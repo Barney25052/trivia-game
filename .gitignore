@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+build/
+
+# Environment variables (never commit secrets/config)
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Editor - VSCode
+.vscode/*
+!.vscode/extensions.json
+
+# OS - Windows
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Vite cache
+.vite/
+
+# TypeScript build info (if using TS)
+*.tsbuildinfo
