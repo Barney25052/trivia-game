@@ -94,13 +94,12 @@ function submitAnswer(index) {
 
 function handleLeave() {
   room.value?.leave()
-  room.value = null
+  room.value  = null
 }
 </script>
 
 <template>
   <div class="app">
-    <h1>Trivia Lobby</h1>
     <h1>{{ currentState }}</h1>
 
     <HomeScreen v-if="currentState=='home'" @join="handleJoin" @create="handleJoin"/>
@@ -132,7 +131,6 @@ function handleLeave() {
 
 <style scoped>
 .app {
-  max-width: 400px;
   margin: 60px auto;
   font-family: sans-serif;
 }
