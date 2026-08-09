@@ -4,6 +4,8 @@ import { Client } from "@colyseus/sdk";
 import { GamePhase } from "./TriviaTypes.ts";
 import HomeScreen from "./screens/HomeScreen.vue"
 import LobbyScreen from "./screens/LobbyScreen.vue";
+import QuestionScreen from "./screens/QuestionScreen.vue";
+import ResultsScreen from "./screens/ResultsScreen.vue";
 
 // Change this to your deployed server URL later
 const SERVER_URL = "ws://localhost:2567";
@@ -86,7 +88,13 @@ async function nextQuestion() {
 }
 
 function submitAnswer(index) {
+  console.log("INDEX:", index)
   room.value?.send("answer", {optionIndex: index})
+}
+
+function handleLeave() {
+  room.value?.leave()
+  room.value = null
 }
 </script>
 
@@ -103,23 +111,21 @@ function submitAnswer(index) {
       :isHost="isHost"
       :room = "room"
     />
-
-    <div v-if="currentState=='question'">
-      <h4>{{ myPlayer.name }} - {{ myPlayer.score }}</h4>
-      <h2>{{currentQuestion.question}}</h2>
-      <button
-        v-if="!haveIAnswered"
-        v-for="(option, index) in currentQuestion.options"
-        :key="index"
-        @click="submitAnswer(index)"
-      >
-        {{ option }}
-      </button>
-      <h3 v-else>Answered!</h3>
-    </div>
-    <div v-if="currentState=='answer'">
-        <h3>The correct answer was Blue!</h3>
-        <button v-if="isHost" @click="nextQuestion">Next question</button>
+    <QuestionScreen 
+      v-if="currentState=='question'"
+      @answerSubmitted="submitAnswer"
+      :myPlayer="myPlayer"
+      :currentQuestion="currentQuestion"
+      :haveIAnswered="haveIAnswered"
+    />
+    <ResultsScreen
+      v-if="currentState=='answer'"
+      @nextQuestion="nextQuestion"
+      :isHost = "isHost"
+    />
+    <div v-if="currentState=='gameend'">
+      <h4 v-for="(player, index) in players" :key="index">{{ player.name }} - {{ player.score }}</h4>
+      <button @click="handleLeave">Main Menu</button>
     </div>
   </div>
 </template>

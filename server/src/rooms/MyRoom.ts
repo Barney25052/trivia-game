@@ -9,6 +9,7 @@ export class MyRoom extends Room {
   currentQuestion = new QuestionInstance();
 
   pickAndSendQuestion() {
+    this.state.currentRound += 1;
     var question = new Question()
     question.text = "What is your favourite colour?"
     question.options = new ArraySchema<string>("Red", "Yellow", "Blue", "Pink");
@@ -52,7 +53,11 @@ export class MyRoom extends Room {
       console.log(client.sessionId, message.optionIndex === this.currentQuestion.question.correctIndex);
       const allAnswered = Array.from(this.state.answered.values()).every(v => v === true);
       if (allAnswered) {
-        this.state.currentState = GamePhase.Answer;
+        if(this.state.currentRound == 5) {
+          this.state.currentState = GamePhase.GameEnd;
+        } else {
+          this.state.currentState = GamePhase.Answer;
+        }
       }
     }
   }
