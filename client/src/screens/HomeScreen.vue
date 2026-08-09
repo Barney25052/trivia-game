@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from "vue";
-defineProps(["players", "isHost"]);
+defineProps([]);
 const emit = defineEmits(["join", "create"]);
 
 const playerName = ref("");
