@@ -179,8 +179,11 @@ h1, h2, h3, h4 {
 }
 
 .answers {
-  width: 700px;
-  margin: auto
+  width: 800px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px
 }
 
 .waiting {
@@ -194,8 +197,9 @@ h1, h2, h3, h4 {
 
 .answerButton {
   height: 175px;
-  width: 45%;
-  margin: 2%;
+  width: 100%;      
+  margin: 0;         
+  padding: 0px;
   font-size: 30px;
 }
 

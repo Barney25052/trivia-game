@@ -29,5 +29,6 @@ export class QuizState extends Schema {
   @type("string") currentState : GamePhase = GamePhase.Lobby
   @type({ map: "boolean" }) answered = new MapSchema<boolean>();
   @type("number") currentRound : number = 0;
+  @type("string") answer : string = "";
 }
 

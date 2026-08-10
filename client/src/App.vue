@@ -16,6 +16,7 @@ const players = ref([]);
 const answeredMap = ref([]);
 const currentPhase = ref(null)
 const currentQuestion = ref(null);
+const answer = ref(null);
 
 const currentState = computed(() => {
   if (!room.value) return "home";
@@ -53,6 +54,7 @@ async function joinLobby(playerName, roomCode) {
       playersMap.value = newState.players;
       players.value = Array.from(newState.players.values());
       answeredMap.value = newState.answered ? Object.fromEntries(newState.answered.entries()) : {};
+      answer.value = newState.answer;
     });
 
     room.value.onLeave(() => {
@@ -82,6 +84,7 @@ async function nextQuestion() {
   try {
     console.log("To the next!");
     room.value?.send("nextQuestion", {});
+    answer.value = null;
   } catch (e) {
     console.error("Failed to go to next question:", e);
   }
@@ -121,6 +124,7 @@ function handleLeave() {
       v-if="currentState=='answer'"
       @nextQuestion="nextQuestion"
       :isHost = "isHost"
+      :answer = "answer"
     />
     <div v-if="currentState=='gameend'">
       <h4 v-for="(player, index) in players" :key="index">{{ player.name }} - {{ player.score }}</h4>
