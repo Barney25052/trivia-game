@@ -10,16 +10,19 @@ function selectAnswer(index) {
 
 <template>
     <div class='question'>
-      <h2>{{currentQuestion.question}}</h2>
       <div v-if="!haveIAnswered">
-      <button
-        v-for="(option, index) in currentQuestion.options"
-        :key="index"
-        @click="selectAnswer(index)"
-      >
-        {{ option }}
-      </button>
+        <h2 class="questionText">{{currentQuestion.question}}</h2>
+        <div class = "answers">
+          <button
+            class = "answerButton"
+            v-for="(option, index) in currentQuestion.options"
+            :key="index"
+            @click="selectAnswer(index)"
+          >
+            {{ option }}
+          </button>
+        </div>
       </div>
-      <h3 v-else>Answered!</h3>
+      <h3 v-else class ="waiting">Waiting for other players...</h3>
     </div>
 </template>

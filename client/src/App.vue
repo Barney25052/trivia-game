@@ -100,7 +100,7 @@ function handleLeave() {
 
 <template>
   <div class="app">
-    <h1>{{ currentState }}</h1>
+    <p>{{ currentState }}</p>
 
     <HomeScreen v-if="currentState=='home'" @join="handleJoin" @create="handleJoin"/>
     <LobbyScreen 
@@ -128,20 +128,3 @@ function handleLeave() {
     </div>
   </div>
 </template>
-
-<style scoped>
-.app {
-  margin: 60px auto;
-  font-family: sans-serif;
-}
-input {
-  padding: 8px;
-  margin-right: 8px;
-}
-button {
-  padding: 8px 16px;
-}
-li {
-  margin: 6px 0;
-}
-</style>

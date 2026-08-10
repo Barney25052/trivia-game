@@ -6,13 +6,13 @@ const emit = defineEmits(["startQuiz"]);
 
 <template>
     <div class = "lobby">
-      <h3>Room Code: {{room.roomId}}</h3>
-      <h2>Players</h2>
+      <h1 class = "lobbyTitle">Host's Lobby</h1>
+      <h3 class = "roomCode">Room Code: {{room.roomId}}</h3>
       <ul>
-        <li v-for="player in players" :key="player.name">
+        <li v-for="player in players" :key="player.name" class = "playerName">
           {{ player.name }}
         </li>
       </ul>
-      <button v-if="isHost" @click="emit('startQuiz')">Start Quiz</button>
+      <button v-if="isHost" @click="emit('startQuiz')" class="startButton">Start Quiz</button>
     </div>
 </template>
