@@ -212,6 +212,12 @@ h1, h2, h3, h4 {
   text-align: center;
 }
 
+.results {
+  margin: 0px auto;
+  max-width: 600px;
+  display: block;
+}
+
 ul {
   height: 50%;
   list-style: none;
@@ -219,6 +225,11 @@ ul {
   padding: 10px;
   background-color: #ffffff56;
   overflow: scroll;
+}
+
+.correctAnswer {
+  text-align: center;
+  font-size: 40px;
 }
 
 #app {

@@ -24,6 +24,10 @@ export class MyRoom extends Room {
   questions = new Array<Question>();
 
   pickAndSendQuestion() {
+    if(this.state.currentRound == 5) {
+      this.state.currentState = GamePhase.GameEnd;
+      return;
+    }
     this.state.currentRound += 1;
     var question = this.questions[this.state.currentRound-1]
     this.currentQuestion.question = question;
@@ -99,13 +103,9 @@ export class MyRoom extends Room {
       console.log(client.sessionId, message.optionIndex === this.currentQuestion.question.correctIndex);
       const allAnswered = Array.from(this.state.answered.values()).every(v => v === true);
       if (allAnswered) {
-        if(this.state.currentRound == 5) {
-          this.state.currentState = GamePhase.GameEnd;
-        } else {
-          let question = this.questions[this.state.currentRound-1]
-          this.state.answer = question.options[question.correctIndex];
-          this.state.currentState = GamePhase.Answer;
-        }
+        let question = this.questions[this.state.currentRound-1]
+        this.state.answer = question.options[question.correctIndex];
+        this.state.currentState = GamePhase.Answer;
       }
     }
   }

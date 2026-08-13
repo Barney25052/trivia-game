@@ -5,6 +5,8 @@ const emit = defineEmits(["nextQuestion"]);
 </script>
 
 <template>
-    <h3>The correct answer was {{ answer }}</h3>
-    <button v-if="isHost" @click="emit('nextQuestion')">Next question</button>
+    <div class = "results">
+        <h3 class = "correctAnswer">The correct answer was <u>{{ answer }}</u></h3>
+        <button class = "startButton" v-if="isHost" @click="emit('nextQuestion')">Next question</button>
+    </div>
 </template>
