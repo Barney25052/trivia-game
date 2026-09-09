@@ -49,10 +49,10 @@ Repeat cash builder + offer + chase for every contestant.
 
 ## Current state
 
-- The repo currently holds a *different, simpler* trivia game (straight 5-question multiple-choice, no asym roles). It gives us the working foundation — Colyseus room + schema sync, client screens, opentdb fetching — but the game flow must be rebuilt for the asymmetric rules above.
-- Working today: create/join `trivia` room by name or code, first-joiner-is-host, host-started rounds, state sync (`QuizState`: Lobby → Question → Answer → GameEnd), scores, per-question reveal, leaderboard.
-- No timers on the server yet (all rounds must become timer-driven, server-authoritative).
-- Template leftovers: `server/test/MyRoom.test.ts` + loadtest reference wrong room name; `GamePhase` enum duplicated in 3 files; client hardcodes `ws://localhost:2567`.
+- The repo is mid-refactor from a *simpler* trivia game to the asymmetric rules above (tickets 001–011 in Phase 0). The foundation is in place; the game flow is not yet rebuilt.
+- Working today (server): create/join `trivia` room by name or code; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers; open-ended question bank (45 free-text questions) with loader + non-repeating random picker. `npm test` is green (20 tests).
+- NOT done yet: the room still runs a thin legacy 5-question flow adapted onto `GameState` (opentdb multiple-choice, Lobby → Question → Answer → GameEnd). It must be replaced by the `gameFlow` state machine + timers (tickets 007–008) and the client screens rebuilt (ticket 009).
+- Client hardcodes `ws://localhost:2567` (ticket 010); template leftovers remain in `npm run loadtest` (`my_room`, ticket 011).
 
 ## Plan
 

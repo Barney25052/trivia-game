@@ -1,5 +1,7 @@
 # 010: Client: make SERVER_URL configurable
 
+> Updated after 001–006: unchanged requirement. `client/src/env.d.ts` (added in 001) + `"types": ["vite/client"]` are already in place, so `import.meta.env.VITE_SERVER_URL` type-checks without extra setup. Root `.gitignore` ignores `.env*` files, so the new `.env.example` is safe.
+
 ## Goal
 
 Stop hardcoding `ws://localhost:2567` so the client can point at a deployed server.
