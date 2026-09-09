@@ -1,8 +1,7 @@
 import assert from "assert";
 import { ClockTimer } from "@colyseus/timer";
-import { ColyseusTestServer, boot } from "@colyseus/testing";
-import appConfig from "../src/app.config.js";
 import { scheduleTimer, TimerRoom } from "../src/timer.js";
+import { cleanup, getTestServer } from "./testServer.js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -57,18 +56,15 @@ describe("scheduleTimer", () => {
   });
 
   it("works against a real Colyseus Room clock", async () => {
-    const colyseus = await boot(appConfig);
-    try {
-      const room = await colyseus.createRoom("trivia", {});
-      let fired = false;
+    await cleanup();
+    const colyseus = await getTestServer();
+    const room = await colyseus.createRoom("trivia", {});
+    let fired = false;
 
-      scheduleTimer(room, 30, () => { fired = true; });
+    scheduleTimer(room, 30, () => { fired = true; });
 
-      await sleep(250);
-      assert.strictEqual(fired, true);
-      await room.waitForNextPatch();
-    } finally {
-      await colyseus.shutdown();
-    }
+    await sleep(250);
+    assert.strictEqual(fired, true);
+    await room.waitForNextPatch();
   });
 });

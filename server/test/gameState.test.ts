@@ -1,16 +1,18 @@
 import assert from "assert";
-import { ColyseusTestServer, boot } from "@colyseus/testing";
+import { ColyseusTestServer } from "@colyseus/testing";
 import appConfig from "../src/app.config.js";
 import { GameState } from "../src/rooms/schema/GameState.js";
 import { GamePhase, PlayerRole } from "../src/TriviaTypes.js";
 import { CHASER_POT } from "../src/gameConfig.js";
+import { cleanup, getTestServer } from "./testServer.js";
 
 describe("GameState", () => {
   let colyseus: ColyseusTestServer<typeof appConfig>;
 
-  before(async () => { colyseus = await boot(appConfig); });
-  after(async () => { await colyseus.shutdown(); });
-  beforeEach(async () => { await colyseus.cleanup(); });
+  beforeEach(async () => {
+    colyseus = await getTestServer();
+    await cleanup();
+  });
 
   it("room boots with GameState defaults", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {});

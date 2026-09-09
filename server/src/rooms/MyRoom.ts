@@ -1,120 +1,208 @@
 import { Room, Client, CloseCode } from "colyseus";
-import { ArraySchema } from "@colyseus/schema"
-import { GamePlayer, Question, QuestionInstance, GameState } from "./schema/GameState.js";
+import { GamePlayer, GameState } from "./schema/GameState.js";
 import { GamePhase, PlayerRole } from "../TriviaTypes.js";
-import { randomInt } from "crypto";
+import {
+  transition,
+  FlowEffect,
+  FlowEvent,
+  GameFlowContext,
+  OfferTier,
+} from "../gameFlow.js";
+import { scheduleTimer, TimerHandle } from "../timer.js";
+import { CASH_BUILDER, FINAL_ROUND } from "../gameConfig.js";
 
-interface RawQuestion {
-  difficulty: string
-  category: string
-  question: string
-  correct_answer: string
-  incorrect_answers: Array<string>
-}
+const OFFER_TIERS: OfferTier[] = ["low", "middle", "high"];
 
-interface TriviaAPIResponse {
-  response_code: number
-  results : Array<RawQuestion>
+interface OfferAmounts {
+  low: number;
+  middle: number;
+  high: number;
 }
 
 export class MyRoom extends Room {
   maxClients = 4;
   state = new GameState();
-  currentQuestion = new QuestionInstance();
-  questions = new Array<Question>();
-  answered = new Map<string, boolean>();
 
-  pickAndSendQuestion() {
-    if(this.state.activeRound == 5) {
-      this.state.currentPhase = GamePhase.GameEnd;
-      return;
+  cashBuilderDurationMs: number = CASH_BUILDER.durationMs;
+  teamFinalDurationMs: number = FINAL_ROUND.teamDurationMs;
+  chaserFinalDurationMs: number = FINAL_ROUND.chaserDurationMs;
+
+  activeTimer: TimerHandle | null = null;
+  currentOffer: OfferAmounts | null = null;
+  currentOfferAmount = 0;
+
+  onCreate (options: any) {
+    if (typeof options?.cashBuilderDurationMs === "number") {
+      this.cashBuilderDurationMs = options.cashBuilderDurationMs;
     }
-    this.state.activeRound += 1;
-    var question = this.questions[this.state.activeRound-1]
-    this.currentQuestion.question = question;
-    this.currentQuestion.playersAnswered =  0;
-    console.log("Correct answers", this.currentQuestion.question.correctIndex, this.currentQuestion.question.options[this.currentQuestion.question.correctIndex]);
-
-    this.answered = new Map<string, boolean>();
-    for (const sessionId of this.state.players.keys()) {
-      this.answered.set(sessionId, false);
+    if (typeof options?.teamFinalDurationMs === "number") {
+      this.teamFinalDurationMs = options.teamFinalDurationMs;
     }
-
-    this.broadcast("question", {question: question.text, options: question.options});
-    this.state.currentPhase = GamePhase.Question
+    if (typeof options?.chaserFinalDurationMs === "number") {
+      this.chaserFinalDurationMs = options.chaserFinalDurationMs;
+    }
   }
 
-  convertJSONToQuestion(question : RawQuestion) : Question {
-    const newQuestion = new Question()
-    newQuestion.text = decodeURIComponent(question.question);
-    
-    const answers : string[] = question.incorrect_answers
-    answers.push(question.correct_answer)
-
-    for (let i = 0; i < answers.length-1; i++) {
-      const j = randomInt(answers.length - i) + i
-      const temp = answers[i]
-      answers[i] = answers[j]
-      answers[j] = temp
+  private clearTimer() {
+    if (this.activeTimer !== null) {
+      this.activeTimer.cancel();
+      this.activeTimer = null;
     }
-
-    newQuestion.options = new ArraySchema<string>(...answers.map(answer => decodeURIComponent(answer)));
-    newQuestion.correctIndex = answers.findIndex(a => a === question.correct_answer);
-    return newQuestion;
   }
 
-  async requestQuestions(numberOfRounds : Number) {
-    const response = await fetch(`https://opentdb.com/api.php?amount=${numberOfRounds}&type=multiple&encode=url3986`)
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`)
+  private setPhase(phase: GamePhase) {
+    if (this.state.currentPhase !== phase) {
+      this.state.currentPhase = phase;
+      console.log("Phase ->", phase);
     }
+    this.broadcast("phase", { phase });
+  }
 
-    const data : TriviaAPIResponse = await response.json()
-    data.results.forEach(rawQuestion => {
-      this.questions.push(this.convertJSONToQuestion(rawQuestion));  
-    });
+  private flowContext(): GameFlowContext {
+    return {
+      currentPhase: this.state.currentPhase,
+      contestantsOrder: [...this.state.contestantsOrder],
+      activeContestantSessionId: this.state.activeContestantSessionId,
+      activeRound: this.state.activeRound,
+      currentOfferAmount: this.currentOfferAmount,
+    };
+  }
+
+  private dispatch(event: FlowEvent) {
+    try {
+      const result = transition(event, this.flowContext());
+      this.clearTimer();
+      this.applyEffects(result.effects);
+      this.setPhase(result.nextPhase);
+    } catch (error) {
+      console.error(`Rejected flow event '${event.type}':`, (error as Error).message);
+    }
+  }
+
+  private applyEffects(effects: FlowEffect[]) {
+    for (const effect of effects) {
+      switch (effect.type) {
+        case "startCashBuilder": {
+          this.state.activeContestantSessionId = effect.sessionId;
+          this.state.activeRound = effect.round;
+          console.log(
+            `Cash builder for ${effect.sessionId} (round ${effect.round}, ${this.cashBuilderDurationMs}ms)`
+          );
+          this.activeTimer = scheduleTimer(this, this.cashBuilderDurationMs, () => {
+            this.dispatch({ type: "cashBuilderTimeout" });
+          });
+          break;
+        }
+
+        case "startOffer": {
+          const player = this.state.players.get(effect.sessionId);
+          const take = player?.cashBuilderMoney ?? 0;
+          this.currentOffer = {
+            middle: take,
+            low: Math.floor(take / 2),
+            high: take * 2
+          };
+          this.currentOfferAmount = this.currentOffer.middle;
+          console.log(
+            `Offer for ${effect.sessionId}: low ${this.currentOffer.low} / ` +
+            `middle ${this.currentOffer.middle} / high ${this.currentOffer.high}`
+          );
+          this.broadcast("offer", {
+            sessionId: effect.sessionId,
+            offers: this.currentOffer
+          });
+          break;
+        }
+
+        case "startChase": {
+          console.log(
+            `Chase: ${effect.sessionId} starts at space ${effect.contestantStartSpace}, ` +
+            `chaser at ${effect.chaserStartSpace}`
+          );
+          break;
+        }
+
+        case "eliminateContestant": {
+          const player = this.state.players.get(effect.sessionId);
+          if (player) {
+            player.isEliminated = true;
+          }
+          console.log(`${effect.sessionId} was caught — out of the game`);
+          break;
+        }
+
+        case "addToTeamPot": {
+          const player = this.state.players.get(effect.sessionId);
+          if (player) {
+            player.madeItBack = true;
+          }
+          this.state.teamPot += effect.amount;
+          console.log(`${effect.sessionId} made it back — ${effect.amount} added to the team pot`);
+          break;
+        }
+
+        case "startFinalTeam": {
+          const survivors = [...this.state.contestantsOrder].filter(
+            (sessionId) => this.state.players.get(sessionId)?.madeItBack === true
+          ).length;
+          this.state.teamScore = survivors;
+          console.log(`Final round: team starts at ${survivors} points (${this.teamFinalDurationMs}ms)`);
+          this.activeTimer = scheduleTimer(this, this.teamFinalDurationMs, () => {
+            this.dispatch({ type: "finalTeamTimeout" });
+          });
+          break;
+        }
+
+        case "startFinalChaser": {
+          console.log(`Final round: chaser goes (${this.chaserFinalDurationMs}ms)`);
+          this.activeTimer = scheduleTimer(this, this.chaserFinalDurationMs, () => {
+            this.dispatch({ type: "finalChaserTimeout" });
+          });
+          break;
+        }
+
+        case "endGame": {
+          console.log(`Game over — ${effect.winner} wins!`);
+          this.broadcast("endGame", { winner: effect.winner });
+          break;
+        }
+      }
+    }
   }
 
   messages = {
-    nextQuestion: (client: Client, message: any) => {
-      console.log("Next question!");
-      this.pickAndSendQuestion();
-    },
-
-    startGame: async (client: Client, message: any) => {
-      if(this.state.currentPhase != GamePhase.Lobby) {
-        console.log(client.sessionId, "Can not start Quiz when not in Lobby!");
+    startGame: (client: Client, message: any) => {
+      if (this.state.currentPhase !== GamePhase.Lobby) {
+        console.log(client.sessionId, "Can not start the game outside Lobby!");
         return;
       }
-      console.log(client.sessionId, "Starting quiz!");
-      await this.requestQuestions(5);
-      this.pickAndSendQuestion();
+      console.log(client.sessionId, "Starting game!");
+      this.dispatch({ type: "startGame" });
     },
 
-    answer: (client: Client, message: any) => {
-      if (this.state.currentPhase !== GamePhase.Question) return;
-
-      this.answered.set(client.sessionId, true);
-      const player = this.state.players.get(client.sessionId);
-
-      if(message.optionIndex == this.currentQuestion.question.correctIndex) {
-        player.score += 1;
+    offerChoice: (client: Client, message: any) => {
+      const offer = message?.offer as OfferTier;
+      if (!OFFER_TIERS.includes(offer)) {
+        console.log(client.sessionId, "Ignoring invalid offer choice:", message?.offer);
+        return;
       }
-      console.log(client.sessionId, message.optionIndex === this.currentQuestion.question.correctIndex);
-      const allAnswered = Array.from(this.answered.values()).every(v => v === true);
-      if (allAnswered) {
-        let question = this.questions[this.state.activeRound-1]
-        this.broadcast("answerReveal", { answer: question.options[question.correctIndex] });
-        this.state.currentPhase = GamePhase.Answer;
+      if (this.currentOffer) {
+        this.currentOfferAmount = this.currentOffer[offer];
       }
+      this.dispatch({ type: "contestantChoice", offer });
+    },
+
+    chaseResult: (client: Client, message: any) => {
+      if (message?.escaped === true) {
+        this.dispatch({ type: "chaseEscape" });
+      } else {
+        this.dispatch({ type: "chaseCaught" });
+      }
+    },
+
+    finalChaserScore: (client: Client, message: any) => {
+      this.dispatch({ type: "finalChaserReachedScore" });
     }
-  }
-
-  onCreate (options: any) {
-    /**
-     * Called when a new room is created.
-     */
   }
 
   onJoin (client: Client, options: any) {
@@ -132,17 +220,19 @@ export class MyRoom extends Room {
   }
 
   onLeave (client: Client, code: CloseCode) {
-    if(this.state.players.get(client.sessionId).isHost) {
+    const player = this.state.players.get(client.sessionId);
+    if(player?.isHost) {
       this.disconnect(6767)
     }
     this.state.players.delete(client.sessionId);
+    const contestantIndex = this.state.contestantsOrder.indexOf(client.sessionId);
+    if(contestantIndex >= 0) {
+      this.state.contestantsOrder.splice(contestantIndex, 1);
+    }
     console.log("Client left room", this.roomId)
   }
 
   onDispose() {
-    /**
-     * Called when the room is disposed.
-     */
     console.log("room", this.roomId, "disposing...");
   }
 

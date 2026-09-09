@@ -30,8 +30,8 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 004 | Open-ended question bank: seed data | done |
 | 005 | Question bank loader + random picker | done |
 | 006 | New asymmetric game state schema | done |
-| 007 | Pure game-flow state transition function | in-progress |
-| 008 | Rewire room to new state, phases, timers | backlog |
+| 007 | Pure game-flow state transition function | done |
+| 008 | Rewire room to new state, phases, timers | done |
 | 009 | Client: new phase screens + flow | backlog |
 | 010 | Client: make SERVER_URL configurable | backlog |
 | 011 | Stale test/loadtest cleanup + green baseline | backlog |
