@@ -29,11 +29,14 @@ body {
   height: 150%;
   top: -25%;
   left: -25%;
-  filter: opacity(10%);
   background: repeating-conic-gradient(#47bde8 0 25%, #0000 0 50%)
-      50% / 250px 250px;
+      50% / 250px 250px;  
   animation: pan-bg 20s linear infinite;
+  will-change: transform;
+  isolation: isolate;   /* forces its own stacking context */
+  contain: paint; 
   transform: rotate(15deg); 
+  filter: opacity(10%);
 }
 
 .logo {
@@ -223,13 +226,24 @@ ul {
   list-style: none;
   border-radius: 10px;
   padding: 10px;
-  background-color: #ffffff56;
+  background-color: #ffffff;
   overflow: scroll;
 }
 
 .correctAnswer {
   text-align: center;
   font-size: 40px;
+}
+
+.nextButton {
+  margin: auto auto;
+  display: block;
+  width: 300px;
+}
+
+.nextButton:hover {
+  background-color: black;
+  color: white
 }
 
 #app {
@@ -245,12 +259,8 @@ ul {
 }
 
 @keyframes pan-bg {
-  from {
-    background-position: 50% 50%;
-  }
-  to {
-    background-position: calc(50% + 250px) calc(50% + 250px);
-  }
+  from { transform: rotate(15deg) translate(0, 0); }
+  to   { transform: rotate(15deg) translate(250px, 250px); }
 }
 
 @keyframes rotate-logo {

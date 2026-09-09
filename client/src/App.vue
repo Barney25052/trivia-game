@@ -126,9 +126,16 @@ function handleLeave() {
       :isHost = "isHost"
       :answer = "answer"
     />
-    <div v-if="currentState=='gameend'">
-      <h4 v-for="(player, index) in players" :key="index">{{ player.name }} - {{ player.score }}</h4>
-      <button @click="handleLeave">Main Menu</button>
+    <div v-if="currentState=='gameend'" class = "lobby">
+      <h2  class = "lobbyTitle">Results</h2>
+      <ul>
+        <li v-for="player in players" :key="player.name">
+            <div class = "playerResult">
+                <p class ="playerName">{{ player.name }} - {{ player.score }}</p>
+            </div>
+        </li>
+      </ul>
+      <button @click="handleLeave" class = "nextButton">Main Menu</button>
     </div>
   </div>
 </template>
