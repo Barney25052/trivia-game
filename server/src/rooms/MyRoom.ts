@@ -1,7 +1,7 @@
 import { Room, Client, CloseCode } from "colyseus";
-import { ArraySchema, MapSchema } from "@colyseus/schema"
-import { Player, Question, QuestionInstance, QuizState } from "./schema/MyRoomState.js";
-import { GamePhase } from "../TriviaTypes.js";
+import { ArraySchema } from "@colyseus/schema"
+import { GamePlayer, Question, QuestionInstance, GameState } from "./schema/GameState.js";
+import { GamePhase, PlayerRole } from "../TriviaTypes.js";
 import { randomInt } from "crypto";
 
 interface RawQuestion {
@@ -19,28 +19,29 @@ interface TriviaAPIResponse {
 
 export class MyRoom extends Room {
   maxClients = 4;
-  state = new QuizState();
+  state = new GameState();
   currentQuestion = new QuestionInstance();
   questions = new Array<Question>();
+  answered = new Map<string, boolean>();
 
   pickAndSendQuestion() {
-    if(this.state.currentRound == 5) {
-      this.state.currentState = GamePhase.GameEnd;
+    if(this.state.activeRound == 5) {
+      this.state.currentPhase = GamePhase.GameEnd;
       return;
     }
-    this.state.currentRound += 1;
-    var question = this.questions[this.state.currentRound-1]
+    this.state.activeRound += 1;
+    var question = this.questions[this.state.activeRound-1]
     this.currentQuestion.question = question;
     this.currentQuestion.playersAnswered =  0;
     console.log("Correct answers", this.currentQuestion.question.correctIndex, this.currentQuestion.question.options[this.currentQuestion.question.correctIndex]);
 
-    this.state.answered = new MapSchema<boolean>();
+    this.answered = new Map<string, boolean>();
     for (const sessionId of this.state.players.keys()) {
-      this.state.answered.set(sessionId, false);
+      this.answered.set(sessionId, false);
     }
 
     this.broadcast("question", {question: question.text, options: question.options});
-    this.state.currentState = GamePhase.Question
+    this.state.currentPhase = GamePhase.Question
   }
 
   convertJSONToQuestion(question : RawQuestion) : Question {
@@ -82,7 +83,7 @@ export class MyRoom extends Room {
     },
 
     startGame: async (client: Client, message: any) => {
-      if(this.state.currentState != GamePhase.Lobby) {
+      if(this.state.currentPhase != GamePhase.Lobby) {
         console.log(client.sessionId, "Can not start Quiz when not in Lobby!");
         return;
       }
@@ -92,20 +93,20 @@ export class MyRoom extends Room {
     },
 
     answer: (client: Client, message: any) => {
-      if (this.state.currentState !== GamePhase.Question) return;
+      if (this.state.currentPhase !== GamePhase.Question) return;
 
-      this.state.answered.set(client.sessionId, true);
+      this.answered.set(client.sessionId, true);
       const player = this.state.players.get(client.sessionId);
 
       if(message.optionIndex == this.currentQuestion.question.correctIndex) {
         player.score += 1;
       }
       console.log(client.sessionId, message.optionIndex === this.currentQuestion.question.correctIndex);
-      const allAnswered = Array.from(this.state.answered.values()).every(v => v === true);
+      const allAnswered = Array.from(this.answered.values()).every(v => v === true);
       if (allAnswered) {
-        let question = this.questions[this.state.currentRound-1]
-        this.state.answer = question.options[question.correctIndex];
-        this.state.currentState = GamePhase.Answer;
+        let question = this.questions[this.state.activeRound-1]
+        this.broadcast("answerReveal", { answer: question.options[question.correctIndex] });
+        this.state.currentPhase = GamePhase.Answer;
       }
     }
   }
@@ -117,12 +118,15 @@ export class MyRoom extends Room {
   }
 
   onJoin (client: Client, options: any) {
-    var newPlayer = new Player();
+    var newPlayer = new GamePlayer();
     newPlayer.name = options.playerName;
+    newPlayer.sessionId = client.sessionId;
+    newPlayer.role = PlayerRole.Contestant;
     if(this.state.players.size == 0) {
       newPlayer.isHost = true;
     }
     this.state.players.set(client.sessionId, newPlayer);
+    this.state.contestantsOrder.push(client.sessionId);
     console.log("Client joined room", this.roomId);
     console.log(options)
   }
