@@ -4,3 +4,8 @@ export enum GamePhase {
     Answer = "answer",
     GameEnd = "gameend"
 }
+
+export enum PlayerRole {
+    Contestant = "contestant",
+    Chaser = "chaser"
+}

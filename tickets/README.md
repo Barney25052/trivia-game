@@ -24,8 +24,8 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 
 | # | Title | Status |
 |---|-------|--------|
-| 001 | Remove dead `GamePhase` copy in `common/` | backlog |
-| 002 | Server game-config constants + role enum | backlog |
+| 001 | Remove dead `GamePhase` copy in `common/` | done |
+| 002 | Server game-config constants + role enum | done |
 | 003 | Cancellable room timer utility | backlog |
 | 004 | Open-ended question bank: seed data | backlog |
 | 005 | Question bank loader + random picker | backlog |

@@ -16,8 +16,8 @@ Multiplayer trivia game built on Colyseus. Two independent npm projects — ther
 
 ## Gotchas
 
-- Template leftovers you'll hit: `server/test/MyRoom.test.ts` and `npm run loadtest` reference room name `my_room`, but the only registered room is `trivia`. The test also asserts on `MyRoomState.mySynchronizedProperty`, while `MyRoom` actually uses `QuizState`. Both would currently fail / misbehave — don't use them as reference for correct behavior.
-- `GamePhase` enum is duplicated in `server/src/TriviaTypes.ts` and `client/src/TriviaTypes.ts`; `common/TriviaTypes.ts` is a third copy that **nothing imports** (dead). If you change the enum, update the two used copies.
+- Template leftovers you'll still hit: `npm run loadtest` references room name `my_room`, but the only registered room is `trivia`. The old template test `server/test/MyRoom.test.ts` (which referenced `my_room` and `MyRoomState.mySynchronizedProperty`) was removed in ticket 002 — it was failing and would not compile after `QuizState` was deleted. Ticket 011 finishes the loadtest cleanup.
+- `GamePhase` enum is duplicated in `server/src/TriviaTypes.ts` and `client/src/TriviaTypes.ts` — both are used; keep them identical. The old dead copy in `common/TriviaTypes.ts` was removed in ticket 001.
 - Client hardcodes the server URL `ws://localhost:2567` in `client/src/App.vue` (`SERVER_URL`).
 - Game flow: create/`joinById` room `trivia` with `{ playerName }`; first joiner is host; host sends `startGame` → 5 questions; phases progress `Lobby → Question → Answer → GameEnd` via `QuizState` schema (`server/src/rooms/schema/MyRoomState.ts`). Host leaving disconnects the room (`onLeave`, close code 6767).
 - PM2 deploy config (`server/ecosystem.config.cjs`) runs `build/index.js`, so `npm run build` is required before deploying. `@colyseus/monitor` is exposed at `/monitor`; the Colyseus playground serves at `/` except in production.
