@@ -49,21 +49,22 @@ Repeat cash builder + offer + chase for every contestant.
 
 ## Current state
 
-- The repo is mid-refactor from a *simpler* trivia game to the asymmetric rules above (tickets 001–011 in Phase 0). The foundation is in place; the game flow is not yet rebuilt.
-- Working today (server): create/join `trivia` room by name or code; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers; open-ended question bank (45 free-text questions) with loader + non-repeating random picker. `npm test` is green (20 tests).
-- NOT done yet: the room still runs a thin legacy 5-question flow adapted onto `GameState` (opentdb multiple-choice, Lobby → Question → Answer → GameEnd). It must be replaced by the `gameFlow` state machine + timers (tickets 007–008) and the client screens rebuilt (ticket 009).
-- Client `SERVER_URL` is configurable via `VITE_SERVER_URL` (fallback `ws://localhost:2567`) — ticket 010.
+- The repo is mid-refactor from a *simpler* trivia game to the asymmetric rules above (tickets 001–012 in Phase 0). The foundation and phase wiring are in place; the game is not yet playable end-to-end.
+- Working today (server): create/join `trivia` room; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers (`src/timer.ts`); open-ended question bank (45 free-text questions) with loader + non-repeating random picker; a **pure `gameFlow` state machine** whose `FlowEffect`s the room applies. `npm test` is green (42 tests).
+- The room (tickets 007–008) dispatches real `gameFlow` transitions: `startGame` → cash builder → offer → chase, repeating per contestant, then team final → chaser final → game end, with server-authoritative timers wired. Client has screens for the new phases (ticket 009) and `SERVER_URL` is configurable via `VITE_SERVER_URL` (ticket 010).
+- NOT done yet: no lobby/chaser selection (Phase 1); no real question gameplay — cash-builder answer checking is unwired (Phase 2), offers are broadcast but not sent in the UI flow, and the MC board-chase against opentdb isn't implemented (Phase 4). Pot/score fields exist but nothing plays through them yet.
+- Ticket 012 (backlog) removes template/legacy cruft left over from the refactor (`MyRoom`, dead `Question`/`Answer` phases and schema).
 
 ## Plan
 
 Evolve this list as we work. Check items off / reorder as priorities change.
 
 ### Phase 0 — Foundation for the new game
-Granular agent tasks for this phase live in `tickets/` (001–011, tracked in `tickets/README.md`).
-- [ ] Rewrite game state schema for asymmetric play (roles, board, Chaser pot, team pot, round state machine)
-- [ ] Build the free-text open-ended question bank (data + server loader)
-- [ ] Add server-authoritative timers (cash-builder 60s, final 120s, chase 5s)
-- [ ] Restructure client screens for the new flow; unify/clean `GamePhase`
+Granular agent tasks for this phase live in `tickets/` (001–012, tracked in `tickets/README.md`).
+- [x] Rewrite game state schema for asymmetric play (roles, board, Chaser pot, team pot, round state machine)
+- [x] Build the free-text open-ended question bank (data + server loader)
+- [x] Add server-authoritative timers (cash-builder 60s, final 120s, chase 5s)
+- [x] Restructure client screens for the new flow; unify/clean `GamePhase` (cleanup pending in 012)
 
 ### Phase 1 — Lobby & chaser selection
 - [ ] Player setup (names, room code)

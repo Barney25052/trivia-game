@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Multiplayer trivia game built on Colyseus. Two independent npm projects — there is **no root `package.json`**, no workspaces, no lint/format config. Install and run commands from each subdirectory. Default working branch is `dev`.
+Multiplayer trivia game built on Colyseus. Two independent npm projects — there is **no root `package.json`**, no workspaces, no formatter/linter tooling (style rules are documented — see "Code requirements"). Install and run commands from each subdirectory. Default working branch is `dev`.
 
 ## Layout & commands
 
@@ -12,13 +12,41 @@ Multiplayer trivia game built on Colyseus. Two independent npm projects — ther
   - `npm run dev` — Vite dev server
   - `npm run build` — `vue-tsc -b && vite build` (this is the typecheck step; there is no separate typecheck script)
 - `api-test.py` — root-level scratch script for testing the opentdb.com API; not part of the app.
-- Server fetches questions **live from opentdb.com** (`encode=url3986`) when `startGame` is received; answers are `decodeURIComponent`'d on the server. Running the game requires network access to opentdb.
+- The open-ended question bank (`server/src/questions/bank.ts`, 45 questions) is loaded on the server and covered by tests; wiring it into the cash-builder/final phases is Phase 2+. The board chase plans to pull multiple-choice questions from opentdb (Phase 4); nothing fetches from opentdb at runtime yet.
 
 ## Gotchas
 
 - The template loadtest (`npm run loadtest` in `server/`) joins room `trivia`; the old template test `server/test/MyRoom.test.ts` (which referenced `my_room` and `MyRoomState.mySynchronizedProperty`) was removed in ticket 002 — it was failing and would not compile after `QuizState` was deleted.
 - `GamePhase` enum is duplicated in `server/src/TriviaTypes.ts` and `client/src/TriviaTypes.ts` — both are used; keep them identical. The old dead copy in `common/TriviaTypes.ts` was removed in ticket 001.
-- Client hardcodes the server URL `ws://localhost:2567` in `client/src/App.vue` (`SERVER_URL`).
-- Game flow: create/`joinById` room `trivia` with `{ playerName }`; first joiner is host; host sends `startGame` → 5 questions; phases progress `Lobby → Question → Answer → GameEnd` via `QuizState` schema (`server/src/rooms/schema/MyRoomState.ts`). Host leaving disconnects the room (`onLeave`, close code 6767).
+- Client `SERVER_URL` defaults to `ws://localhost:2567` and can be overridden via `VITE_SERVER_URL` (`client/src/App.vue`).
+- Game flow: create/`joinById` room `trivia` with `{ playerName }`; first joiner is host; phases progress `Lobby → CashBuilder → Offer → Chase` (repeating per contestant) `→ TeamFinal → ChaserFinal → GameEnd`. Transitions come from the pure state machine `server/src/gameFlow.ts` (a `FlowEvent` + context → `nextPhase` + `FlowEffect[]`), which the room (`server/src/rooms/MyRoom.ts`) applies; timers are server-authoritative via `scheduleTimer` (`server/src/timer.ts`) with durations from `server/src/gameConfig.ts`. Host leaving disconnects the room (`onLeave`, close code 6767).
 - PM2 deploy config (`server/ecosystem.config.cjs`) runs `build/index.js`, so `npm run build` is required before deploying. `@colyseus/monitor` is exposed at `/monitor`; the Colyseus playground serves at `/` except in production.
 - `client/package.json` has `allowScripts` for `msgpackr-extract`; this can matter if `npm install` fails under restricted script settings.
+
+## Code requirements
+
+Documented standards — there is no formatter or linter; conventions are enforced by review, tests, and the build.
+
+### Formatting & style
+- Indent **4 spaces** in both packages; double quotes; semicolons.
+- No unused imports; prefer explicit types over `any` (Colyseus message params are the allowed exception).
+- Keep files small and focused; prefer pure modules that return data over fat classes.
+
+### No cruft
+- Every ticket removes the dead code its work orphans (old phases, schemas, exports, routes) and greps for stale names as part of its acceptance criteria.
+- No template leftovers: `my-app` package metadata, unreferenced handlers/routes, legacy enum members/schema classes.
+
+### Architecture invariants (do not break)
+- `gameFlow.ts` is **pure**: it takes a `FlowEvent` + context and returns `nextPhase` + `FlowEffect[]`. The room applies effects and runs timers; it never decides transitions itself.
+- All tunables live in `server/src/gameConfig.ts` (durations, money, board layout, offer math). No magic numbers in room code.
+- Message handlers are **authoritative and role-checked**: only the expected client may trigger an event (e.g. host starts, chaser finishes the final), only in the right phase. Reject + log otherwise.
+
+### Naming
+- Rename template artifacts (`MyRoom`, `my-app`, template package metadata) out when touched — descriptive names over template ones.
+
+### Testing
+- Every new transition/rule gets a test in `server/test/*.test.ts`. Green gate per ticket: `npm test` (server) and `npm run build` in **both** packages.
+- `gameFlow` transitions are unit-tested pure (no room); room integration follows the stub-handler pattern in `roomFlow.test.ts`.
+
+### Type sharing
+- `GamePhase` / `PlayerRole` are intentionally duplicated in `server/src/TriviaTypes.ts` and `client/src/TriviaTypes.ts`; edits must land in both and be verified by build/tests — not a manual grep.
