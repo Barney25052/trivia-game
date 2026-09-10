@@ -97,7 +97,7 @@ Granular agent tasks live in `tickets/` (013–016, tracked in `tickets/README.m
 Found on the first playthrough + security review; tracked as tickets (no BUGS.md entries):
 - [ ] Random chaser mode: cycle through names until the Chaser settles — 019 (client)
 - [ ] Lobby polish: readable names, settings panel to the side, "How to Play" removed — 020 (client)
-- [ ] Gate cash builder behind a roles-reveal ready vote + "get ready" cooldown — 021 (server) + 022 (client)
+- [ ] Roles reveal becomes a real phase baked into the flow (`ChaserSelection → RolesReveal → CashBuilder`) with an all-ready vote + "get ready" cooldown — 021 (server) + 022 (client)
 - [ ] Authority/phase guards on the offer/chase/final handlers — 023 (server)
 - [ ] Clamp room-option duration overrides to gameConfig bounds — 024 (server)
 
