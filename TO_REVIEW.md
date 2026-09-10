@@ -17,75 +17,66 @@ Add entries like so:
     STATUS: 
     DECISION: For human to fill out
 
------------ TO REVIEW -------------------
+----------- DECIDED -------------------
+
+All items reviewed. Closed items (#3, #4) deleted; open items converted to tickets.
 
 1.  WHAT: TriviaRoom.ts is 477 lines and growing — handler dispatch, effect application, chaser-selection helpers, reveal-ready logic, and message handlers all in one file.
     WHERE: server/src/rooms/TriviaRoom.ts:1-477
     WHY: Passing the ~150–200 line comfort zone. As Phase 2–5 add real question handling, chase logic, and final-round scoring, this file will balloon further. Worth deciding now whether to extract helpers (e.g. a `handlers/` module or an effect-applicator) before the next phase makes it harder to split.
-    STATUS: open
-    DECISION: Create a handlers module and pull some functionality into that.
+    STATUS: decided
+    DECISION: Create a handlers module and pull some functionality into that. → Ticket 031.
 
 2.  WHAT: GamePhase.GameEnd has value `"gameend"` while all other enum values use camelCase (`"finalTeam"`, `"finalChaser"`, `"chaserSelection"`, etc.).
     WHERE: server/src/TriviaTypes.ts:10, client/src/TriviaTypes.ts:10
     WHY: Works today because App.vue maps via the enum, but any string comparison with `"gameEnd"` (camelCase) would silently fail. Minor now, but the inconsistency could bite when Phase 2+ adds more string-based routing or logging. Worth a quick normalise while the enum is small.
-    STATUS: open
-    DECISION: Change to gameEnd.
-
-3.  WHAT: Offer multipliers (low = take/2, high = take*2) are hardcoded in TriviaRoom.ts:238-239 instead of living in gameConfig. GOAL.md Phase 3 has since been fleshed out: low must be lower than middle, high higher; low can go negative (floor at $0 player pot); offers capped by the Chaser's pot; Chaser pot +$30k/round randomized per game.
-    WHERE: server/src/rooms/TriviaRoom.ts:238-239, server/src/gameConfig.ts:28-31 (CHASER_POT.perRound is a fixed 30k — needs the randomized-per-game form when Phase 3 lands)
-    WHY: Open question #1 (multipliers) is now resolved in the rules — the offer math is no longer an open design question but a concrete Phase 3 spec. Flagging so it's not lost: when Phase 3 lands, move the math into gameConfig honoring low<middle<high (with negative-low down to $0) and the chaser-pot cap, and turn CHASER_POT.perRound into a per-game randomized tunable with a test.
-    STATUS: closed
-    DECISION: Ignore
-
-4.  WHAT: Dead schema fields (boardPos, score, chaserPot) are synced to clients but have no room logic behind them yet.
-    WHERE: server/src/rooms/schema/GameState.ts:10,16,24
-    WHY: These are intentionally reserved for Phases 3–5 per GOAL.md, but they're currently broadcasting zero-value defaults to all clients. Not a bug, but worth noting: once Phase 2 starts writing to cashBuilderMoney (already wired), the pattern of "sync first, implement later" is established. Make sure each field gets a test that asserts the values it should actually hold once the phase lands.
-    STATUS: closed
-    DECISION: Will be passed over in later phases
+    STATUS: decided
+    DECISION: Change to gameEnd. → Ticket 032.
 
 5.  WHAT: The chaser wheel is a full-screen fixed overlay (`wheelOverlay`, z-index 10) that can sit on top of the RolesReveal phase screen during its ~5s landing animation.
     WHERE: client/src/App.vue:59-66,200-205,258-263, client/src/screens/ChaserWheelScreen.vue:120-133, client/src/style.css (`.wheelOverlay`, `.wheelViewport`)
     WHY: Ticket 022's acceptance required "nothing in the app is ever drawn on top of the active phase screen" (all-overlay removal), yet 019 re-introduced an overlay — deliberately, as the wheel IS the reveal moment. The wheel covering RolesReveal for ~5s after the chaser resolves is likely fine as a product choice, but it quietly reverses 022's blanket rule. Decide whether "overlay only ever over ChaserSelection, always cleared the moment landing completes" is the standing rule, and document it so future phases don't re-add overlays again. Also feeds ticket 028 (wheel not cleared on leave).
-    STATUS: open
-    DECISION: Move wheelOverlay to its own screen in the flow.
+    STATUS: decided
+    DECISION: Move wheelOverlay to its own screen in the flow. → Ticket 033.
 
 6.  WHAT: Whether players' sessionIds should be hidden from other clients at all — the `players` MapSchema keys ARE the Colyseus sessionIds, so they're broadcast to every client regardless of the `GamePlayer.sessionId` field ticket 026 drops.
     WHERE: server/src/rooms/schema/GameState.ts:20, server/src/rooms/TriviaRoom.ts:454 (map keyed by client.sessionId)
     WHY: Full hiding would require rekeying the players map with a non-session per-player id (a "seat id") and translating every handler lookup — a cross-cutting change before any of it is a real risk (sessionIds are opaque tokens, no reconnection exists yet). Ticket 026 de-dups the field but not the map keys. Decide now whether hiding matters at all, so it's either done deliberately or dropped deliberately rather than half-done.
-    STATUS: open
-    DECISION: Change now and make highest priority.
+    STATUS: decided
+    DECISION: Rekey the map with seatId, hide sessionIds from clients. → Combined into Ticket 034 (absorbs ticket 026).
 
 7.  WHAT: A "seat id" distinct from Colyseus sessionId — needed for host-reconnect, spectator-rejoin, avatars, predictions/taunts, chaser-character reveal. Today sessionId IS the map key and every handler/flow identifier.
     WHERE: server/src/rooms/TriviaRoom.ts:454 (map key), gameFlow.ts (all events carry sessionId), GameState.ts:26 (`activeContestantSessionId`), server/src/rooms/schema/GameState.ts:13 (`chaserVote` stores a sessionId)
     WHY: The host-reconnect stretch explicitly says "we deliberately keep identities sessionId-ephemeral" — but the *spectator-rejoin* stretch ("rejoin as spectator / next round") needs a stable seat keyed player-to-round. Every social stretch (taunt targeting, vote targeting, prediction attribution) references players by sessionId today. If we never want durable identity, no change needed. But the moment a player reloads and rejoins mid-room, the price of retrofitting a stable seat id goes up the more handlers were written against sessionId. Decide the identity model before Phase 2 wires `cashBuilderMoney`/scoring, which will hard-reference it.
-    STATUS: open
-    DECISION: Similar to point 6, combine both into the same ticket.
+    STATUS: decided
+    DECISION: Introduce seatId, combined with #6 into Ticket 034.
 
 8.  WHAT: The game model assumes "one contestant plays the turn; everyone else waits" — but the dead-player stretches (ghost scoreboard/answers, prediction pool, taunt bar) need every non-active player answering/predicting/reacting inside each round.
     WHERE: server/src/gameFlow.ts:161-163 (round advance only considers the active contestant), TriviaRoom.ts:221-231 (only the active player's cash builder gets a timer/question channel), GameState.ts (no per-player per-round answer/ghost storage)
     WHY: This is the single biggest fork the stretches introduce. Today the room sends one question at a time to one player; the ghost scoreboard wants "the same question fan(s) out to everyone, answers stored per player but counted for nobody." That's a different message/broadcast shape (`question` channel with a target vs an everyone channel), a different schema (per-player ghost picks), and different gameFlow effects. Cheap now (before Phase 2 defines the "this player is answering X" message) to decide whether the per-question broadcast always carries a `targetSessionId` that the client remarks on ("only the active contestant's answer counts") or whether we build a separate ghost channel up front. Do NOT let Phase 2 bake in a "single recipient question message" without a decision here.
-    STATUS: open
-    DECISION: Make the architecture changes for this now.
+    STATUS: decided
+    DECISION: Architecture changes done via Ticket 030 (per-round question event + seat axis).
 
 9.  WHAT: Type sharing between server and client is currently only two duplicated enums (TriviaTypes.ts). The `question`/`offer`/`getReady` broadcast payloads are inferred (the client `onMessage` handlers take `any`).
     WHERE: client/src/App.vue:100-130 (onMessage("offer"/"getReady"/"phase") with untyped payloads), server/src/rooms/TriviaRoom.ts:204-250 (broadcast payload shapes)
     WHY: TriviaTypes is duplicated by design and kept in parity by tests, but the *message payloads* are the highest-drift surface (a renamed field in a server broadcast silently breaks the client). As payload shapes multiply (question, offer, getReady, endGame, plus future social channels), the hand-maintained-duplication approach doesn't scale. Options: a committed shared JSON-schema / .d.ts, an `@colyseus/command`-style contract, or a lightweight hand-shared types module imported by both (with a parity test like the enum). Decide the policy before Phase 2 defines the question payload — it's the cheapest point to commit.
-    STATUS: open
+    STATUS: decided
+    DECISION: Create a shared `common/MessageTypes.ts` imported by both server and client. → Ticket 035.
 
 10. WHAT: `GamePlayer` carries overlapping/partially-dead seat state — `isEliminated`, `madeItBack`, `boardPos`, `score`, `cashBuilderMoney` — with no single "what is this seat right now" primitive. The dead-player + spectator stretches want one axis (`active | waiting | eliminated | spectator`) plus per-seat earnings.
     WHERE: server/src/rooms/schema/GameState.ts:9-16
     WHY: `isEliminated` (caught) and `madeItBack` (survived) are the only writers today; `boardPos`/`score` are dead. The final-round rules (eliminated players rejoin) already blur these. Replacing the booleans with a single `seatState` string now is cheap; retrofitting once scores/boards/prediction-currency land on top is a migration. Ticket 030 proposes the seam but explicitly does NOT migrate the booleans without sign-off — that's your call, and the earlier you decide, the cheaper it is.
-    STATUS: open
-    DECISION: Sounds like a good idea, do this- combine into Ticket 030.
+    STATUS: decided
+    DECISION: Combine into Ticket 030 (seat axis). Do the migration now while the schema is cheap to change.
 
 11. WHAT: Chaser-character reveal is currently positioned at `ChaserSelection → RolesReveal` (who the *player* Chaser is), but the stretch goal says the character identity is revealed later, at the offer stage, and is chosen before reveal.
     WHERE: server/src/gameFlow.ts:92-107 (chaserSelectionComplete → RolesReveal), client/src/screens/ChaserSelectionScreen.vue / ChaserWheelScreen.vue
     WHY: If the "Chaser roster" lands, there's a second identity (character) that is deliberately hidden until the offer. That means schema (`chaserCharacterId` on the chaser player or the state), a message flow (chaser picks character before reveal, broadcast only later), and a reveal moment that is NOT the current roles-reveal. Decide now whether roles-reveal stays "you are the Chaser" (a person) or becomes "and here's your character" picker, so Phase 1's reveal wiring isn't reworked. If the roster is a far-off stretch, at least note it so nobody assumes RolesReveal is final.
-    STATUS: open
-    DECISION: So in the role reveal selction, the chaser should get to pick who they want to be - this is their ready button. But it is not revealed to the players the character they picked until the first offer round.
+    STATUS: decided
+    DECISION: In roles-reveal, the Chaser picks their character (this is their ready button). Character identity is NOT revealed to contestants until the first offer round. → Ticket 036.
 
 12. WHAT: No per-player message rate limiting / abuse caps, and the room's message handlers are all fire-and-forget — fine today, but the taunt/emote stretches send lots of small messages per player per round.
     WHERE: server/src/rooms/TriviaRoom.ts:309-435 (messages map, no throttling)
     WHY: AGENTS.md Security says "cap active rooms and connections, and rate-limit per-player messages (matters when taunts/emotes/picks land)." The social stretches are exactly that "when". Cheapest now is to add a thin per-client `scheduleTimer`-backed or timestamp-based throttle at the messages layer (or just document the plan). Without it, the taunt/emote feature is an invitation to be spammed (and to spam other players' render loops). Decide the throttle shape before the social channel lands.
-    STATUS: open
-    DECISION: Add as a low priority ticket as game is being made for friends only - not a large scale audience expected. 
+    STATUS: decided
+    DECISION: Low priority — game is for friends, not large-scale. Add a thin per-client timestamp throttle before social channels land. → Ticket 037.
