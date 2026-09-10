@@ -40,6 +40,8 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 014 | Client: chaser-selection screens (mode pick + votes) | done |
 | 015 | Client: show roles + rules to all players | done |
 | 016 | Harden player setup (server-side name validation) | backlog |
+| 017 | Fix flaky `roomFlow` end-to-end test (server) | backlog |
+| 018 | TriviaTypes.ts trailing-newline parity (server vs client) | backlog |
 
 Status values: `backlog`, `in-progress`, `done`.
 
