@@ -34,7 +34,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 008 | Rewire room to new state, phases, timers | done |
 | 009 | Client: new phase screens + flow | done |
 | 010 | Client: make SERVER_URL configurable | done |
-| 011 | Stale test/loadtest cleanup + green baseline | backlog |
+| 011 | Stale test/loadtest cleanup + green baseline | done |
 
 Status values: `backlog`, `in-progress`, `done`.
 

@@ -52,7 +52,7 @@ Repeat cash builder + offer + chase for every contestant.
 - The repo is mid-refactor from a *simpler* trivia game to the asymmetric rules above (tickets 001–011 in Phase 0). The foundation is in place; the game flow is not yet rebuilt.
 - Working today (server): create/join `trivia` room by name or code; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers; open-ended question bank (45 free-text questions) with loader + non-repeating random picker. `npm test` is green (20 tests).
 - NOT done yet: the room still runs a thin legacy 5-question flow adapted onto `GameState` (opentdb multiple-choice, Lobby → Question → Answer → GameEnd). It must be replaced by the `gameFlow` state machine + timers (tickets 007–008) and the client screens rebuilt (ticket 009).
-- Client hardcodes `ws://localhost:2567` (ticket 010); template leftovers remain in `npm run loadtest` (`my_room`, ticket 011).
+- Client `SERVER_URL` is configurable via `VITE_SERVER_URL` (fallback `ws://localhost:2567`) — ticket 010.
 
 ## Plan
 

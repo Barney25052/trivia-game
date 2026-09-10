@@ -16,7 +16,7 @@ Multiplayer trivia game built on Colyseus. Two independent npm projects — ther
 
 ## Gotchas
 
-- Template leftovers you'll still hit: `npm run loadtest` references room name `my_room`, but the only registered room is `trivia`. The old template test `server/test/MyRoom.test.ts` (which referenced `my_room` and `MyRoomState.mySynchronizedProperty`) was removed in ticket 002 — it was failing and would not compile after `QuizState` was deleted. Ticket 011 finishes the loadtest cleanup.
+- The template loadtest (`npm run loadtest` in `server/`) joins room `trivia`; the old template test `server/test/MyRoom.test.ts` (which referenced `my_room` and `MyRoomState.mySynchronizedProperty`) was removed in ticket 002 — it was failing and would not compile after `QuizState` was deleted.
 - `GamePhase` enum is duplicated in `server/src/TriviaTypes.ts` and `client/src/TriviaTypes.ts` — both are used; keep them identical. The old dead copy in `common/TriviaTypes.ts` was removed in ticket 001.
 - Client hardcodes the server URL `ws://localhost:2567` in `client/src/App.vue` (`SERVER_URL`).
 - Game flow: create/`joinById` room `trivia` with `{ playerName }`; first joiner is host; host sends `startGame` → 5 questions; phases progress `Lobby → Question → Answer → GameEnd` via `QuizState` schema (`server/src/rooms/schema/MyRoomState.ts`). Host leaving disconnects the room (`onLeave`, close code 6767).
