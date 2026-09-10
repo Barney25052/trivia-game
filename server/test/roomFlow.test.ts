@@ -202,7 +202,7 @@ describe("roomFlow", () => {
     assert.ok(phases.includes(GamePhase.ChaserSelection), "should have broadcast chaserSelection phase");
     assert.ok(phases.includes(GamePhase.Chase), "should have broadcast chase phase");
     assert.ok(phases.includes(GamePhase.TeamFinal), "should have broadcast finalTeam phase");
-    assert.ok(phases.includes(GamePhase.GameEnd), "should have broadcast gameend phase");
+    assert.ok(phases.includes(GamePhase.GameEnd), "should have broadcast gameEnd phase");
   });
 
   it("offerChoice is guarded: rejected in the lobby and by a non-active player; the active contestant's choice still transitions", async () => {
