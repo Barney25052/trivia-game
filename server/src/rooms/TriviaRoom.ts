@@ -13,6 +13,9 @@ import { CASH_BUILDER, CHASER_SELECTION, FINAL_ROUND, PLAYER_NAME } from "../gam
 
 const OFFER_TIERS: OfferTier[] = ["low", "middle", "high"];
 
+const clampDuration = (value: number, minMs: number, maxMs: number): number =>
+    Math.min(Math.max(value, minMs), maxMs);
+
 interface OfferAmounts {
   low: number;
   middle: number;
@@ -34,16 +37,32 @@ export class TriviaRoom extends Room {
 
   onCreate (options: any) {
     if (typeof options?.cashBuilderDurationMs === "number") {
-      this.cashBuilderDurationMs = options.cashBuilderDurationMs;
+      this.cashBuilderDurationMs = clampDuration(
+        options.cashBuilderDurationMs,
+        CASH_BUILDER.minMs,
+        CASH_BUILDER.maxMs
+      );
     }
     if (typeof options?.chaserSelectionDurationMs === "number") {
-      this.chaserSelectionDurationMs = options.chaserSelectionDurationMs;
+      this.chaserSelectionDurationMs = clampDuration(
+        options.chaserSelectionDurationMs,
+        CHASER_SELECTION.minMs,
+        CHASER_SELECTION.maxMs
+      );
     }
     if (typeof options?.teamFinalDurationMs === "number") {
-      this.teamFinalDurationMs = options.teamFinalDurationMs;
+      this.teamFinalDurationMs = clampDuration(
+        options.teamFinalDurationMs,
+        FINAL_ROUND.minMs,
+        FINAL_ROUND.maxMs
+      );
     }
     if (typeof options?.chaserFinalDurationMs === "number") {
-      this.chaserFinalDurationMs = options.chaserFinalDurationMs;
+      this.chaserFinalDurationMs = clampDuration(
+        options.chaserFinalDurationMs,
+        FINAL_ROUND.minMs,
+        FINAL_ROUND.maxMs
+      );
     }
   }
 

@@ -1,12 +1,27 @@
+const CASH_BUILDER_DURATION_MS = 60_000;
+const CHASER_SELECTION_RANDOM_MS = 8_000;
+const CHASER_SELECTION_VOTE_MS = 30_000;
+const TEAM_FINAL_DURATION_MS = 120_000;
+const CHASER_FINAL_DURATION_MS = 120_000;
+
+export const TIMER_CLAMP = {
+    minMs: 100,
+    maxFactor: 10
+} as const;
+
 export const CASH_BUILDER = {
-    durationMs: 60_000,
-    rewardPerCorrect: 1_000
+    durationMs: CASH_BUILDER_DURATION_MS,
+    rewardPerCorrect: 1_000,
+    minMs: TIMER_CLAMP.minMs,
+    maxMs: CASH_BUILDER_DURATION_MS * TIMER_CLAMP.maxFactor
 } as const;
 
 export const CHASER_SELECTION = {
     defaultMode: "random",
-    randomDurationMs: 8_000,
-    voteDurationMs: 30_000
+    randomDurationMs: CHASER_SELECTION_RANDOM_MS,
+    voteDurationMs: CHASER_SELECTION_VOTE_MS,
+    minMs: TIMER_CLAMP.minMs,
+    maxMs: CHASER_SELECTION_VOTE_MS * TIMER_CLAMP.maxFactor
 } as const;
 
 export const CHASER_POT = {
@@ -37,8 +52,10 @@ export const CHASE_QUESTION = {
 } as const;
 
 export const FINAL_ROUND = {
-    teamDurationMs: 120_000,
-    chaserDurationMs: 120_000
+    teamDurationMs: TEAM_FINAL_DURATION_MS,
+    chaserDurationMs: CHASER_FINAL_DURATION_MS,
+    minMs: TIMER_CLAMP.minMs,
+    maxMs: CHASER_FINAL_DURATION_MS * TIMER_CLAMP.maxFactor
 } as const;
 
 export const PLAYER_NAME = {
