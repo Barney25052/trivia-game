@@ -69,10 +69,11 @@ Deliberate differences we keep: the Chaser is a **player** (not a pro/host), so 
 
 ## Current state
 
-- The room is mid-refactor from a *simpler* trivia game to the asymmetric rules above (tickets 001–013 in Phase 0/1). The foundation and phase wiring are in place; the game is not yet playable end-to-end.
-- Working today (server): create/join `trivia` room; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers (`src/timer.ts`); open-ended question bank (45 free-text questions) with loader + non-repeating random picker; a **pure `gameFlow` state machine** whose `FlowEffect`s the room applies. `npm test` is green (51 tests).
+- The room is mid-refactor from a *simpler* trivia game to the asymmetric rules above (tickets 001–024 across Phase 0/1 + follow-up). The foundation and phase wiring are in place; the game is not yet playable end-to-end.
+- Working today (server): create/join `trivia` room; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers (`src/timer.ts`); open-ended question bank (45 free-text questions) with loader + non-repeating random picker; a **pure `gameFlow` state machine** whose `FlowEffect`s the room applies. `npm test` is green (**57** tests).
 - The room (tickets 007–008, 013) dispatches real `gameFlow` transitions: `startGame` → authoritative **chaser selection** (random or vote, host-driven) → cash builder → offer → chase, repeating per non-chaser contestant, then team final → chaser final → game end, with server-authoritative timers wired. Client has screens for the new phases (ticket 009) and `SERVER_URL` is configurable via `VITE_SERVER_URL` (ticket 010).
-- NOT done yet: no chaser-selection UI (Phase 1, ticket 014) or role/rules reveal (015); no real question gameplay — cash-builder answer checking is unwired (Phase 2), offers are broadcast but not sent in the UI flow, and the MC board-chase against opentdb isn't implemented (Phase 4). Pot/score fields exist but nothing plays through them yet.
+- **Phase 1 (lobby & chaser selection) is done**: authoritative **chaser selection** in **random** and **vote** modes (013) plus the client screens — mode pick + vote buttons (014); role badges, a static rules panel, and a chaser-identity reveal when selection resolves (015); server-side player-name validation on join (016). Tickets 017 (deterministic `roomFlow` e2e) and 018 (TriviaTypes parity) also landed. Playtesting then surfaced follow-ups (random-mode animation, lobby legibility, reveal/ready gating) and security gaps (handler guards, option clamping) tracked as tickets 019–024 below.
+- NOT done yet (Phase 2+): no real question gameplay — the cash-builder screen is a **placeholder** (no questions, no answer checking; Phase 2), offers already flow end-to-end (client picks low/middle/high, the server transitions) but the cash-builder total that feeds the offer math is never actually earned, and the MC board-chase against opentdb isn't implemented (Phase 4). The chase/final screens are placeholders; pot/score fields exist but nothing plays through them yet.
 - Ticket 012 (done) removed template/legacy cruft: `MyRoom` → `TriviaRoom`, dropped the dead `Question`/`Answer` game phases and `Question`/`QuestionInstance` schema classes, and renamed the server package to `trivia-server`.
 
 ## Plan
@@ -84,13 +85,21 @@ Granular agent tasks for this phase live in `tickets/` (001–012, tracked in `t
 - [x] Rewrite game state schema for asymmetric play (roles, board, Chaser pot, team pot, round state machine)
 - [x] Build the free-text open-ended question bank (data + server loader)
 - [x] Add server-authoritative timers (cash-builder 60s, final 120s, chase 5s)
-- [x] Restructure client screens for the new flow; unify/clean `GamePhase` (cleanup pending in 012)
+- [x] Restructure client screens for the new flow; unify/clean `GamePhase` (012)
 
 ### Phase 1 — Lobby & chaser selection
 Granular agent tasks live in `tickets/` (013–016, tracked in `tickets/README.md`).
-- [ ] Player setup (names, room code) — 016 (UI exists; server-side validation)
-- [ ] Chaser selection with **random** and **vote** options — 013 (server) + 014 (client)
-- [ ] Show roles + rules to all players — 015
+- [x] Player setup (names, room code) — 016 (UI exists; server-side validation)
+- [x] Chaser selection with **random** and **vote** options — 013 (server) + 014 (client)
+- [x] Show roles to all players — 015 (the static "How to Play" rules panel was removed by product decision in 020; roles reveal stays)
+
+### Phase 1 follow-up — polish & hardening (tickets 019–024)
+Found on the first playthrough + security review; tracked as tickets (no BUGS.md entries):
+- [ ] Random chaser mode: cycle through names until the Chaser settles — 019 (client)
+- [ ] Lobby polish: readable names, settings panel to the side, "How to Play" removed — 020 (client)
+- [ ] Gate cash builder behind a roles-reveal ready vote + "get ready" cooldown — 021 (server) + 022 (client)
+- [ ] Authority/phase guards on the offer/chase/final handlers — 023 (server)
+- [ ] Clamp room-option duration overrides to gameConfig bounds — 024 (server)
 
 ### Phase 2 — Cash builder
 - [ ] 60-second open-ended question round (typed answers from the question bank)
@@ -98,6 +107,7 @@ Granular agent tasks live in `tickets/` (013–016, tracked in `tickets/README.m
 - [ ] Pot display + transition to offer
 
 ### Phase 3 — The offer
+- [ ] Offer math lives in `gameConfig` — currently hardcoded inline in `TriviaRoom.ts` (`low = cashBuilder ÷ 2`, `high × 2`, `startOffer` effect); move it into config and resolve open question #1 (multipliers)
 - [ ] Chaser pot starts at $50k, **+$30k per round**; offers draw from and payout against it
 - [ ] Chaser picks high/middle (= cash-builder total)/lower; contestant chooses
 - [ ] High/low multiplier strategy visible to the Chaser (pot remaining)
@@ -118,6 +128,7 @@ Granular agent tasks live in `tickets/` (013–016, tracked in `tickets/README.m
 - [ ] Fix/remove stale tests; real server tests for the state machine
 - [ ] Graceful opentdb/question-bank failure handling
 - [ ] Deployment: PM2 build + serving client from the server; protect `/monitor` with auth; TLS/wss behind a reverse proxy; cap rooms/connections/message rate (see AGENTS.md "Security")
+- [ ] Handler authority + room-option clamping (tickets 023–024), plus abuse caps above
 
 ### Stretch goals
 - [ ] **Chaser special abilities** (toggle-able in settings): e.g. once-per-round 50/50, others to discuss
