@@ -1,6 +1,9 @@
 <script setup>
-defineProps(["players", "isHost", "room"]);
-const emit = defineEmits(["start"]);
+import { ref } from "vue";
+
+defineProps(["players", "isHost", "room", "chaserSelectionMode"]);
+const emit = defineEmits(["start", "setChaserMode"]);
+const settingsOpen = ref(false);
 </script>
 
 <template>
@@ -12,6 +15,28 @@ const emit = defineEmits(["start"]);
           {{ player.name }}
         </li>
       </ul>
+      <button v-if="isHost" @click="settingsOpen = !settingsOpen" class="settingsButton">
+        {{ settingsOpen ? "Close Settings" : "Settings" }}
+      </button>
+      <div v-if="isHost && settingsOpen" class = "settingsPanel">
+        <h3 class = "settingsTitle">How do we pick the Chaser?</h3>
+        <div class = "modeRow">
+          <button
+            class="modeButton"
+            :class = "{ selected: chaserSelectionMode === 'random' }"
+            @click="emit('setChaserMode', { mode: 'random' })"
+          >
+            Random
+          </button>
+          <button
+            class="modeButton"
+            :class = "{ selected: chaserSelectionMode === 'vote' }"
+            @click="emit('setChaserMode', { mode: 'vote' })"
+          >
+            Team Vote
+          </button>
+        </div>
+      </div>
       <button v-if="isHost" @click="emit('start')" class="startButton">Start Game</button>
     </div>
 </template>

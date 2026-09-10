@@ -4,6 +4,7 @@ import { Client } from "@colyseus/sdk";
 import { GamePhase } from "./TriviaTypes.ts";
 import HomeScreen from "./screens/HomeScreen.vue"
 import LobbyScreen from "./screens/LobbyScreen.vue";
+import ChaserSelectionScreen from "./screens/ChaserSelectionScreen.vue";
 import CashBuilderScreen from "./screens/CashBuilderScreen.vue";
 import OfferScreen from "./screens/OfferScreen.vue";
 import ChaseScreen from "./screens/ChaseScreen.vue";
@@ -17,6 +18,7 @@ const room = ref(null);
 const playersMap = ref(null);
 const players = ref([]);
 const currentPhase = ref(null);
+const chaserSelectionMode = ref("");
 const activeContestantSessionId = ref("");
 const chaserSessionId = ref("");
 const teamScore = ref(0);
@@ -27,6 +29,7 @@ const currentScreen = computed(() => {
   if (!room.value) return "home";
   switch (currentPhase.value) {
     case GamePhase.Lobby: return "lobby";
+    case GamePhase.ChaserSelection: return "chaserSelection";
     case GamePhase.CashBuilder: return "cashBuilder";
     case GamePhase.Offer: return "offer";
     case GamePhase.Chase: return "chase";
@@ -60,6 +63,7 @@ async function joinLobby(playerName, roomCode) {
       currentPhase.value = newState.currentPhase;
       playersMap.value = newState.players;
       players.value = Array.from(newState.players.values());
+      chaserSelectionMode.value = newState.chaserSelectionMode;
       activeContestantSessionId.value = newState.activeContestantSessionId;
       chaserSessionId.value = newState.chaserSessionId;
       teamScore.value = newState.teamScore;
@@ -92,6 +96,24 @@ function startGame() {
 
   } catch (e) {
     console.error("Failed to start:", e);
+  }
+}
+
+function setChaserMode({ mode }) {
+  try {
+    room.value?.send("setChaserMode", { mode });
+
+  } catch (e) {
+    console.error("Failed to set chaser mode:", e);
+  }
+}
+
+function chaserVote({ targetSessionId }) {
+  try {
+    room.value?.send("chaserVote", { targetSessionId });
+
+  } catch (e) {
+    console.error("Failed to send chaser vote:", e);
   }
 }
 
@@ -136,9 +158,20 @@ function handleLeave() {
     <LobbyScreen 
       v-if="currentScreen=='lobby'" 
       @start="startGame"
+      @setChaserMode="setChaserMode"
       :players="players"
       :isHost="isHost"
       :room = "room"
+      :chaserSelectionMode="chaserSelectionMode"
+    />
+    <ChaserSelectionScreen
+      v-if="currentScreen=='chaserSelection'"
+      :players="players"
+      :isHost="isHost"
+      :chaserSelectionMode="chaserSelectionMode"
+      :chaserSessionId="chaserSessionId"
+      :mySessionId="mySessionId"
+      @chaserVote="chaserVote"
     />
     <CashBuilderScreen 
       v-if="currentScreen=='cashBuilder'"
