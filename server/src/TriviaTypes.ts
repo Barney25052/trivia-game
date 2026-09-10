@@ -7,7 +7,7 @@ export enum GamePhase {
     Chase = "chase",
     TeamFinal = "finalTeam",
     ChaserFinal = "finalChaser",
-    GameEnd = "gameend"
+    GameEnd = "gameEnd"
 }
 
 export enum PlayerRole {
