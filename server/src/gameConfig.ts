@@ -68,3 +68,8 @@ export const REVEAL_READY = {
 export const PLAYER_NAME = {
     maxLength: 24
 } as const;
+
+export const ANSWER_CHECK = {
+    normaliseWhitespace: true,
+    caseInsensitive: true
+} as const;
