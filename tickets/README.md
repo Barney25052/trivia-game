@@ -49,20 +49,20 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 023 | Authority + phase guards on offer/chase/final handlers (server) | done |
 | 024 | Clamp room-option duration overrides to gameConfig bounds (server) | done |
 | 025 | Make "random" the explicit default chaser-selection mode (kills the silent `""`) | done |
-| 026 | Drop the synced GamePlayer.sessionId field — use map keys for identity | backlog |
-| 027 | Remove template cruft and dead CSS | backlog |
+| 026 | Drop the synced GamePlayer.sessionId field — use map keys for identity | done |
+| 027 | Remove template cruft and dead CSS | done |
 | 028 | Clear the chaser-wheel overlay on leave/disconnect | backlog |
 | 029 | Move maxClients into gameConfig; remove raw join-options log | backlog |
-| 030 | Add per-round question event schema + first-class seat/spectator axis | backlog |
+| 030 | Add per-round question event schema + first-class seat/spectator axis | done |
 | 031 | Extract TriviaRoom handler dispatch into a handlers module | backlog |
-| 032 | Normalise GamePhase.GameEnd value to camelCase | backlog |
+| 032 | Normalise GamePhase.GameEnd value to camelCase | done |
 | 033 | Move chaser wheel overlay into its own screen in the phase flow | backlog |
-| 034 | Rekey players map with seat ID — stop leaking sessionIds to clients (absorbs 026) | backlog |
-| 035 | Shared type definitions for server→client message payloads | backlog |
+| 034 | Rekey players map with seat ID — stop leaking sessionIds to clients (absorbs 026) | done |
+| 035 | Shared type definitions for server→client message payloads | done |
 | 036 | Chaser character picker during roles-reveal, identity revealed at offer stage | backlog |
 | 037 | Per-player message rate limiting | backlog |
 | **Phase 2 — Cash Builder** | | |
-| 038 | Answer validation utility for open-ended questions | backlog |
+| 038 | Answer validation utility for open-ended questions | done |
 | 039 | Server: question delivery, answer handler, pot tracking | backlog |
 | 040 | Client: cash builder screen — question display, submission, pot | backlog |
 | 041 | Phase 2 integration tests — full cash builder flow | backlog |
