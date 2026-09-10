@@ -23,7 +23,7 @@ const settingsOpen = ref(false);
         <div class = "modeRow">
           <button
             class="modeButton"
-            :class = "{ selected: chaserSelectionMode === 'random' }"
+            :class = "{ selected: chaserSelectionMode === 'random' || chaserSelectionMode === '' }"
             @click="emit('setChaserMode', { mode: 'random' })"
           >
             Random
