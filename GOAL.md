@@ -103,6 +103,8 @@ Granular agent tasks live in `tickets/` (013–016, tracked in `tickets/README.m
 - [ ] **Chaser special abilities** (toggle-able in settings): e.g. once-per-round 50/50, others to discuss
 - [ ] **Chaser characters**: the Chaser player picks *which Chaser* they want to be from a roster (each with their own name/identity/ability and — like the show — contestants don't see which Chaser they're facing until the reveal, i.e. when they walk out at the offer stage). Not concrete yet; idea only.
 - [ ] **Something to do for eliminated contestants** during the game (idea TBD — see Open questions)
+- [ ] **At-the-table reactions (party layer)**: while a question is live, every non-active player (waiting contestants + eliminated players) picks an option themselves; their pick drives a live face — smile when the picked option is the correct one, eeeek/:( when it's wrong or when it mismatches the active player's pick. The faces float in a small corner panel with the other contestants' faces, like a party game. Server only broadcasts picks — never affects game outcomes. (This also gives eliminated/waiting players a real job, feeding the goal above.)
+- [ ] **Pickable 2D avatars**: players pick a little 2D "funny guy" character when they join; avatars sit at the table in the corner panel (reactions above) and next to the active player/Chaser. Flat 2D art style — explicitly not 3D — to make the game feel social. Contestants pick their own avatar; distinct from the Chaser-character roster (above) which only the Chaser chooses. (Character art the user must draw is tracked in `HUMAN_TASKS.md`.)
 
 ## Open questions
 

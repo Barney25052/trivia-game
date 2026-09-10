@@ -43,6 +43,11 @@ Documented standards — there is no formatter or linter; conventions are enforc
 - Prefer CSS custom properties in a `:root` block for palette/typography when a color or family repeats — don't copy hex values between rules.
 - Respect the existing look (gradient bg, "Luckiest Guy" font, animations in style.css) when adding screens; read `style.css` first, and update it in the same ticket when a screen needs styles.
 
+### Art assets & HUMAN_TASKS.md
+- When UI work needs an art asset only a human can make (character faces, avatars, icons, chaser art), add a row to `HUMAN_TASKS.md` at the repo root — the **file name** (e.g. `character_face.png`), what it is, where it's used (screen/component), status `todo` — and reference that filename in code/UI as the asset to use.
+- The user makes the art, drops it in `client/src/images/`, and crosses the row off (status `done`).
+- Treat `HUMAN_TASKS.md` as the source of truth: don't invent asset names or hand-wave placeholders — check the file first, and if the asset you need is already listed as `todo`/`done`, use that filename.
+
 ### No cruft
 - Every ticket removes the dead code its work orphans (old phases, schemas, exports, routes) and greps for stale names as part of its acceptance criteria.
 - No template leftovers: `my-app` package metadata, unreferenced handlers/routes, legacy enum members/schema classes.

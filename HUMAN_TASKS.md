@@ -1,0 +1,9 @@
+# HUMAN_TASKS.md
+
+Hand-made art the game needs. Agents add a row here whenever their ticket needs an asset only a human can create (character faces, avatars, icons, chaser art), then reference the file name in code/UI so the wiring is ready. The user makes the art, drops it in `client/src/images/`, and crosses the row off.
+
+Status values: `todo`, `done`.
+
+| File | What it is | Where it's used | Status |
+|------|------------|-----------------|--------|
+| character_face.png | 2D avatar face for the contestants' reaction panel | client corner panel (stretch: at-the-table reactions) | todo |
