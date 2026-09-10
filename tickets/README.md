@@ -49,6 +49,11 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 023 | Authority + phase guards on offer/chase/final handlers (server) | done |
 | 024 | Clamp room-option duration overrides to gameConfig bounds (server) | done |
 | 025 | Make "random" the explicit default chaser-selection mode (kills the silent `""`) | done |
+| 026 | Drop the synced GamePlayer.sessionId field — use map keys for identity | backlog |
+| 027 | Remove template cruft and dead CSS | backlog |
+| 028 | Clear the chaser-wheel overlay on leave/disconnect | backlog |
+| 029 | Move maxClients into gameConfig; remove raw join-options log | backlog |
+| 030 | Add per-round question event schema + first-class seat/spectator axis | backlog |
 
 Status values: `backlog`, `in-progress`, `done`.
 

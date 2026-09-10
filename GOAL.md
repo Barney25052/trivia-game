@@ -71,9 +71,10 @@ Deliberate differences we keep: the Chaser is a **player** (not a pro/host), so 
 ## Current state
 
 - The room is mid-refactor from a *simpler* trivia game to the asymmetric rules above (tickets 001–025 across Phase 0/1 + follow-up). The foundation and phase wiring are in place; the game is not yet playable end-to-end.
-- Working today (server): create/join `trivia` room; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers (`src/timer.ts`); open-ended question bank (45 free-text questions) with loader + non-repeating random picker; a **pure `gameFlow` state machine** whose `FlowEffect`s the room applies. `npm test` is green (**57** tests).
+- Working today (server): create/join `trivia` room; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers (`src/timer.ts`); open-ended question bank (45 free-text questions) with loader + non-repeating random picker; a **pure `gameFlow` state machine** whose `FlowEffect`s the room applies. `npm test` is green (**69** tests).
 - The room (tickets 007–008, 013) dispatches real `gameFlow` transitions: `startGame` → authoritative **chaser selection** (random or vote, host-driven) → cash builder → offer → chase, repeating per non-chaser contestant, then team final → chaser final → game end, with server-authoritative timers wired. Client has screens for the new phases (ticket 009) and `SERVER_URL` is configurable via `VITE_SERVER_URL` (ticket 010).
-- **Phase 1 (lobby & chaser selection) is done**: authoritative **chaser selection** in **random** and **vote** modes (013) plus the client screens — mode pick + vote buttons (014); role badges, a static rules panel, and a chaser-identity reveal when selection resolves (015); server-side player-name validation on join (016). Tickets 017 (deterministic `roomFlow` e2e) and 018 (TriviaTypes parity) also landed. Playtesting then surfaced follow-ups (random-mode animation, lobby legibility, reveal/ready gating) and security gaps (handler guards, option clamping) tracked as tickets 019–025 below.
+- **Phase 1 (lobby & chaser selection) is done**: authoritative **chaser selection** in **random** and **vote** modes (013) plus the client screens — mode pick + vote buttons (014); role badges, a static rules panel, and a chaser-identity reveal when selection resolves (015); server-side player-name validation on join (016). Tickets 017 (deterministic `roomFlow` e2e) and 018 (TriviaTypes parity) also landed.
+- **Phase 1 follow-up (tickets 019–025) is done**: random chaser wheel animation (019), lobby polish with settings rail (020), roles-reveal as a gated phase with ready vote + get-ready cooldown (021 + 022), authority/phase guards on offer/chase/final handlers (023), room-option clamping (024), and explicit random default (025). Reviewed and verified (see `REVIEWERS.md` review). Three follow-up tickets created: 026 (drop the synced `GamePlayer.sessionId` field), 027 (remove template cruft + dead CSS), 028 (clear the chaser-wheel overlay on leave).
 - NOT done yet (Phase 2+): no real question gameplay — the cash-builder screen is a **placeholder** (no questions, no answer checking; Phase 2), offers already flow end-to-end (client picks low/middle/high, the server transitions) but the cash-builder total that feeds the offer math is never actually earned, and the MC board-chase isn't implemented (Phase 4 — comes from our own bank, opentdb dropped by decision). The chase/final screens are placeholders; pot/score fields exist but nothing plays through them yet.
 - Ticket 012 (done) removed template/legacy cruft: `MyRoom` → `TriviaRoom`, dropped the dead `Question`/`Answer` game phases and `Question`/`QuestionInstance` schema classes, and renamed the server package to `trivia-server`.
 
@@ -94,14 +95,14 @@ Granular agent tasks live in `tickets/` (013–016, tracked in `tickets/README.m
 - [x] Chaser selection with **random** and **vote** options — 013 (server) + 014 (client)
 - [x] Show roles to all players — 015 (the static "How to Play" rules panel was removed by product decision in 020; roles reveal stays)
 
-### Phase 1 follow-up — polish & hardening (tickets 019–024)
-Found on the first playthrough + security review; tracked as tickets (no BUGS.md entries):
-- [ ] Random chaser mode: cycle through names until the Chaser settles — 019 (client)
-- [ ] Lobby polish: readable names, settings panel to the side, "How to Play" removed — 020 (client)
-- [ ] Roles reveal becomes a real phase baked into the flow (`ChaserSelection → RolesReveal → CashBuilder`) with an all-ready vote + "get ready" cooldown — 021 (server) + 022 (client)
-- [ ] Authority/phase guards on the offer/chase/final handlers — 023 (server)
-- [ ] Clamp room-option duration overrides to gameConfig bounds — 024 (server)
-- [ ] Make "random" the explicit default chaser mode (state stores `"random"`, not the silent `""` that broke 019's wheel) — 025 (server + client)
+### Phase 1 follow-up — polish & hardening (tickets 019–025)
+Found on the first playthrough + security review; tracked as tickets and verified in the end-of-phase review:
+- [x] Random chaser mode: cycle through names until the Chaser settles — 019 (client)
+- [x] Lobby polish: readable names, settings panel to the side, "How to Play" removed — 020 (client)
+- [x] Roles reveal becomes a real phase baked into the flow (`ChaserSelection → RolesReveal → CashBuilder`) with an all-ready vote + "get ready" cooldown — 021 (server) + 022 (client)
+- [x] Authority/phase guards on the offer/chase/final handlers — 023 (server)
+- [x] Clamp room-option duration overrides to gameConfig bounds — 024 (server)
+- [x] Make "random" the explicit default chaser mode (state stores `"random"`, not the silent `""` that broke 019's wheel) — 025 (server + client)
 
 ### Phase 2 — Cash builder
 - [ ] 60-second open-ended question round (typed answers from the question bank)
