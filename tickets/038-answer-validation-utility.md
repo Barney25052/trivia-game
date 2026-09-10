@@ -15,11 +15,13 @@ The cash builder needs to check typed answers against the question bank. Today `
   - Exact match (`"Mars"` === `"Mars"`).
   - Case-insensitive (`"mars"` === `"Mars"`).
   - Leading/trailing whitespace (`" Mars "` === `"Mars"`).
-  - Internal whitespace collapse (`"Carbon  dioxide"` === `"Carbon dioxide"`).
+  - Internal whitespace collapse (`"Carbon  dioxide"` === `"Carbon dioxide"`). 
+  - Spaces are irrelevant (`"Twenty  Two"` === `"TwentyTwo"`)
+  - Filler words (The, of, and, etc) are irrelevant (`"Kermit The Frog"` === `"KermitFrog"`)
   - Numeric answers (`"206"` === `"206"`, `" 206 "` === `"206"`).
+  - Partial match returns `true` (`"Masr"` === `"Mars"`). Use some sort of string distance to check it is within a sensible distance, allow for spelling mistakes.
   - Wrong answer returns `false`.
   - Empty string returns `false`.
-  - Partial match returns `false` (`"Mar"` !== `"Mars"`).
 
 ## Acceptance
 - `cd server && npm test` passes (new tests + existing).
