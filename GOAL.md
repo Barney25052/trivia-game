@@ -51,7 +51,7 @@ Repeat cash builder + offer + chase for every contestant.
 
 ### Question bank
 - **Open-ended** questions (cash builder + final) come from a **custom free-text question bank** we maintain (a `server/data/questions.json`-style file loaded by the server; server checks typed answers — decide whether answers are exact-match or lenient later).
-- **Multiple-choice** (board chase) comes from the **same owned bank** (Phase 4 extends the format to MC: `options[]` + server-held `correctIndex`; show 3 of 4 options). **No opentdb at runtime** — decided; a local bank removes an external dependency and keeps the correct index server-only until reveal. The loader sits behind a thin get-questions interface so the source can swap later.
+- **Multiple-choice** (board chase) comes from the **same owned bank** (Phase 4 extends the format to MC: `options[]` + server-held `correctIndex`; show 3 of 4 options). **Use opentdb at runtime for multiple choice only** — decided; a local bank removes an external dependency and keeps the correct index server-only until reveal. The loader sits behind a thin get-questions interface so the source can swap later.
 - **Storage**: file-based (JSON) for now. If a DB is ever warranted (large curated set, admin editing, stats), **SQLite** is the planned path — a single file, zero ops, PM2-friendly, and the JSON stays the seed/export format. Not decided, parked with the question-bank-editor stretch goal.
 
 ### Compared to the TV show (reference)
