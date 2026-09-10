@@ -5,6 +5,7 @@ import { GamePhase } from "./TriviaTypes.ts";
 import HomeScreen from "./screens/HomeScreen.vue"
 import LobbyScreen from "./screens/LobbyScreen.vue";
 import ChaserSelectionScreen from "./screens/ChaserSelectionScreen.vue";
+import RolesRevealScreen from "./screens/RolesRevealScreen.vue";
 import CashBuilderScreen from "./screens/CashBuilderScreen.vue";
 import OfferScreen from "./screens/OfferScreen.vue";
 import ChaseScreen from "./screens/ChaseScreen.vue";
@@ -24,6 +25,8 @@ const chaserSessionId = ref("");
 const teamScore = ref(0);
 const currentOffer = ref(null);
 const winner = ref(null);
+const hasRevealedRoles = ref(false);
+const rolesRevealOpen = ref(false);
 
 const currentScreen = computed(() => {
   if (!room.value) return "home";
@@ -59,6 +62,9 @@ async function joinLobby(playerName, roomCode) {
       room.value = await client.joinById(roomCode, {playerName : playerName});
     }
 
+    hasRevealedRoles.value = false;
+    rolesRevealOpen.value = false;
+
     room.value.onStateChange((newState) => {
       currentPhase.value = newState.currentPhase;
       playersMap.value = newState.players;
@@ -67,6 +73,11 @@ async function joinLobby(playerName, roomCode) {
       activeContestantSessionId.value = newState.activeContestantSessionId;
       chaserSessionId.value = newState.chaserSessionId;
       teamScore.value = newState.teamScore;
+
+      if (newState.chaserSessionId && !hasRevealedRoles.value) {
+        hasRevealedRoles.value = true;
+        rolesRevealOpen.value = true;
+      }
     });
 
     room.value.onMessage("phase", (message) => {
@@ -148,6 +159,10 @@ function handleLeave() {
   room.value?.leave()
   room.value  = null
 }
+
+function closeRolesReveal() {
+  rolesRevealOpen.value = false;
+}
 </script>
 
 <template>
@@ -204,6 +219,12 @@ function handleLeave() {
       :winner="winner"
       :players="players"
       @leave="handleLeave"
+    />
+    <RolesRevealScreen
+      v-if="rolesRevealOpen"
+      :players="players"
+      :mySessionId="mySessionId"
+      @continue="closeRolesReveal"
     />
   </div>
 </template>

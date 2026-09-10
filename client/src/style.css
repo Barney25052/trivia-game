@@ -1,3 +1,10 @@
+:root {
+  --chaser-red-dark: #b31212;
+  --chaser-red-glow: #ff4b4b;
+  --contestant-blue-glow: #1f9fe0;
+  --chaser-silhouette: #3a0d0d;
+}
+
 html {
   height: 100%;
 }
@@ -208,6 +215,58 @@ h1, h2, h3, h4 {
   color: #ffffff;
 }
 
+.lobbyRow {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+  width: 90%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.lobbyRow .lobby {
+  margin: 40px 0;
+}
+
+.rulesPanel {
+  flex: 0 0 300px;
+  max-width: 300px;
+  margin-top: 40px;
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.rulesText {
+  color: #ffffff;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 16px;
+  line-height: 1.4;
+  margin: 10px 0;
+}
+
+@media (max-width: 900px) {
+  .lobbyRow {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .lobbyRow .lobby {
+    margin: 40px auto;
+  }
+
+  .rulesPanel {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 500px;
+  }
+}
+
 .question {
   width: 80%;
   display: block;
@@ -335,6 +394,132 @@ ul {
   height: 100%;
   overflow: none;
   font-family: sans-serif;
+}
+
+.revealScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.revealTop {
+  flex: 1;
+  background: linear-gradient(160deg, var(--chaser-red-glow), var(--chaser-red-dark));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.revealLabel {
+  font-size: 28px;
+  text-align: center;
+  margin: 0;
+}
+
+.chaserSilhouette {
+  width: 120px;
+  height: 170px;
+  margin: 10px 0;
+}
+
+.chaserSilhouette .sil {
+  fill: var(--chaser-silhouette);
+}
+
+.revealChaserName {
+  font-size: 52px;
+  text-align: center;
+  margin: 0;
+}
+
+.revealChaserYou {
+  color: #ffe27a;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 20px;
+  margin-top: 4px;
+}
+
+.revealBottom {
+  flex: 1;
+  background: linear-gradient(160deg, var(--contestant-blue-glow), #0a72da);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.revealContestantsTitle {
+  font-size: 30px;
+  margin: 10px 0;
+}
+
+.revealContestants {
+  list-style: none;
+  height: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+  overflow: visible;
+}
+
+.contestantCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 140px;
+  padding: 15px;
+  background-color: #ffffff;
+  border-radius: 15px;
+}
+
+.contestantAvatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #d41bbb;
+  color: #ffffff;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contestantName {
+  color: #000000;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 20px;
+  text-align: center;
+}
+
+.contestantYou {
+  color: var(--chaser-red-dark);
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 16px;
+}
+
+.revealContinue {
+  width: 200px;
+  height: 60px;
+  margin: 20px auto;
+  background-color: #ffffff;
+  color: var(--chaser-red-dark);
 }
 
 @keyframes pan-bg {
