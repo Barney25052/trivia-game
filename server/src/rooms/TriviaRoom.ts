@@ -100,6 +100,18 @@ export class TriviaRoom extends Room {
     };
   }
 
+  private broadcastQuestion(round: number, targetSessionId: string, kind: "open" | "mc", questionId: number, prompt: string, options?: string[]) {
+    const payload: { round: number; targetSessionId: string; kind: "open" | "mc"; prompt: string; options?: string[]; questionId: number } = {
+      round,
+      targetSessionId,
+      kind,
+      prompt,
+      options,
+      questionId,
+    };
+    this.broadcast("question", payload);
+  }
+
   private isHost (client: Client): boolean {
     return this.state.players.get(client.sessionId)?.isHost === true;
   }
