@@ -18,34 +18,6 @@ body {
   margin: 0px;
 }
 
-.bg-square {
-  position: absolute;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  padding: 0px;
-  margin: 0px;
-  overflow: hidden; 
-}
-
-.bg-square::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  width: 150%;
-  height: 150%;
-  top: -25%;
-  left: -25%;
-  background: repeating-conic-gradient(#47bde8 0 25%, #0000 0 50%)
-      50% / 250px 250px;  
-  animation: pan-bg 20s linear infinite;
-  will-change: transform;
-  isolation: isolate;   /* forces its own stacking context */
-  contain: paint; 
-  transform: rotate(15deg); 
-  filter: opacity(10%);
-}
-
 .logo {
   width: 40%;
   display: block;
@@ -88,7 +60,6 @@ button {
 
 .joinButton:hover {
   background-color: #19b42b;
-  /*box-shadow: inset 0px 0px 6px 2px rgba(0,0,0,0.12);*/
 }
 
 .createButton {
@@ -100,7 +71,6 @@ button {
 
 .createButton:hover {
   background-color: #b70d62;
-  /*box-shadow: inset 0px 0px 6px 2px rgba(0,0,0,0.12);*/
 }
 
 input {
@@ -253,32 +223,6 @@ h1, h2, h3, h4 {
   }
 }
 
-.question {
-  width: 80%;
-  display: block;
-  position:relative;
-  top: 40%;
-  left: 50%;
-  transform: translateX(-50%) translateY(-40%);
-}
-
-.answers {
-  width: 800px;
-  margin: auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px
-}
-
-.waiting {
-  top: 40%;
-  width: 100%;
-  text-align: center;
-  transform: translateY(-40%);
-  font-size: 60px;
-  animation: rotate-logo 16s ease-in-out infinite;
-}
-
 .waitingText {
   color: #ffffff;
   font-family: "Luckiest Guy", cursive;
@@ -289,28 +233,9 @@ h1, h2, h3, h4 {
   margin: 20px auto;
 }
 
-.answerButton {
-  height: 175px;
-  width: 100%;      
-  margin: 0;         
-  padding: 0px;
-  font-size: 30px;
-}
 
-.answerButton:hover {
-  background-color: #e1d1df;
-}
 
-.questionText {
-  font-size: 50px;
-  text-align: center;
-}
 
-.results {
-  margin: 0px auto;
-  max-width: 600px;
-  display: block;
-}
 
 ul {
   height: 50%;
@@ -392,10 +317,6 @@ ul {
   font-size: 26px;
 }
 
-.correctAnswer {
-  text-align: center;
-  font-size: 40px;
-}
 
 .nextButton {
   margin: auto auto;

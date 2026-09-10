@@ -18,9 +18,9 @@
   "author": "",
   "license": "UNLICENSED",
   "bugs": {
-    "url": "https://github.com/colyseus/create-colyseus/issues"
+    "url": "https://github.com/your-organization/trivia-game/issues"
   },
-  "homepage": "https://github.com/colyseus/create-colyseus#readme",
+  "homepage": "https://github.com/your-organization/trivia-game#readme",
   "devDependencies": {
     "@colyseus/loadtest": "^0.17.7",
     "@colyseus/testing": "^0.17.10",
