@@ -11,8 +11,7 @@ import TeamFinalScreen from "./screens/TeamFinalScreen.vue";
 import ChaserFinalScreen from "./screens/ChaserFinalScreen.vue";
 import ResultsScreen from "./screens/ResultsScreen.vue";
 
-// Change this to your deployed server URL later
-const SERVER_URL = "ws://localhost:2567";
+const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? "ws://localhost:2567";
 
 const room = ref(null);
 const playersMap = ref(null);
