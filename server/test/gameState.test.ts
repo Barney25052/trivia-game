@@ -22,6 +22,7 @@ describe("GameState", () => {
     assert.strictEqual(room.state.players.size, 0);
     assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
     assert.strictEqual(room.state.chaserSessionId, "");
+    assert.strictEqual(room.state.chaserSelectionMode, "");
     assert.strictEqual(room.state.chaserPot, CHASER_POT.initial);
     assert.strictEqual(room.state.teamPot, 0);
     assert.strictEqual(room.state.activeContestantSessionId, "");
@@ -47,6 +48,7 @@ describe("GameState", () => {
     assert.strictEqual(player.cashBuilderMoney, 0);
     assert.strictEqual(player.boardPos, 0);
     assert.strictEqual(player.score, 0);
+    assert.strictEqual(player.chaserVote, "");
     assert.deepStrictEqual([...room.state.contestantsOrder], [client.sessionId]);
   });
 

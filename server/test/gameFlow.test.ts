@@ -16,12 +16,10 @@ function context(overrides: Partial<GameFlowContext> = {}): GameFlowContext {
 
 describe("gameFlow transition", () => {
     describe("startGame", () => {
-        it("lobby + startGame -> cashBuilder for the first contestant at round 1", () => {
+        it("lobby + startGame -> chaserSelection", () => {
             const result = transition({ type: "startGame" }, context());
-            assert.strictEqual(result.nextPhase, GamePhase.CashBuilder);
-            assert.deepStrictEqual(result.effects, [
-                { type: "startCashBuilder", sessionId: "alice", round: 1 }
-            ]);
+            assert.strictEqual(result.nextPhase, GamePhase.ChaserSelection);
+            assert.deepStrictEqual(result.effects, [{ type: "startChaserSelection" }]);
         });
 
         it("throws if no contestants are in the room", () => {
@@ -32,6 +30,48 @@ describe("gameFlow transition", () => {
         it("throws if not in lobby", () => {
             const ctx = context({ currentPhase: GamePhase.Offer });
             assert.throws(() => transition({ type: "startGame" }, ctx), /startGame is not valid in phase offer/);
+        });
+    });
+
+    describe("chaserSelectionComplete", () => {
+        it("chaserSelection + complete -> cashBuilder for the first contestant, chaser assigned first", () => {
+            const ctx = context({ currentPhase: GamePhase.ChaserSelection });
+            const result = transition(
+                { type: "chaserSelectionComplete", chaserSessionId: "carol" },
+                ctx
+            );
+            assert.strictEqual(result.nextPhase, GamePhase.CashBuilder);
+            assert.deepStrictEqual(result.effects, [
+                { type: "assignChaser", sessionId: "carol" },
+                { type: "startCashBuilder", sessionId: "alice", round: 1 }
+            ]);
+        });
+
+        it("skips a chaser at the front of contestantsOrder when picking the first contestant", () => {
+            const ctx = context({ currentPhase: GamePhase.ChaserSelection });
+            const result = transition(
+                { type: "chaserSelectionComplete", chaserSessionId: "alice" },
+                ctx
+            );
+            assert.deepStrictEqual(result.effects, [
+                { type: "assignChaser", sessionId: "alice" },
+                { type: "startCashBuilder", sessionId: "bob", round: 1 }
+            ]);
+        });
+
+        it("throws if no contestants remain after removing the chaser", () => {
+            const ctx = context({ currentPhase: GamePhase.ChaserSelection, contestantsOrder: ["alice"] });
+            assert.throws(
+                () => transition({ type: "chaserSelectionComplete", chaserSessionId: "alice" }, ctx),
+                /at least one contestant/
+            );
+        });
+
+        it("throws if not in chaserSelection", () => {
+            assert.throws(
+                () => transition({ type: "chaserSelectionComplete", chaserSessionId: "alice" }, context()),
+                /chaserSelectionComplete is not valid in phase lobby/
+            );
         });
     });
 
@@ -180,15 +220,13 @@ describe("gameFlow transition", () => {
     });
 
     describe("full multi-contestant game", () => {
-        it("walks three contestants through cashBuilder/offer/chase into the team final and both end states", () => {
+        it("walks three players through selection/cashBuilder/offer/chase into the team final and both end states", () => {
             const events: FlowEvent[] = [
                 { type: "startGame" },
+                { type: "chaserSelectionComplete", chaserSessionId: "bob" },
                 { type: "cashBuilderTimeout" },
                 { type: "contestantChoice", offer: "high" },
                 { type: "chaseEscape" },           // alice makes it back
-                { type: "cashBuilderTimeout" },
-                { type: "contestantChoice", offer: "middle" },
-                { type: "chaseCaught" },           // bob is out
                 { type: "cashBuilderTimeout" },
                 { type: "contestantChoice", offer: "low" },
                 { type: "chaseEscape" }            // carol makes it back -> finalTeam
@@ -201,16 +239,28 @@ describe("gameFlow transition", () => {
                 const result = transition(event, ctx);
                 phases.push(result.nextPhase);
 
-                const start = result.effects.find((effect) => effect.type === "startCashBuilder");
-                ctx = start
-                    ? { ...ctx, currentPhase: result.nextPhase, activeContestantSessionId: start.sessionId, activeRound: start.round }
-                    : { ...ctx, currentPhase: result.nextPhase };
+                for (const effect of result.effects) {
+                    if (effect.type === "assignChaser") {
+                        ctx = {
+                            ...ctx,
+                            contestantsOrder: ctx.contestantsOrder.filter(
+                                (sessionId) => sessionId !== effect.sessionId
+                            )
+                        };
+                    }
+                    if (effect.type === "startCashBuilder") {
+                        ctx = {
+                            ...ctx,
+                            activeContestantSessionId: effect.sessionId,
+                            activeRound: effect.round
+                        };
+                    }
+                }
+                ctx = { ...ctx, currentPhase: result.nextPhase };
             }
 
             assert.deepStrictEqual(phases, [
-                GamePhase.CashBuilder,
-                GamePhase.Offer,
-                GamePhase.Chase,
+                GamePhase.ChaserSelection,
                 GamePhase.CashBuilder,
                 GamePhase.Offer,
                 GamePhase.Chase,
@@ -220,7 +270,7 @@ describe("gameFlow transition", () => {
                 GamePhase.TeamFinal
             ]);
             assert.strictEqual(ctx.activeContestantSessionId, "carol");
-            assert.strictEqual(ctx.activeRound, 3);
+            assert.strictEqual(ctx.activeRound, 2);
         });
 
         it("reaches both end states from the final", () => {

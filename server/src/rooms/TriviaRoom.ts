@@ -9,7 +9,7 @@ import {
   OfferTier,
 } from "../gameFlow.js";
 import { scheduleTimer, TimerHandle } from "../timer.js";
-import { CASH_BUILDER, FINAL_ROUND } from "../gameConfig.js";
+import { CASH_BUILDER, CHASER_SELECTION, FINAL_ROUND } from "../gameConfig.js";
 
 const OFFER_TIERS: OfferTier[] = ["low", "middle", "high"];
 
@@ -24,6 +24,7 @@ export class TriviaRoom extends Room {
   state = new GameState();
 
   cashBuilderDurationMs: number = CASH_BUILDER.durationMs;
+  chaserSelectionDurationMs: number = CHASER_SELECTION.durationMs;
   teamFinalDurationMs: number = FINAL_ROUND.teamDurationMs;
   chaserFinalDurationMs: number = FINAL_ROUND.chaserDurationMs;
 
@@ -34,6 +35,9 @@ export class TriviaRoom extends Room {
   onCreate (options: any) {
     if (typeof options?.cashBuilderDurationMs === "number") {
       this.cashBuilderDurationMs = options.cashBuilderDurationMs;
+    }
+    if (typeof options?.chaserSelectionDurationMs === "number") {
+      this.chaserSelectionDurationMs = options.chaserSelectionDurationMs;
     }
     if (typeof options?.teamFinalDurationMs === "number") {
       this.teamFinalDurationMs = options.teamFinalDurationMs;
@@ -68,6 +72,43 @@ export class TriviaRoom extends Room {
     };
   }
 
+  private isHost (client: Client): boolean {
+    return this.state.players.get(client.sessionId)?.isHost === true;
+  }
+
+  private pickRandomChaser(): string {
+    const sessionIds = [...this.state.players.keys()];
+    return sessionIds[Math.floor(Math.random() * sessionIds.length)];
+  }
+
+  private allPlayersVoted(): boolean {
+    if (this.state.players.size === 0) {
+      return false;
+    }
+    for (const player of this.state.players.values()) {
+      if (player.chaserVote === "") {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private tallyChaserVotes(): string {
+    const votes = new Map<string, number>();
+    for (const player of this.state.players.values()) {
+      if (player.chaserVote !== "") {
+        votes.set(player.chaserVote, (votes.get(player.chaserVote) ?? 0) + 1);
+      }
+    }
+    const counted = [...votes.entries()];
+    if (counted.length === 0) {
+      return this.pickRandomChaser();
+    }
+    const most = Math.max(...counted.map(([, count]) => count));
+    const leaders = counted.filter(([, count]) => count === most).map(([sessionId]) => sessionId);
+    return leaders[Math.floor(Math.random() * leaders.length)];
+  }
+
   private dispatch(event: FlowEvent) {
     try {
       const result = transition(event, this.flowContext());
@@ -82,6 +123,41 @@ export class TriviaRoom extends Room {
   private applyEffects(effects: FlowEffect[]) {
     for (const effect of effects) {
       switch (effect.type) {
+        case "startChaserSelection": {
+          const mode = this.state.chaserSelectionMode || CHASER_SELECTION.defaultMode;
+          console.log(
+            `Chaser selection in ${mode} mode — ${this.chaserSelectionDurationMs}ms to decide`
+          );
+          this.activeTimer = scheduleTimer(this, this.chaserSelectionDurationMs, () => {
+            if (mode === "vote") {
+              this.dispatch({
+                type: "chaserSelectionComplete",
+                chaserSessionId: this.tallyChaserVotes()
+              });
+            } else {
+              this.dispatch({
+                type: "chaserSelectionComplete",
+                chaserSessionId: this.pickRandomChaser()
+              });
+            }
+          });
+          break;
+        }
+
+        case "assignChaser": {
+          this.state.chaserSessionId = effect.sessionId;
+          const player = this.state.players.get(effect.sessionId);
+          if (player) {
+            player.role = PlayerRole.Chaser;
+          }
+          const chaserPosition = this.state.contestantsOrder.indexOf(effect.sessionId);
+          if (chaserPosition >= 0) {
+            this.state.contestantsOrder.splice(chaserPosition, 1);
+          }
+          console.log(`${effect.sessionId} is the Chaser`);
+          break;
+        }
+
         case "startCashBuilder": {
           this.state.activeContestantSessionId = effect.sessionId;
           this.state.activeRound = effect.round;
@@ -172,12 +248,61 @@ export class TriviaRoom extends Room {
 
   messages = {
     startGame: (client: Client, message: any) => {
+      if (!this.isHost(client)) {
+        console.log(client.sessionId, "Can not start the game — only the host can!");
+        return;
+      }
       if (this.state.currentPhase !== GamePhase.Lobby) {
         console.log(client.sessionId, "Can not start the game outside Lobby!");
         return;
       }
       console.log(client.sessionId, "Starting game!");
       this.dispatch({ type: "startGame" });
+    },
+
+    setChaserMode: (client: Client, message: any) => {
+      if (!this.isHost(client)) {
+        console.log(client.sessionId, "Can not set the chaser mode — only the host can!");
+        return;
+      }
+      if (this.state.currentPhase !== GamePhase.Lobby) {
+        console.log(client.sessionId, "Can not set the chaser mode outside Lobby!");
+        return;
+      }
+      const mode = message?.mode;
+      if (mode !== "random" && mode !== "vote") {
+        console.log(client.sessionId, "Ignoring invalid chaser mode:", mode);
+        return;
+      }
+      this.state.chaserSelectionMode = mode;
+      console.log(client.sessionId, "Set chaser mode to", mode);
+    },
+
+    chaserVote: (client: Client, message: any) => {
+      if (this.state.currentPhase !== GamePhase.ChaserSelection) {
+        console.log(client.sessionId, "Can not vote outside ChaserSelection!");
+        return;
+      }
+      const voter = this.state.players.get(client.sessionId);
+      if (!voter) {
+        return;
+      }
+      if (voter.chaserVote !== "") {
+        console.log(client.sessionId, "Already voted for the chaser!");
+        return;
+      }
+      const target = message?.targetSessionId;
+      if (typeof target !== "string" || !this.state.players.has(target)) {
+        console.log(client.sessionId, "Ignoring vote for unknown player:", target);
+        return;
+      }
+      voter.chaserVote = target;
+      if (this.state.chaserSelectionMode === "vote" && this.allPlayersVoted()) {
+        this.dispatch({
+          type: "chaserSelectionComplete",
+          chaserSessionId: this.tallyChaserVotes()
+        });
+      }
     },
 
     offerChoice: (client: Client, message: any) => {

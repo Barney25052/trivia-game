@@ -11,12 +11,14 @@ export class GamePlayer extends Schema {
     @type("boolean") isEliminated: boolean = false;
     @type("boolean") madeItBack: boolean = false;
     @type("boolean") isHost: boolean = false;
+    @type("string") chaserVote: string = "";
     @type("number") score: number = 0;
 }
 
 export class GameState extends Schema {
     @type({ map: GamePlayer }) players = new MapSchema<GamePlayer>();
     @type("string") currentPhase: GamePhase = GamePhase.Lobby;
+    @type("string") chaserSelectionMode: string = "";
     @type("string") chaserSessionId: string = "";
     @type("number") chaserPot: number = CHASER_POT.initial;
     @type("number") teamPot: number = 0;

@@ -3,6 +3,11 @@ export const CASH_BUILDER = {
     rewardPerCorrect: 1_000
 } as const;
 
+export const CHASER_SELECTION = {
+    durationMs: 30_000,
+    defaultMode: "random"
+} as const;
+
 export const CHASER_POT = {
     initial: 50_000,
     perRound: 30_000
