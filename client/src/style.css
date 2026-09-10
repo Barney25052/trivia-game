@@ -167,6 +167,10 @@ h1, h2, h3, h4 {
   padding: 10px;
 }
 
+.lobbyPlayer {
+  color: var(--chaser-red-glow);
+}
+
 .startButton {
   margin: 10px auto;
   display: block;
@@ -183,14 +187,6 @@ h1, h2, h3, h4 {
   width: 150px;
   margin: 10px auto;
   display: block;
-}
-
-.settingsPanel {
-  max-width: 350px;
-  margin: 10px auto;
-  padding: 10px;
-  background-color: rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
 }
 
 .settingsTitle {
@@ -229,7 +225,7 @@ h1, h2, h3, h4 {
   margin: 40px 0;
 }
 
-.rulesPanel {
+.settingsRail {
   flex: 0 0 300px;
   max-width: 300px;
   margin-top: 40px;
@@ -238,16 +234,6 @@ h1, h2, h3, h4 {
   border-radius: 10px;
   max-height: 70vh;
   overflow-y: auto;
-}
-
-.rulesText {
-  color: #ffffff;
-  font-family: "Luckiest Guy", cursive;
-  font-weight: 400;
-  font-style: normal;
-  font-size: 16px;
-  line-height: 1.4;
-  margin: 10px 0;
 }
 
 @media (max-width: 900px) {
@@ -260,7 +246,7 @@ h1, h2, h3, h4 {
     margin: 40px auto;
   }
 
-  .rulesPanel {
+  .settingsRail {
     flex: 0 0 auto;
     width: 100%;
     max-width: 500px;
