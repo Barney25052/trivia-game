@@ -4,34 +4,43 @@ import { Client } from "@colyseus/sdk";
 import { GamePhase } from "./TriviaTypes.ts";
 import HomeScreen from "./screens/HomeScreen.vue"
 import LobbyScreen from "./screens/LobbyScreen.vue";
-import QuestionScreen from "./screens/QuestionScreen.vue";
+import CashBuilderScreen from "./screens/CashBuilderScreen.vue";
+import OfferScreen from "./screens/OfferScreen.vue";
+import ChaseScreen from "./screens/ChaseScreen.vue";
+import TeamFinalScreen from "./screens/TeamFinalScreen.vue";
+import ChaserFinalScreen from "./screens/ChaserFinalScreen.vue";
 import ResultsScreen from "./screens/ResultsScreen.vue";
 
 // Change this to your deployed server URL later
 const SERVER_URL = "ws://localhost:2567";
 
-const room = ref(null);      
-const playersMap = ref(null);   
+const room = ref(null);
+const playersMap = ref(null);
 const players = ref([]);
-const answeredMap = ref([]);
-const currentPhase = ref(null)
-const currentQuestion = ref(null);
-const answer = ref(null);
+const currentPhase = ref(null);
+const activeContestantSessionId = ref("");
+const chaserSessionId = ref("");
+const teamScore = ref(0);
+const currentOffer = ref(null);
+const winner = ref(null);
 
-const currentState = computed(() => {
+const currentScreen = computed(() => {
   if (!room.value) return "home";
   switch (currentPhase.value) {
     case GamePhase.Lobby: return "lobby";
-    case GamePhase.Question: return "question";
-    case GamePhase.Answer: return "answer";
-    case GamePhase.GameEnd: return "gameend";
+    case GamePhase.CashBuilder: return "cashBuilder";
+    case GamePhase.Offer: return "offer";
+    case GamePhase.Chase: return "chase";
+    case GamePhase.TeamFinal: return "teamFinal";
+    case GamePhase.ChaserFinal: return "chaserFinal";
+    case GamePhase.GameEnd: return "gameEnd";
     default: return "home";
   }
 });
 
 const myPlayer = computed(() => playersMap.value?.get(room.value?.sessionId));
+const mySessionId = computed(() => room.value?.sessionId);
 const isHost = computed(() => myPlayer.value?.isHost === true);
-const haveIAnswered = computed(() => answeredMap.value?.[room.value?.sessionId] === true)
 
 async function handleJoin({ playerName, roomCode }) {
   await joinLobby(playerName, roomCode);
@@ -49,29 +58,36 @@ async function joinLobby(playerName, roomCode) {
     }
 
     room.value.onStateChange((newState) => {
-      console.log("State changed", newState.currentState);
-      currentPhase.value = newState.currentState;
+      currentPhase.value = newState.currentPhase;
       playersMap.value = newState.players;
       players.value = Array.from(newState.players.values());
-      answeredMap.value = newState.answered ? Object.fromEntries(newState.answered.entries()) : {};
-      answer.value = newState.answer;
+      activeContestantSessionId.value = newState.activeContestantSessionId;
+      chaserSessionId.value = newState.chaserSessionId;
+      teamScore.value = newState.teamScore;
+    });
+
+    room.value.onMessage("phase", (message) => {
+      currentPhase.value = message.phase;
+    });
+
+    room.value.onMessage("offer", (message) => {
+      currentOffer.value = message;
+    });
+
+    room.value.onMessage("endGame", (message) => {
+      winner.value = message.winner;
     });
 
     room.value.onLeave(() => {
       room.value = null;
     });
 
-    room.value.onMessage("question", (message) => {
-      console.log("message received")
-      currentQuestion.value = message
-    })
-
   } catch (e) {
     console.error("Failed to join:", e);
   }
 }
 
-async function startQuiz() {
+function startGame() {
   try {
     room.value?.send("startGame", {});
 
@@ -80,19 +96,31 @@ async function startQuiz() {
   }
 }
 
-async function nextQuestion() {
+function chooseOffer(offer) {
   try {
-    console.log("To the next!");
-    room.value?.send("nextQuestion", {});
-    answer.value = null;
+    room.value?.send("offerChoice", { offer });
+
   } catch (e) {
-    console.error("Failed to go to next question:", e);
+    console.error("Failed to choose offer:", e);
   }
 }
 
-function submitAnswer(index) {
-  console.log("INDEX:", index)
-  room.value?.send("answer", {optionIndex: index})
+function sendChaseResult(escaped) {
+  try {
+    room.value?.send("chaseResult", { escaped });
+
+  } catch (e) {
+    console.error("Failed to send chase result:", e);
+  }
+}
+
+function chaserReachedScore() {
+  try {
+    room.value?.send("finalChaserScore", {});
+
+  } catch (e) {
+    console.error("Failed to send final chaser score:", e);
+  }
 }
 
 function handleLeave() {
@@ -103,39 +131,47 @@ function handleLeave() {
 
 <template>
   <div class="app">
-    <p>{{ currentState }}</p>
+    <p>{{ currentScreen }}</p>
 
-    <HomeScreen v-if="currentState=='home'" @join="handleJoin" @create="handleJoin"/>
+    <HomeScreen v-if="currentScreen=='home'" @join="handleJoin" @create="handleJoin"/>
     <LobbyScreen 
-      v-if="currentState=='lobby'" 
-      @startQuiz="startQuiz"
+      v-if="currentScreen=='lobby'" 
+      @start="startGame"
       :players="players"
       :isHost="isHost"
       :room = "room"
     />
-    <QuestionScreen 
-      v-if="currentState=='question'"
-      @answerSubmitted="submitAnswer"
-      :myPlayer="myPlayer"
-      :currentQuestion="currentQuestion"
-      :haveIAnswered="haveIAnswered"
+    <CashBuilderScreen 
+      v-if="currentScreen=='cashBuilder'"
+    />
+    <OfferScreen
+      v-if="currentScreen=='offer'"
+      :offer="currentOffer"
+      :mySessionId="mySessionId"
+      :players="players"
+      @choose="chooseOffer"
+    />
+    <ChaseScreen
+      v-if="currentScreen=='chase'"
+      :players="players"
+      :activeContestantSessionId="activeContestantSessionId"
+      :chaserSessionId="chaserSessionId"
+      @chaseResult="sendChaseResult"
+    />
+    <TeamFinalScreen
+      v-if="currentScreen=='teamFinal'"
+      :teamScore="teamScore"
+    />
+    <ChaserFinalScreen
+      v-if="currentScreen=='chaserFinal'"
+      :teamScore="teamScore"
+      @chaserReached="chaserReachedScore"
     />
     <ResultsScreen
-      v-if="currentState=='answer'"
-      @nextQuestion="nextQuestion"
-      :isHost = "isHost"
-      :answer = "answer"
+      v-if="currentScreen=='gameEnd'"
+      :winner="winner"
+      :players="players"
+      @leave="handleLeave"
     />
-    <div v-if="currentState=='gameend'" class = "lobby">
-      <h2  class = "lobbyTitle">Results</h2>
-      <ul>
-        <li v-for="player in players" :key="player.name">
-            <div class = "playerResult">
-                <p class ="playerName">{{ player.name }} - {{ player.score }}</p>
-            </div>
-        </li>
-      </ul>
-      <button @click="handleLeave" class = "nextButton">Main Menu</button>
-    </div>
   </div>
 </template>
