@@ -53,6 +53,11 @@ Documented standards — there is no formatter or linter; conventions are enforc
 - Every ticket removes the dead code its work orphans (old phases, schemas, exports, routes) and greps for stale names as part of its acceptance criteria.
 - No template leftovers: `my-app` package metadata, unreferenced handlers/routes, legacy enum members/schema classes.
 
+### Bug triaging
+- A bug that is **within** the current ticket's scope gets fixed there (with a regression test), as usual.
+- A bug that is **outside** the current ticket's scope must not be silently fixed or silently ignored: log it to `BUGS.md` at the repo root (sequential `bug-###` id, one-line title, found date + ticket, file/feature, what you saw, expected, repro steps, status `open`), then stay on the ticket.
+- A follow-up session converts `open` entries into actionable tickets in `tickets/` and flips the entry to `triaged`, citing the ticket number.
+
 ### Architecture invariants (do not break)
 - `gameFlow.ts` is **pure**: it takes a `FlowEvent` + context and returns `nextPhase` + `FlowEffect[]`. The room applies effects and runs timers; it never decides transitions itself.
 - All tunables live in `server/src/gameConfig.ts` (durations, money, board layout, offer math). No magic numbers in room code.
