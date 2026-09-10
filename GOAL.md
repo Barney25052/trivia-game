@@ -18,19 +18,20 @@ Current tech foundation (to be extended):
 - Everyone else is a **Contestant**.
 
 ### Cash builder (per contestant)
-- Contestant gets **60 seconds** to answer as many **open-ended** questions as possible (they type answers). Every correct answer adds **$1000** to their pot.
+- Contestant gets **60 seconds** to answer as many **open-ended** questions as possible (they type answers). Every correct answer adds **$1000** to their pot. Questions keep coming until the clock hits zero — **no penalty for a wrong answer or a pass** (officially "free" — guessing and skipping don't hurt you).
 
 ### The offer (per contestant)
 - The Chaser offers **high**, **middle** (= what the contestant made in the cash builder), or **lower**.
 - **Chaser pot mechanic**: the Chaser has a **pot they may offer from**. It starts at **$50k**, and **+$30k is added after every round**. Any money a player takes home is **removed from the Chaser's pot**. This forces the Chaser to ration offers across all contestants. (High/low are shaped by this, e.g. multiples of the middle — exact multipliers configurable, to decide.)
 - The contestant picks which offer to play for.
+- **The offer sets how far from home you start** (risk/reward is the whole point): the closer to home you start, the fewer correct answers you need to escape, but the less money you play for. Middle (what you built) starts mid-board, **high** starts closer to the Chaser (further from home — riskier), **low** starts closer to home (safer). A low offer can be **$0** (or even negative on the show) — the Chaser limiting their exposure.
 
 ### The board chase (head-to-head)
 - Board has **7 spaces** (1–7). Lower offer starts the contestant on **space 4**, middle on **space 5**, high on **space 6**.
 - The **Chaser starts off the board at space 8**; first correct answer moves them to **space 7**, then they move **down** the board.
 - Contestant **wins by reaching space 0** (off the board). Chaser **catches** the contestant by reaching their space — contestant is **out**.
-- Questions are **multiple-choice with 3 options**. No timer until either side answers; then the **other side gets a 5-second timer** to answer.
-- **Both sides can advance on the same question**: if the first answer is correct, the other side may still answer within 5s, and a correct answer moves each side one space. (Wrong answers advance nobody.)
+- Questions are **multiple-choice with 3 options**. No timer until either side answers; then the **other side gets a 5-second window** (lockout countdown) to answer.
+- **Both sides can advance on the same question**: if the first answer is correct, the other side may still answer within the 5s window, and a correct answer moves each side one space. (Wrong answers advance nobody — a correct answer must arrive within the window.)
 - Surviving the board adds the chosen offer to a **team pot**.
 
 Repeat cash builder + offer + chase for every contestant.
@@ -40,7 +41,9 @@ Repeat cash builder + offer + chase for every contestant.
 ### Final round (team vs Chaser)
 - The **team** gets **2 minutes** of open-ended questions, answering as a group. Every correct answer is **+1**.
 - The team starts with **X points, where X = the number of contestants who made it back**.
+- **Two parallel question sets**: the team and Chaser answer **different** sets — the team draws one set, the Chaser gets the other (both drawn from the same bank, same difficulty). Neither side sees the other's questions.
 - **Eliminated players rejoin for this round**: everyone — including contestants who were caught — answers in the team's group round. X is unchanged and still only counts survivors; eliminated players just add their answers to the 2-minute tally.
+- **If no one made it back** (X = 0), the team still plays the Final for a nominal pot — everyone answers, the Chaser is just X ahead where X=0 until the team catches up.
 - Then the **Chaser** gets **2 minutes** of open-ended questions:
   - Correct answer → Chaser **+1**.
   - Wrong answer → the team gets a chance to answer; if they're right they **push the Chaser back** one.
@@ -49,6 +52,20 @@ Repeat cash builder + offer + chase for every contestant.
 ### Question bank
 - **Open-ended** questions (cash builder + final) come from a **custom free-text question bank** we maintain (e.g. a JSON file loaded by the server; server checks typed answers — decide whether answers are exact-match or lenient later).
 - **Multiple-choice** (board chase) comes from opentdb (`type=multiple` gives 4 options — we'll show 3 of them; server picks the correct-index).
+
+### Compared to the TV show (reference)
+This game is adapted from the UK show *The Chase* (ITV), per official documents/discussions:
+
+| Aspect (official show) | Here |
+| --- | --- |
+| Cash builder: 60s, answer as many as possible, £1,000 per correct; **no penalty for wrong/pass** | Same, typed open-ended, $1000 each, no penalty |
+| ~7-step money board; the higher/lower you play for, the closer to / further from the Chaser you start (middle = 5 correct to reach home, high = 6, low = 4) | Board spaces 1–7, escape at 0; low=4, middle=5, high=6 — **identical reach-home counts** |
+| Lower offer can be near-$0 (or negative) if the Chaser limits exposure | Same idea (our low can reach $0) |
+| Head-to-head: first to answer right forces the other into a **5-second lockout** | Same 5s window |
+| Final: survivors (only) answer as a team vs Chaser for an equal share of the prize fund | All players rejoin the group round; X = survivors only; fund split among survivors' team pot |
+| Team picks **two categories**, Chaser gets the other | Two parallel open-ended sets from the same bank; team picks, Chaser gets the other — neither sees theirs |
+
+Deliberate differences we keep: the Chaser is a **player** (not a pro/host), so a **Chaser pot** bounds offers; open-ended typed answers (not spoken); eliminated players rejoin the final; MC arrives via opentdb (3 options shown).
 
 ## Current state
 
