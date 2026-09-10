@@ -32,6 +32,17 @@ Documented standards — there is no formatter or linter; conventions are enforc
 - No unused imports; prefer explicit types over `any` (Colyseus message params are the allowed exception).
 - Keep files small and focused; prefer pure modules that return data over fat classes.
 
+### UI work & design direction
+- Any ticket that touches the UI (new/changed screens, layout, CSS, components, interactions, on-screen copy) must **stop and present the intended direction to the user before implementing**: what screen(s), what the player does on them, the visual approach, and how it plugs into the server flow. Get sign-off, then code.
+- Don't assume the "obvious" UI build for a ticket — look & feel is evolving and the user wants to steer it. When a ticket has both UI and non-UI scope, surface the UI part separately.
+
+### CSS & styling
+- All styling lives in `client/src/style.css` (imported once in `main.ts`). Components only attach class names — no `<style scoped>`, no inline `style=` unless truly necessary.
+- **Human-readable first**: the user edits this file by hand. Reuse existing classes (`lobby`, `lobbyTitle`, `playerName`, `startButton`, `roomCode`, `answerButton`, ...) before adding new ones; name new classes kebab-case with an obvious purpose; group related declarations.
+- Formatting: 4-space indent, one declaration per line, trailing semicolons, lowercase hex (`#ffffff`), `transparent` instead of the `#0000` shorthand, sizes as `0` not `0px`. No commented-out dead rules.
+- Prefer CSS custom properties in a `:root` block for palette/typography when a color or family repeats — don't copy hex values between rules.
+- Respect the existing look (gradient bg, "Luckiest Guy" font, animations in style.css) when adding screens; read `style.css` first, and update it in the same ticket when a screen needs styles.
+
 ### No cruft
 - Every ticket removes the dead code its work orphans (old phases, schemas, exports, routes) and greps for stale names as part of its acceptance criteria.
 - No template leftovers: `my-app` package metadata, unreferenced handlers/routes, legacy enum members/schema classes.
