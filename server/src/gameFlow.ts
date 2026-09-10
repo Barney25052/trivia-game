@@ -6,6 +6,8 @@ export type OfferTier = "low" | "middle" | "high";
 export type FlowEvent =
     | { type: "startGame" }
     | { type: "chaserSelectionComplete"; chaserSessionId: string }
+    | { type: "revealAllReady" }
+    | { type: "readyCooldownDone" }
     | { type: "cashBuilderTimeout" }
     | { type: "contestantChoice"; offer: OfferTier }
     | { type: "chaseEscape" }
@@ -33,6 +35,8 @@ export interface GameFlowContext {
 export type FlowEffect =
     | { type: "startChaserSelection" }
     | { type: "assignChaser"; sessionId: string }
+    | { type: "startRolesReveal" }
+    | { type: "startReadyCooldown"; sessionId: string; round: number }
     | { type: "startCashBuilder"; sessionId: string; round: number }
     | { type: "startOffer"; sessionId: string }
     | { type: "startChase"; sessionId: string; contestantStartSpace: number; chaserStartSpace: number }
@@ -94,11 +98,31 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
                 throw new Error("gameFlow: chaserSelectionComplete requires at least one contestant");
             }
             return {
-                nextPhase: GamePhase.CashBuilder,
+                nextPhase: GamePhase.RolesReveal,
                 effects: [
                     { type: "assignChaser", sessionId: event.chaserSessionId },
-                    { type: "startCashBuilder", sessionId: first, round: 1 }
+                    { type: "startRolesReveal" }
                 ]
+            };
+        }
+
+        case "revealAllReady": {
+            ensurePhase(event, context, GamePhase.RolesReveal);
+            const first = context.contestantsOrder[0];
+            if (first === undefined) {
+                throw new Error("gameFlow: revealAllReady requires at least one contestant");
+            }
+            return {
+                nextPhase: GamePhase.CashBuilder,
+                effects: [{ type: "startReadyCooldown", sessionId: first, round: context.activeRound + 1 }]
+            };
+        }
+
+        case "readyCooldownDone": {
+            ensurePhase(event, context, GamePhase.CashBuilder);
+            return {
+                nextPhase: GamePhase.CashBuilder,
+                effects: [{ type: "startCashBuilder", sessionId: context.activeContestantSessionId, round: context.activeRound }]
             };
         }
 

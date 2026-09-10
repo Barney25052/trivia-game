@@ -3,6 +3,7 @@ const CHASER_SELECTION_RANDOM_MS = 8_000;
 const CHASER_SELECTION_VOTE_MS = 30_000;
 const TEAM_FINAL_DURATION_MS = 120_000;
 const CHASER_FINAL_DURATION_MS = 120_000;
+const REVEAL_READY_COOLDOWN_MS = 5_000;
 
 export const TIMER_CLAMP = {
     minMs: 100,
@@ -56,6 +57,12 @@ export const FINAL_ROUND = {
     chaserDurationMs: CHASER_FINAL_DURATION_MS,
     minMs: TIMER_CLAMP.minMs,
     maxMs: CHASER_FINAL_DURATION_MS * TIMER_CLAMP.maxFactor
+} as const;
+
+export const REVEAL_READY = {
+    cooldownMs: REVEAL_READY_COOLDOWN_MS,
+    minMs: TIMER_CLAMP.minMs,
+    maxMs: REVEAL_READY_COOLDOWN_MS * TIMER_CLAMP.maxFactor
 } as const;
 
 export const PLAYER_NAME = {

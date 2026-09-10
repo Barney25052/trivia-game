@@ -9,7 +9,7 @@ import {
   OfferTier,
 } from "../gameFlow.js";
 import { scheduleTimer, TimerHandle } from "../timer.js";
-import { CASH_BUILDER, CHASER_SELECTION, FINAL_ROUND, PLAYER_NAME } from "../gameConfig.js";
+import { CASH_BUILDER, CHASER_SELECTION, FINAL_ROUND, PLAYER_NAME, REVEAL_READY } from "../gameConfig.js";
 
 const OFFER_TIERS: OfferTier[] = ["low", "middle", "high"];
 
@@ -28,6 +28,7 @@ export class TriviaRoom extends Room {
 
   cashBuilderDurationMs: number = CASH_BUILDER.durationMs;
   chaserSelectionDurationMs: number | null = null;
+  revealReadyCooldownMs: number = REVEAL_READY.cooldownMs;
   teamFinalDurationMs: number = FINAL_ROUND.teamDurationMs;
   chaserFinalDurationMs: number = FINAL_ROUND.chaserDurationMs;
 
@@ -48,6 +49,13 @@ export class TriviaRoom extends Room {
         options.chaserSelectionDurationMs,
         CHASER_SELECTION.minMs,
         CHASER_SELECTION.maxMs
+      );
+    }
+    if (typeof options?.revealReadyCooldownMs === "number") {
+      this.revealReadyCooldownMs = clampDuration(
+        options.revealReadyCooldownMs,
+        REVEAL_READY.minMs,
+        REVEAL_READY.maxMs
       );
     }
     if (typeof options?.teamFinalDurationMs === "number") {
@@ -106,6 +114,18 @@ export class TriviaRoom extends Room {
     }
     for (const player of this.state.players.values()) {
       if (player.chaserVote === "") {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private allPlayersReady(): boolean {
+    if (this.state.players.size === 0) {
+      return false;
+    }
+    for (const player of this.state.players.values()) {
+      if (!player.revealReady) {
         return false;
       }
     }
@@ -177,6 +197,24 @@ export class TriviaRoom extends Room {
             this.state.contestantsOrder.splice(chaserPosition, 1);
           }
           console.log(`${effect.sessionId} is the Chaser`);
+          break;
+        }
+
+        case "startRolesReveal": {
+          console.log("Roles reveal — waiting for all players to confirm before the cash builder");
+          break;
+        }
+
+        case "startReadyCooldown": {
+          this.state.activeContestantSessionId = effect.sessionId;
+          this.state.activeRound = effect.round;
+          console.log(
+            `Get ready — cash builder for ${effect.sessionId} starts in ${this.revealReadyCooldownMs}ms`
+          );
+          this.broadcast("getReady", { cooldownMs: this.revealReadyCooldownMs });
+          this.activeTimer = scheduleTimer(this, this.revealReadyCooldownMs, () => {
+            this.dispatch({ type: "readyCooldownDone" });
+          });
           break;
         }
 
@@ -324,6 +362,26 @@ export class TriviaRoom extends Room {
           type: "chaserSelectionComplete",
           chaserSessionId: this.tallyChaserVotes()
         });
+      }
+    },
+
+    revealReady: (client: Client, message: any) => {
+      if (this.state.currentPhase !== GamePhase.RolesReveal) {
+        console.log(client.sessionId, "Can not confirm ready outside RolesReveal!");
+        return;
+      }
+      const player = this.state.players.get(client.sessionId);
+      if (!player) {
+        return;
+      }
+      if (player.revealReady) {
+        console.log(client.sessionId, "Already confirmed ready for the roles reveal!");
+        return;
+      }
+      player.revealReady = true;
+      console.log(`${client.sessionId} confirmed ready for the cash builder`);
+      if (this.allPlayersReady()) {
+        this.dispatch({ type: "revealAllReady" });
       }
     },
 

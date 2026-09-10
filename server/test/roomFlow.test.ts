@@ -30,10 +30,11 @@ describe("roomFlow", () => {
     await cleanup();
   });
 
-  it("host starts in random mode -> ChaserSelection resolves by picking a player, and the short cash-builder timer fires -> Offer", async () => {
+  it("roles reveal gates the cash builder: selection lands in RolesReveal with no timer, a lone ready does not advance, and getReady precedes the cash-builder timer", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       cashBuilderDurationMs: 80,
-      chaserSelectionDurationMs: 80
+      chaserSelectionDurationMs: 80,
+      revealReadyCooldownMs: 100
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -51,16 +52,14 @@ describe("roomFlow", () => {
 
     const phases: string[] = [];
     alice.onMessage("phase", (message: any) => phases.push(message.phase));
+    const getReadyMessage = alice.waitForMessage("getReady");
     const offerMessage = alice.waitForMessage("offer");
 
     alice.send("setChaserMode", { mode: "random" });
     await sleep(30);
     alice.send("startGame");
 
-    // The offer only arrives after selection + the cash-builder timer both resolve.
-    const offer = await offerMessage;
-    assert.strictEqual(room.state.currentPhase, GamePhase.Offer);
-    assert.strictEqual(room.state.activeRound, 1);
+    await waitForPhase(room, GamePhase.RolesReveal);
     const chaser = room.state.chaserSessionId;
     assert.ok(
       chaser === alice.sessionId || chaser === bob.sessionId,
@@ -73,13 +72,35 @@ describe("roomFlow", () => {
     );
     const contender = alice.sessionId === chaser ? bob.sessionId : alice.sessionId;
     assert.deepStrictEqual([...room.state.contestantsOrder], [contender]);
+
+    // The reveal is a hold: no cash-builder timer is scheduled while in RolesReveal.
+    await sleep(200);
+    assert.strictEqual(room.state.currentPhase, GamePhase.RolesReveal);
+    assert.strictEqual(room.state.activeContestantSessionId, "");
+
+    // A lone revealReady from one player does not advance the room.
+    alice.send("revealReady");
+    await sleep(100);
+    assert.strictEqual(room.state.currentPhase, GamePhase.RolesReveal);
+    assert.strictEqual(room.state.players.get(alice.sessionId).revealReady, true);
+    assert.strictEqual(room.state.players.get(bob.sessionId).revealReady, false);
+
+    // Everyone ready -> getReady broadcast -> cooldown -> cash builder -> offer.
+    bob.send("revealReady");
+    await waitForPhase(room, GamePhase.CashBuilder);
+    const getReady = await getReadyMessage;
+    assert.strictEqual(getReady.cooldownMs, 100);
+
+    const offer = await offerMessage;
+    assert.strictEqual(room.state.currentPhase, GamePhase.Offer);
+    assert.strictEqual(room.state.activeRound, 1);
     assert.strictEqual(room.state.activeContestantSessionId, contender);
     assert.strictEqual(offer.sessionId, contender);
     assert.ok(
       "low" in offer.offers && "middle" in offer.offers && "high" in offer.offers,
       "offer message should carry low/middle/high amounts"
     );
-    assert.ok(phases.includes(GamePhase.ChaserSelection), "should have broadcast chaserSelection phase");
+    assert.ok(phases.includes(GamePhase.RolesReveal), "should have broadcast rolesReveal phase");
     assert.ok(phases.includes(GamePhase.CashBuilder), "should have broadcast cashBuilder phase");
     assert.ok(phases.includes(GamePhase.Offer), "should have broadcast offer phase");
   });
@@ -98,7 +119,7 @@ describe("roomFlow", () => {
     assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
 
     alice.send("startGame");
-    await waitForPhase(room, GamePhase.CashBuilder);
+    await waitForPhase(room, GamePhase.RolesReveal);
 
     assert.strictEqual(room.state.chaserSelectionMode, "random");
     assert.ok(
@@ -106,12 +127,19 @@ describe("roomFlow", () => {
       "default random mode picks one of the players as chaser"
     );
     assert.strictEqual(room.state.players.get(room.state.chaserSessionId).role, PlayerRole.Chaser);
+
+    alice.send("revealReady");
+    bob.send("revealReady");
+    await waitForPhase(room, GamePhase.CashBuilder);
+    assert.strictEqual(room.state.activeContestantSessionId, room.state.chaserSessionId === alice.sessionId ? bob.sessionId : alice.sessionId);
+    assert.strictEqual(room.state.activeRound, 1);
   });
 
   it("walks the full flow end-to-end via the stub handlers", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
+      revealReadyCooldownMs: 80,
       teamFinalDurationMs: 80
     });
 
@@ -131,6 +159,10 @@ describe("roomFlow", () => {
     alice.send("setChaserMode", { mode: "random" });
     await sleep(30);
     alice.send("startGame");
+    await waitForPhase(room, GamePhase.RolesReveal);
+    alice.send("revealReady");
+    bob.send("revealReady");
+    carol.send("revealReady");
     await waitForPhase(room, GamePhase.Offer);
 
     // First contestant: cashBuilder -> offer -> chase (escapes; her round's offer is $0)
@@ -176,7 +208,8 @@ describe("roomFlow", () => {
   it("offerChoice is guarded: rejected in the lobby and by a non-active player; the active contestant's choice still transitions", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       cashBuilderDurationMs: 80,
-      chaserSelectionDurationMs: 80
+      chaserSelectionDurationMs: 80,
+      revealReadyCooldownMs: 80
     });
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
@@ -187,6 +220,9 @@ describe("roomFlow", () => {
     assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
 
     alice.send("startGame");
+    await waitForPhase(room, GamePhase.RolesReveal);
+    alice.send("revealReady");
+    bob.send("revealReady");
     await waitForPhase(room, GamePhase.Offer);
 
     const chaser = room.state.chaserSessionId;
@@ -207,7 +243,8 @@ describe("roomFlow", () => {
   it("chaseResult is guarded: rejected in the lobby and by the chaser; the active contestant's result still transitions", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       cashBuilderDurationMs: 80,
-      chaserSelectionDurationMs: 80
+      chaserSelectionDurationMs: 80,
+      revealReadyCooldownMs: 80
     });
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
@@ -218,6 +255,9 @@ describe("roomFlow", () => {
     assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
 
     alice.send("startGame");
+    await waitForPhase(room, GamePhase.RolesReveal);
+    alice.send("revealReady");
+    bob.send("revealReady");
     await waitForPhase(room, GamePhase.Offer);
 
     const chaser = room.state.chaserSessionId;
@@ -240,6 +280,7 @@ describe("roomFlow", () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
+      revealReadyCooldownMs: 80,
       teamFinalDurationMs: 80
     });
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -251,6 +292,9 @@ describe("roomFlow", () => {
     assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
 
     alice.send("startGame");
+    await waitForPhase(room, GamePhase.RolesReveal);
+    alice.send("revealReady");
+    bob.send("revealReady");
     await waitForPhase(room, GamePhase.Offer);
 
     const chaser = room.state.chaserSessionId;
@@ -294,10 +338,20 @@ describe("roomFlow", () => {
     carol.send("chaserVote", { targetSessionId: alice.sessionId });
     await sleep(100);
 
-    assert.strictEqual(room.state.currentPhase, GamePhase.CashBuilder);
+    assert.strictEqual(room.state.currentPhase, GamePhase.RolesReveal);
     assert.strictEqual(room.state.chaserSessionId, bob.sessionId);
     assert.strictEqual(room.state.players.get(bob.sessionId).role, PlayerRole.Chaser);
     assert.deepStrictEqual([...room.state.contestantsOrder], [alice.sessionId, carol.sessionId]);
+
+    alice.send("revealReady");
+    carol.send("revealReady");
+    await sleep(100);
+    assert.strictEqual(room.state.currentPhase, GamePhase.RolesReveal, "waiting on bob before advancing");
+
+    bob.send("revealReady");
+    await waitForPhase(room, GamePhase.CashBuilder);
+    assert.strictEqual(room.state.activeContestantSessionId, alice.sessionId);
+    assert.strictEqual(room.state.activeRound, 1);
   });
 
   it("vote mode: a tie between voters resolves to one of the tied players", async () => {
@@ -319,7 +373,7 @@ describe("roomFlow", () => {
     bob.send("chaserVote", { targetSessionId: bob.sessionId });
     await sleep(100);
 
-    assert.strictEqual(room.state.currentPhase, GamePhase.CashBuilder);
+    assert.strictEqual(room.state.currentPhase, GamePhase.RolesReveal);
     assert.ok(
       room.state.chaserSessionId === alice.sessionId || room.state.chaserSessionId === bob.sessionId,
       "a tie resolves to one of the tied players"
@@ -327,6 +381,10 @@ describe("roomFlow", () => {
     assert.strictEqual(room.state.players.get(room.state.chaserSessionId).role, PlayerRole.Chaser);
     assert.strictEqual(room.state.contestantsOrder.length, 1);
     assert.ok(![...room.state.contestantsOrder].includes(room.state.chaserSessionId));
+
+    alice.send("revealReady");
+    bob.send("revealReady");
+    await waitForPhase(room, GamePhase.CashBuilder);
   });
 
   it("non-host cannot set the chaser mode", async () => {

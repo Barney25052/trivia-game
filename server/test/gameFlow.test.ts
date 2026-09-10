@@ -34,17 +34,21 @@ describe("gameFlow transition", () => {
     });
 
     describe("chaserSelectionComplete", () => {
-        it("chaserSelection + complete -> cashBuilder for the first contestant, chaser assigned first", () => {
+        it("chaserSelection + complete -> rolesReveal for the first contestant, chaser assigned first", () => {
             const ctx = context({ currentPhase: GamePhase.ChaserSelection });
             const result = transition(
                 { type: "chaserSelectionComplete", chaserSessionId: "carol" },
                 ctx
             );
-            assert.strictEqual(result.nextPhase, GamePhase.CashBuilder);
+            assert.strictEqual(result.nextPhase, GamePhase.RolesReveal);
             assert.deepStrictEqual(result.effects, [
                 { type: "assignChaser", sessionId: "carol" },
-                { type: "startCashBuilder", sessionId: "alice", round: 1 }
+                { type: "startRolesReveal" }
             ]);
+            assert.ok(
+                !result.effects.some((effect) => effect.type === "startCashBuilder"),
+                "no cash-builder timer is scheduled during the roles reveal"
+            );
         });
 
         it("skips a chaser at the front of contestantsOrder when picking the first contestant", () => {
@@ -55,7 +59,7 @@ describe("gameFlow transition", () => {
             );
             assert.deepStrictEqual(result.effects, [
                 { type: "assignChaser", sessionId: "alice" },
-                { type: "startCashBuilder", sessionId: "bob", round: 1 }
+                { type: "startRolesReveal" }
             ]);
         });
 
@@ -71,6 +75,54 @@ describe("gameFlow transition", () => {
             assert.throws(
                 () => transition({ type: "chaserSelectionComplete", chaserSessionId: "alice" }, context()),
                 /chaserSelectionComplete is not valid in phase lobby/
+            );
+        });
+    });
+
+    describe("revealAllReady", () => {
+        it("rolesReveal + all ready -> cashBuilder, starting the ready cooldown for the first contestant", () => {
+            const ctx = context({ currentPhase: GamePhase.RolesReveal, activeRound: 0 });
+            const result = transition({ type: "revealAllReady" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.CashBuilder);
+            assert.deepStrictEqual(result.effects, [
+                { type: "startReadyCooldown", sessionId: "alice", round: 1 }
+            ]);
+        });
+
+        it("throws if there are no contestants", () => {
+            const ctx = context({ currentPhase: GamePhase.RolesReveal, contestantsOrder: [] });
+            assert.throws(
+                () => transition({ type: "revealAllReady" }, ctx),
+                /at least one contestant/
+            );
+        });
+
+        it("throws if not in rolesReveal", () => {
+            assert.throws(
+                () => transition({ type: "revealAllReady" }, context()),
+                /revealAllReady is not valid in phase lobby/
+            );
+        });
+    });
+
+    describe("readyCooldownDone", () => {
+        it("cashBuilder + cooldown done -> cashBuilder, starting the cash builder for the active contestant", () => {
+            const ctx = context({
+                currentPhase: GamePhase.CashBuilder,
+                activeContestantSessionId: "bob",
+                activeRound: 1
+            });
+            const result = transition({ type: "readyCooldownDone" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.CashBuilder);
+            assert.deepStrictEqual(result.effects, [
+                { type: "startCashBuilder", sessionId: "bob", round: 1 }
+            ]);
+        });
+
+        it("throws if not in cashBuilder", () => {
+            assert.throws(
+                () => transition({ type: "readyCooldownDone" }, context()),
+                /readyCooldownDone is not valid in phase lobby/
             );
         });
     });
@@ -220,10 +272,12 @@ describe("gameFlow transition", () => {
     });
 
     describe("full multi-contestant game", () => {
-        it("walks three players through selection/cashBuilder/offer/chase into the team final and both end states", () => {
+        it("walks three players through selection/reveal/cashBuilder/offer/chase into the team final and both end states", () => {
             const events: FlowEvent[] = [
                 { type: "startGame" },
                 { type: "chaserSelectionComplete", chaserSessionId: "bob" },
+                { type: "revealAllReady" },
+                { type: "readyCooldownDone" },
                 { type: "cashBuilderTimeout" },
                 { type: "contestantChoice", offer: "high" },
                 { type: "chaseEscape" },           // alice makes it back
@@ -232,7 +286,7 @@ describe("gameFlow transition", () => {
                 { type: "chaseEscape" }            // carol makes it back -> finalTeam
             ];
 
-            let ctx: GameFlowContext = context();
+            let ctx: GameFlowContext = context({ activeRound: 0 });
             const phases: GamePhase[] = [];
 
             for (const event of events) {
@@ -248,7 +302,7 @@ describe("gameFlow transition", () => {
                             )
                         };
                     }
-                    if (effect.type === "startCashBuilder") {
+                    if (effect.type === "startReadyCooldown" || effect.type === "startCashBuilder") {
                         ctx = {
                             ...ctx,
                             activeContestantSessionId: effect.sessionId,
@@ -261,7 +315,9 @@ describe("gameFlow transition", () => {
 
             assert.deepStrictEqual(phases, [
                 GamePhase.ChaserSelection,
-                GamePhase.CashBuilder,
+                GamePhase.RolesReveal,
+                GamePhase.CashBuilder,   // ready cooldown, then...
+                GamePhase.CashBuilder,    // ...the cash builder runs
                 GamePhase.Offer,
                 GamePhase.Chase,
                 GamePhase.CashBuilder,
