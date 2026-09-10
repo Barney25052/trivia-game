@@ -159,8 +159,10 @@ describe("roomFlow", () => {
     // Team final timer -> chaser final
     await waitForPhase(room, GamePhase.ChaserFinal);
 
-    // Stub handler: chaser reaches the team score -> game end
-    alice.send("finalChaserScore");
+    // Stub handler: the Chaser reaches the team score -> game end
+    const chaserClient = bySession.get(room.state.chaserSessionId);
+    assert.ok(chaserClient, "the chaser is one of the joined clients");
+    chaserClient.send("finalChaserScore");
     const endGame = await endGameMessage;
     assert.strictEqual(room.state.currentPhase, GamePhase.GameEnd);
     assert.strictEqual(endGame.winner, "chaser");
@@ -169,6 +171,104 @@ describe("roomFlow", () => {
     assert.ok(phases.includes(GamePhase.Chase), "should have broadcast chase phase");
     assert.ok(phases.includes(GamePhase.TeamFinal), "should have broadcast finalTeam phase");
     assert.ok(phases.includes(GamePhase.GameEnd), "should have broadcast gameend phase");
+  });
+
+  it("offerChoice is guarded: rejected in the lobby and by a non-active player; the active contestant's choice still transitions", async () => {
+    const room = await colyseus.createRoom<GameState>("trivia", {
+      cashBuilderDurationMs: 80,
+      chaserSelectionDurationMs: 80
+    });
+    const alice = await colyseus.connectTo(room, { playerName: "Alice" });
+    const bob = await colyseus.connectTo(room, { playerName: "Bob" });
+    await sleep(100);
+
+    alice.send("offerChoice", { offer: "high" });
+    await sleep(50);
+    assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
+
+    alice.send("startGame");
+    await waitForPhase(room, GamePhase.Offer);
+
+    const chaser = room.state.chaserSessionId;
+    const active = room.state.activeContestantSessionId;
+    assert.ok(chaser === alice.sessionId || chaser === bob.sessionId, "chaser is one of the players");
+    assert.notStrictEqual(chaser, active, "the chaser is never the active contestant");
+    const chaserClient = chaser === alice.sessionId ? alice : bob;
+    const activeClient = active === alice.sessionId ? alice : bob;
+
+    chaserClient.send("offerChoice", { offer: "high" });
+    await sleep(50);
+    assert.strictEqual(room.state.currentPhase, GamePhase.Offer);
+
+    activeClient.send("offerChoice", { offer: "high" });
+    await waitForPhase(room, GamePhase.Chase);
+  });
+
+  it("chaseResult is guarded: rejected in the lobby and by the chaser; the active contestant's result still transitions", async () => {
+    const room = await colyseus.createRoom<GameState>("trivia", {
+      cashBuilderDurationMs: 80,
+      chaserSelectionDurationMs: 80
+    });
+    const alice = await colyseus.connectTo(room, { playerName: "Alice" });
+    const bob = await colyseus.connectTo(room, { playerName: "Bob" });
+    await sleep(100);
+
+    alice.send("chaseResult", { escaped: true });
+    await sleep(50);
+    assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
+
+    alice.send("startGame");
+    await waitForPhase(room, GamePhase.Offer);
+
+    const chaser = room.state.chaserSessionId;
+    const active = room.state.activeContestantSessionId;
+    const chaserClient = chaser === alice.sessionId ? alice : bob;
+    const activeClient = active === alice.sessionId ? alice : bob;
+
+    activeClient.send("offerChoice", { offer: "high" });
+    await waitForPhase(room, GamePhase.Chase);
+
+    chaserClient.send("chaseResult", { escaped: true });
+    await sleep(50);
+    assert.strictEqual(room.state.currentPhase, GamePhase.Chase);
+
+    activeClient.send("chaseResult", { escaped: true });
+    await waitForPhase(room, GamePhase.TeamFinal);
+  });
+
+  it("finalChaserScore is guarded: rejected in the lobby and by a contestant; the Chaser's call still transitions", async () => {
+    const room = await colyseus.createRoom<GameState>("trivia", {
+      cashBuilderDurationMs: 80,
+      chaserSelectionDurationMs: 80,
+      teamFinalDurationMs: 80
+    });
+    const alice = await colyseus.connectTo(room, { playerName: "Alice" });
+    const bob = await colyseus.connectTo(room, { playerName: "Bob" });
+    await sleep(100);
+
+    alice.send("finalChaserScore");
+    await sleep(50);
+    assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
+
+    alice.send("startGame");
+    await waitForPhase(room, GamePhase.Offer);
+
+    const chaser = room.state.chaserSessionId;
+    const active = room.state.activeContestantSessionId;
+    const chaserClient = chaser === alice.sessionId ? alice : bob;
+    const activeClient = active === alice.sessionId ? alice : bob;
+
+    activeClient.send("offerChoice", { offer: "high" });
+    await waitForPhase(room, GamePhase.Chase);
+    activeClient.send("chaseResult", { escaped: true });
+    await waitForPhase(room, GamePhase.ChaserFinal);
+
+    activeClient.send("finalChaserScore");
+    await sleep(50);
+    assert.strictEqual(room.state.currentPhase, GamePhase.ChaserFinal);
+
+    chaserClient.send("finalChaserScore");
+    await waitForPhase(room, GamePhase.GameEnd);
   });
 
   it("vote mode: majority vote becomes the chaser once everyone has voted", async () => {

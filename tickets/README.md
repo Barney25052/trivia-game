@@ -46,7 +46,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 020 | Lobby screen polish — readable names, settings to the side, drop "How to Play" | done |
 | 021 | Server: roles-reveal ready gate + cash-builder cooldown | backlog |
 | 022 | Client: roles-reveal ready vote + get-ready countdown (depends 021) | backlog |
-| 023 | Authority + phase guards on offer/chase/final handlers (server) | backlog |
+| 023 | Authority + phase guards on offer/chase/final handlers (server) | done |
 | 024 | Clamp room-option duration overrides to gameConfig bounds (server) | backlog |
 | 025 | Make "random" the explicit default chaser-selection mode (kills the silent `""`) | done |
 

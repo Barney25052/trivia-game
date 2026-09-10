@@ -309,6 +309,14 @@ export class TriviaRoom extends Room {
     },
 
     offerChoice: (client: Client, message: any) => {
+      if (client.sessionId !== this.state.activeContestantSessionId) {
+        console.log(client.sessionId, "Can not choose an offer — not the active contestant!");
+        return;
+      }
+      if (this.state.currentPhase !== GamePhase.Offer) {
+        console.log(client.sessionId, "Can not choose an offer outside Offer!");
+        return;
+      }
       const offer = message?.offer as OfferTier;
       if (!OFFER_TIERS.includes(offer)) {
         console.log(client.sessionId, "Ignoring invalid offer choice:", message?.offer);
@@ -321,6 +329,14 @@ export class TriviaRoom extends Room {
     },
 
     chaseResult: (client: Client, message: any) => {
+      if (this.state.currentPhase !== GamePhase.Chase) {
+        console.log(client.sessionId, "Can not send a chase result outside Chase!");
+        return;
+      }
+      if (client.sessionId !== this.state.activeContestantSessionId) {
+        console.log(client.sessionId, "Can not send a chase result — not the active contestant!");
+        return;
+      }
       if (message?.escaped === true) {
         this.dispatch({ type: "chaseEscape" });
       } else {
@@ -329,6 +345,14 @@ export class TriviaRoom extends Room {
     },
 
     finalChaserScore: (client: Client, message: any) => {
+      if (client.sessionId !== this.state.chaserSessionId) {
+        console.log(client.sessionId, "Can not finish the final — only the Chaser can!");
+        return;
+      }
+      if (this.state.currentPhase !== GamePhase.ChaserFinal) {
+        console.log(client.sessionId, "Can not finish the final outside ChaserFinal!");
+        return;
+      }
       this.dispatch({ type: "finalChaserReachedScore" });
     }
   }
