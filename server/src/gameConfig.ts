@@ -4,8 +4,9 @@ export const CASH_BUILDER = {
 } as const;
 
 export const CHASER_SELECTION = {
-    durationMs: 30_000,
-    defaultMode: "random"
+    defaultMode: "random",
+    randomDurationMs: 8_000,
+    voteDurationMs: 30_000
 } as const;
 
 export const CHASER_POT = {

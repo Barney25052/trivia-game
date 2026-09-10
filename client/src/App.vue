@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed} from "vue";
+import { ref, computed, watch} from "vue";
 import { Client } from "@colyseus/sdk";
 import { GamePhase } from "./TriviaTypes.ts";
 import HomeScreen from "./screens/HomeScreen.vue"
 import LobbyScreen from "./screens/LobbyScreen.vue";
 import ChaserSelectionScreen from "./screens/ChaserSelectionScreen.vue";
+import ChaserWheelScreen from "./screens/ChaserWheelScreen.vue";
 import RolesRevealScreen from "./screens/RolesRevealScreen.vue";
 import CashBuilderScreen from "./screens/CashBuilderScreen.vue";
 import OfferScreen from "./screens/OfferScreen.vue";
@@ -27,6 +28,7 @@ const currentOffer = ref(null);
 const winner = ref(null);
 const hasRevealedRoles = ref(false);
 const rolesRevealOpen = ref(false);
+const wheelActive = ref(false);
 
 const currentScreen = computed(() => {
   if (!room.value) return "home";
@@ -47,6 +49,15 @@ const myPlayer = computed(() => playersMap.value?.get(room.value?.sessionId));
 const mySessionId = computed(() => room.value?.sessionId);
 const isHost = computed(() => myPlayer.value?.isHost === true);
 
+watch(
+    () => currentScreen.value,
+    (screen) => {
+        if (screen === "chaserSelection" && chaserSelectionMode.value === "random") {
+            wheelActive.value = true;
+        }
+    }
+);
+
 async function handleJoin({ playerName, roomCode }) {
   await joinLobby(playerName, roomCode);
 }
@@ -64,6 +75,7 @@ async function joinLobby(playerName, roomCode) {
 
     hasRevealedRoles.value = false;
     rolesRevealOpen.value = false;
+    wheelActive.value = false;
 
     room.value.onStateChange((newState) => {
       currentPhase.value = newState.currentPhase;
@@ -74,7 +86,7 @@ async function joinLobby(playerName, roomCode) {
       chaserSessionId.value = newState.chaserSessionId;
       teamScore.value = newState.teamScore;
 
-      if (newState.chaserSessionId && !hasRevealedRoles.value) {
+      if (newState.chaserSessionId && !hasRevealedRoles.value && chaserSelectionMode.value !== "random") {
         hasRevealedRoles.value = true;
         rolesRevealOpen.value = true;
       }
@@ -163,6 +175,17 @@ function handleLeave() {
 function closeRolesReveal() {
   rolesRevealOpen.value = false;
 }
+
+function openRolesReveal() {
+  if (hasRevealedRoles.value) return;
+  hasRevealedRoles.value = true;
+  rolesRevealOpen.value = true;
+}
+
+function handleWheelReveal() {
+  wheelActive.value = false;
+  openRolesReveal();
+}
 </script>
 
 <template>
@@ -179,8 +202,14 @@ function closeRolesReveal() {
       :room = "room"
       :chaserSelectionMode="chaserSelectionMode"
     />
+    <ChaserWheelScreen
+      v-if="wheelActive"
+      :players="players"
+      :chaserSessionId="chaserSessionId"
+      @reveal="handleWheelReveal"
+    />
     <ChaserSelectionScreen
-      v-if="currentScreen=='chaserSelection'"
+      v-if="currentScreen=='chaserSelection' && chaserSelectionMode!=='random'"
       :players="players"
       :isHost="isHost"
       :chaserSelectionMode="chaserSelectionMode"

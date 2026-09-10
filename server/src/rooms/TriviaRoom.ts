@@ -24,7 +24,7 @@ export class TriviaRoom extends Room {
   state = new GameState();
 
   cashBuilderDurationMs: number = CASH_BUILDER.durationMs;
-  chaserSelectionDurationMs: number = CHASER_SELECTION.durationMs;
+  chaserSelectionDurationMs: number | null = null;
   teamFinalDurationMs: number = FINAL_ROUND.teamDurationMs;
   chaserFinalDurationMs: number = FINAL_ROUND.chaserDurationMs;
 
@@ -125,10 +125,13 @@ export class TriviaRoom extends Room {
       switch (effect.type) {
         case "startChaserSelection": {
           const mode = this.state.chaserSelectionMode || CHASER_SELECTION.defaultMode;
+          const duration =
+            this.chaserSelectionDurationMs ??
+            (mode === "vote" ? CHASER_SELECTION.voteDurationMs : CHASER_SELECTION.randomDurationMs);
           console.log(
-            `Chaser selection in ${mode} mode — ${this.chaserSelectionDurationMs}ms to decide`
+            `Chaser selection in ${mode} mode — ${duration}ms to decide`
           );
-          this.activeTimer = scheduleTimer(this, this.chaserSelectionDurationMs, () => {
+          this.activeTimer = scheduleTimer(this, duration, () => {
             if (mode === "vote") {
               this.dispatch({
                 type: "chaserSelectionComplete",
