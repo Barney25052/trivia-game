@@ -39,3 +39,7 @@ export const FINAL_ROUND = {
     teamDurationMs: 120_000,
     chaserDurationMs: 120_000
 } as const;
+
+export const PLAYER_NAME = {
+    maxLength: 24
+} as const;

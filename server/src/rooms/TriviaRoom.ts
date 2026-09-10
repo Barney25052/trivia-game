@@ -9,7 +9,7 @@ import {
   OfferTier,
 } from "../gameFlow.js";
 import { scheduleTimer, TimerHandle } from "../timer.js";
-import { CASH_BUILDER, CHASER_SELECTION, FINAL_ROUND } from "../gameConfig.js";
+import { CASH_BUILDER, CHASER_SELECTION, FINAL_ROUND, PLAYER_NAME } from "../gameConfig.js";
 
 const OFFER_TIERS: OfferTier[] = ["low", "middle", "high"];
 
@@ -331,11 +331,20 @@ export class TriviaRoom extends Room {
   }
 
   onJoin (client: Client, options: any) {
-    var newPlayer = new GamePlayer();
-    newPlayer.name = options.playerName;
+    const name = typeof options?.playerName === "string" ? options.playerName.trim() : "";
+    if (name.length === 0 || name.length > PLAYER_NAME.maxLength) {
+      console.log(
+        `Rejected join: invalid playerName (length ${name.length}) for room ${this.roomId}`
+      );
+      throw new Error(
+        `Invalid playerName: must be 1-${PLAYER_NAME.maxLength} characters after trimming`
+      );
+    }
+    const newPlayer = new GamePlayer();
+    newPlayer.name = name;
     newPlayer.sessionId = client.sessionId;
     newPlayer.role = PlayerRole.Contestant;
-    if(this.state.players.size == 0) {
+    if (this.state.players.size === 0) {
       newPlayer.isHost = true;
     }
     this.state.players.set(client.sessionId, newPlayer);
