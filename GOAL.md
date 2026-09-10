@@ -9,7 +9,7 @@ Build an online **asymmetric trivia game** inspired by *The Chase*: one player i
 Current tech foundation (to be extended):
 - **Server**: Colyseus 0.17 (TypeScript) in `server/` — authoritative state, timers, and scoring.
 - **Client**: Vue 3 + Vite + Colyseus SDK in `client/`.
-- **Questions**: multiple-choice from opentdb.com; **open-ended from a custom free-text question bank** we own (see "Question bank" below).
+- **Questions**: both open-ended and multiple-choice come from **our own question bank** (no opentdb at runtime — see "Question bank" below).
 
 ## Game rules
 
@@ -50,8 +50,9 @@ Repeat cash builder + offer + chase for every contestant.
 - If the Chaser **reaches/passes the team's score** → Chaser wins. If the Chaser **runs out of time first** → the team wins.
 
 ### Question bank
-- **Open-ended** questions (cash builder + final) come from a **custom free-text question bank** we maintain (e.g. a JSON file loaded by the server; server checks typed answers — decide whether answers are exact-match or lenient later).
-- **Multiple-choice** (board chase) comes from opentdb (`type=multiple` gives 4 options — we'll show 3 of them; server picks the correct-index).
+- **Open-ended** questions (cash builder + final) come from a **custom free-text question bank** we maintain (a `server/data/questions.json`-style file loaded by the server; server checks typed answers — decide whether answers are exact-match or lenient later).
+- **Multiple-choice** (board chase) comes from the **same owned bank** (Phase 4 extends the format to MC: `options[]` + server-held `correctIndex`; show 3 of 4 options). **No opentdb at runtime** — decided; a local bank removes an external dependency and keeps the correct index server-only until reveal. The loader sits behind a thin get-questions interface so the source can swap later.
+- **Storage**: file-based (JSON) for now. If a DB is ever warranted (large curated set, admin editing, stats), **SQLite** is the planned path — a single file, zero ops, PM2-friendly, and the JSON stays the seed/export format. Not decided, parked with the question-bank-editor stretch goal.
 
 ### Compared to the TV show (reference)
 This game is adapted from the UK show *The Chase* (ITV), per official documents/discussions:
@@ -65,15 +66,15 @@ This game is adapted from the UK show *The Chase* (ITV), per official documents/
 | Final: survivors (only) answer as a team vs Chaser for an equal share of the prize fund | All players rejoin the group round; X = survivors only; fund split among survivors' team pot |
 | Team picks **two categories**, Chaser gets the other | Two parallel open-ended sets from the same bank; team picks, Chaser gets the other — neither sees theirs |
 
-Deliberate differences we keep: the Chaser is a **player** (not a pro/host), so a **Chaser pot** bounds offers; open-ended typed answers (not spoken); eliminated players rejoin the final; MC arrives via opentdb (3 options shown).
+Deliberate differences we keep: the Chaser is a **player** (not a pro/host), so a **Chaser pot** bounds offers; open-ended typed answers (not spoken); eliminated players rejoin the final; MC comes from our own bank (3 options shown).
 
 ## Current state
 
-- The room is mid-refactor from a *simpler* trivia game to the asymmetric rules above (tickets 001–024 across Phase 0/1 + follow-up). The foundation and phase wiring are in place; the game is not yet playable end-to-end.
+- The room is mid-refactor from a *simpler* trivia game to the asymmetric rules above (tickets 001–025 across Phase 0/1 + follow-up). The foundation and phase wiring are in place; the game is not yet playable end-to-end.
 - Working today (server): create/join `trivia` room; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers (`src/timer.ts`); open-ended question bank (45 free-text questions) with loader + non-repeating random picker; a **pure `gameFlow` state machine** whose `FlowEffect`s the room applies. `npm test` is green (**57** tests).
 - The room (tickets 007–008, 013) dispatches real `gameFlow` transitions: `startGame` → authoritative **chaser selection** (random or vote, host-driven) → cash builder → offer → chase, repeating per non-chaser contestant, then team final → chaser final → game end, with server-authoritative timers wired. Client has screens for the new phases (ticket 009) and `SERVER_URL` is configurable via `VITE_SERVER_URL` (ticket 010).
-- **Phase 1 (lobby & chaser selection) is done**: authoritative **chaser selection** in **random** and **vote** modes (013) plus the client screens — mode pick + vote buttons (014); role badges, a static rules panel, and a chaser-identity reveal when selection resolves (015); server-side player-name validation on join (016). Tickets 017 (deterministic `roomFlow` e2e) and 018 (TriviaTypes parity) also landed. Playtesting then surfaced follow-ups (random-mode animation, lobby legibility, reveal/ready gating) and security gaps (handler guards, option clamping) tracked as tickets 019–024 below.
-- NOT done yet (Phase 2+): no real question gameplay — the cash-builder screen is a **placeholder** (no questions, no answer checking; Phase 2), offers already flow end-to-end (client picks low/middle/high, the server transitions) but the cash-builder total that feeds the offer math is never actually earned, and the MC board-chase against opentdb isn't implemented (Phase 4). The chase/final screens are placeholders; pot/score fields exist but nothing plays through them yet.
+- **Phase 1 (lobby & chaser selection) is done**: authoritative **chaser selection** in **random** and **vote** modes (013) plus the client screens — mode pick + vote buttons (014); role badges, a static rules panel, and a chaser-identity reveal when selection resolves (015); server-side player-name validation on join (016). Tickets 017 (deterministic `roomFlow` e2e) and 018 (TriviaTypes parity) also landed. Playtesting then surfaced follow-ups (random-mode animation, lobby legibility, reveal/ready gating) and security gaps (handler guards, option clamping) tracked as tickets 019–025 below.
+- NOT done yet (Phase 2+): no real question gameplay — the cash-builder screen is a **placeholder** (no questions, no answer checking; Phase 2), offers already flow end-to-end (client picks low/middle/high, the server transitions) but the cash-builder total that feeds the offer math is never actually earned, and the MC board-chase isn't implemented (Phase 4 — comes from our own bank, opentdb dropped by decision). The chase/final screens are placeholders; pot/score fields exist but nothing plays through them yet.
 - Ticket 012 (done) removed template/legacy cruft: `MyRoom` → `TriviaRoom`, dropped the dead `Question`/`Answer` game phases and `Question`/`QuestionInstance` schema classes, and renamed the server package to `trivia-server`.
 
 ## Plan
@@ -114,6 +115,7 @@ Found on the first playthrough + security review; tracked as tickets (no BUGS.md
 - [ ] High/low multiplier strategy visible to the Chaser (pot remaining)
 
 ### Phase 4 — The board chase
+- [ ] Extend the question bank to multiple-choice (`options[]` + server-held `correctIndex`, loaded like the open-ended bank) — no opentdb at runtime
 - [ ] 7-space board; contestant starts 4/5/6 per offer; Chaser starts at 8 (off board, first correct → 7)
 - [ ] 3-option MC questions; 5-second timer once one side answers
 - [ ] **Both sides may advance on a correct answer** in the same question
@@ -127,7 +129,7 @@ Found on the first playthrough + security review; tracked as tickets (no BUGS.md
 ### Phase 6 — Hardening & config
 - [ ] Configurable values (durations, money, offer multipliers), SERVER_URL not hardcoded
 - [ ] Fix/remove stale tests; real server tests for the state machine
-- [ ] Graceful opentdb/question-bank failure handling
+- [ ] Graceful question-bank failure handling (missing/corrupt data — no runtime external dependency to fail)
 - [ ] Deployment: PM2 build + serving client from the server; protect `/monitor` with auth; TLS/wss behind a reverse proxy; cap rooms/connections/message rate (see AGENTS.md "Security")
 - [ ] Handler authority + room-option clamping (tickets 023–024), plus abuse caps above
 
@@ -139,7 +141,7 @@ Found on the first playthrough + security review; tracked as tickets (no BUGS.md
 - [ ] **Dead-player: taunt bar** — eliminated players blast quick emotes/taunts at the active player or the Chaser ("OOH!", "BOO!", skull, laugh) through the same corner/bench panel. Pure banter, zero game impact.
 - [ ] **Dead-player: prediction pool** — eliminated players gamble *candy points* (fun-only currency) on offer picks, escape-vs-caught, and the final winner; the results screen shows a "most candy earned" leaderboard for bragging rights. Effect-free stakes that keep the bench invested in every round.
 - [ ] **Dead-player: ghost scoreboard** — eliminated (and waiting) players keep answering live questions anyway; their picks accumulate into a personal ghost score, and a board shows how well you'd have done vs everyone else. Counts for nothing; pure bragging rights. (MC questions → pick an option; open-ended ones → they can type too.)
-- [ ] **Question-bank editor**: an admin panel or a small standalone Python program (matches the `api-test.py` precedent at repo root) with an easy interface for adding/editing questions in `server/data/questions.json` (`{ questions: [{ id, category, question, answer }] }`) instead of hand-editing the JSON. Useful extras: duplicate-id/empty-field validation, category browsing, and a quick "answer matches?" preview.
+- [ ] **Question-bank editor**: an admin panel or a small standalone Python program (matches the `api-test.py` precedent at repo root) with an easy interface for adding/editing open-ended *and* multiple-choice questions in `server/data/questions.json` instead of hand-editing the JSON. Useful extras: duplicate-id/empty-field validation, category browsing, and a quick "answer matches?" preview. If storage moves to SQLite later, the JSON stays the seed/export format.
 - [ ] **Deferred, officials-tier (revisit when the base game is fun)**: human **judge panel** for lenient open-ended answers (possibly all open-ended rounds) and crowd **boosters/curses**. Both would give eliminated players *real* power; parked on flow/balance grounds for now. (The judge panel also ties into open question #2.)
 - [ ] **Host reconnection**: if the host's connection drops mid-game, let them reconnect within a grace window (e.g. Colyseus `allowReconnection` + a "host left, waiting…" state) instead of kicking everyone. Regular player reload = **forfeit seat** (rejoin as spectator / next round) — we deliberately keep identities `sessionId`-ephemeral and add no durable player accounts.
 

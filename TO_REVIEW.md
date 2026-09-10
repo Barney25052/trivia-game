@@ -7,8 +7,13 @@ Judgment calls a human should look over. End-of-phase reviewers append architect
 - **Why it matters**: the lasting impact or direction to watch.
 - **Status**: `open` (reviewer-added, awaiting you) or `decided` (you've read it — add a note: GOAL update, ticket number, or parked).
 
-Append, don't rewrite. Keep entries short, specific, and high-signal — a long dump is noise.
+Append, don't rewrite. Keep entries short, specific, and high-signal — a long dump is noise. Human readable!!!
 
-| Where | What | Why it matters | Status |
-|-------|------|----------------|--------|
-| _(add rows — see HUMAN_TASKS.md/BUGS.md for the repo's table style)_ | | | |
+Add entries like so:
+
+1.  WHAT:
+    WHERE: 
+    WHY:
+    STATUS: 
+
+----------- TO REVIEW -------------------
