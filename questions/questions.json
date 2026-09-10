@@ -1,0 +1,2899 @@
+{
+  "questions": [
+    {
+      "id": 1591,
+      "category": "general trivia",
+      "question": "What name is given to a large enclosed space used for public games or performances in Roman times?",
+      "answer": "Amphitheater",
+      "alternatives": [
+        "amphitheatre"
+      ]
+    },
+    {
+      "id": 1592,
+      "category": "technology",
+      "question": "What is the standard binary unit of digital information made up of eight bits?",
+      "answer": "Byte",
+      "alternatives": []
+    },
+    {
+      "id": 1593,
+      "category": "fashion",
+      "question": "Which designer is famous for the women’s trouser suit that challenged traditional office wear?",
+      "answer": "Yves Saint Laurent",
+      "alternatives": [
+        "Saint Laurent",
+        "YSL"
+      ]
+    },
+    {
+      "id": 1594,
+      "category": "geography",
+      "question": "Which South American lake is shared by Peru and Bolivia and sits at high altitude?",
+      "answer": "Lake Titicaca",
+      "alternatives": [
+        "Titicaca"
+      ]
+    },
+    {
+      "id": 1595,
+      "category": "history",
+      "question": "Which reform movement in the 16th century challenged the authority of the Catholic Church in Europe?",
+      "answer": "Reformation",
+      "alternatives": [
+        "Protestant Reformation"
+      ]
+    },
+    {
+      "id": 1596,
+      "category": "general trivia",
+      "question": "What is the term for a deliberate misleading clue or trace used to divert attention?",
+      "answer": "Red herring",
+      "alternatives": []
+    },
+    {
+      "id": 1597,
+      "category": "sport",
+      "question": "In football, what is the term for a defender stationed directly in front of the goalkeeper?",
+      "answer": "Sweeper",
+      "alternatives": []
+    },
+    {
+      "id": 1598,
+      "category": "fashion",
+      "question": "Which type of collar, often seen on formal shirts, is folded over and pressed flat?",
+      "answer": "Point collar",
+      "alternatives": [
+        "collar"
+      ]
+    },
+    {
+      "id": 1599,
+      "category": "theater",
+      "question": "Which Shakespeare tragedy features a Roman general who destroys a captive queen's family?",
+      "answer": "Titus Andronicus",
+      "alternatives": []
+    },
+    {
+      "id": 1600,
+      "category": "geography",
+      "question": "Which African city is the administrative capital of South Africa?",
+      "answer": "Pretoria",
+      "alternatives": []
+    },
+    {
+      "id": 1601,
+      "category": "language",
+      "question": "What is the figure of speech where a phrase describes something by saying it is something else?",
+      "answer": "Metaphor",
+      "alternatives": []
+    },
+    {
+      "id": 1602,
+      "category": "fashion",
+      "question": "What material is denim traditionally made from?",
+      "answer": "Cotton",
+      "alternatives": []
+    },
+    {
+      "id": 1603,
+      "category": "science",
+      "question": "Which part of a flower develops into the seed-bearing fruit after fertilization?",
+      "answer": "Ovary",
+      "alternatives": []
+    },
+    {
+      "id": 1604,
+      "category": "technology",
+      "question": "What programming language, named after a British mathematician, is widely used for statistical analysis?",
+      "answer": "R",
+      "alternatives": []
+    },
+    {
+      "id": 1605,
+      "category": "movies/TV",
+      "question": "Which 1990 film follows a Chicago mobster's wife and her suburban unraveling?",
+      "answer": "Goodfellas",
+      "alternatives": [
+        "Good Fellas"
+      ]
+    },
+    {
+      "id": 1606,
+      "category": "music",
+      "question": "Which jazz pianist led the Second Great Quintet before becoming a fusion pioneer?",
+      "answer": "Herbie Hancock",
+      "alternatives": [
+        "Hancock"
+      ]
+    },
+    {
+      "id": 1607,
+      "category": "sport",
+      "question": "What is the term for a score of one over par on a hole in golf?",
+      "answer": "Bogey",
+      "alternatives": []
+    },
+    {
+      "id": 1608,
+      "category": "religion",
+      "question": "Which religion centers its scripture on the Guru Granth Sahib?",
+      "answer": "Sikhism",
+      "alternatives": [
+        "Sikh religion"
+      ]
+    },
+    {
+      "id": 1609,
+      "category": "general trivia",
+      "question": "What is the name for a final, decisive point in a game of chess?",
+      "answer": "Checkmate",
+      "alternatives": []
+    },
+    {
+      "id": 1610,
+      "category": "geography",
+      "question": "Which country is home to the Atacama Desert?",
+      "answer": "Chile",
+      "alternatives": []
+    },
+    {
+      "id": 1611,
+      "category": "music",
+      "question": "Which German composer wrote the Brandenburg Concertos?",
+      "answer": "J S Bach",
+      "alternatives": [
+        "Johann Sebastian Bach",
+        "Bach"
+      ]
+    },
+    {
+      "id": 1612,
+      "category": "history",
+      "question": "Which 1688 political event removed James II and brought William and Mary to power?",
+      "answer": "Glorious Revolution",
+      "alternatives": [
+        "The Glorious Revolution"
+      ]
+    },
+    {
+      "id": 1613,
+      "category": "general trivia",
+      "question": "What everyday object is traditionally opened to reveal a surprise answer or joke?",
+      "answer": "Fortune cookie",
+      "alternatives": [
+        "cookie"
+      ]
+    },
+    {
+      "id": 1614,
+      "category": "music",
+      "question": "Which jazz pianist led the album 'Kind of Blue' with Miles Davis?",
+      "answer": "Bill Evans",
+      "alternatives": [
+        "Evans"
+      ]
+    },
+    {
+      "id": 1615,
+      "category": "art",
+      "question": "Which style, emphasizing emotion and movement, is associated with Delacroix and Goya?",
+      "answer": "Romanticism",
+      "alternatives": []
+    },
+    {
+      "id": 1616,
+      "category": "geography",
+      "question": "Which Baltic capital is famous for its medieval old town and was once a Hanseatic port?",
+      "answer": "Tallinn",
+      "alternatives": []
+    },
+    {
+      "id": 1617,
+      "category": "history",
+      "question": "Which 1066 battle is usually taken as the start of Norman rule in England?",
+      "answer": "Hastings",
+      "alternatives": [
+        "Battle of Hastings"
+      ]
+    },
+    {
+      "id": 1618,
+      "category": "mythology",
+      "question": "Which goddess rules love, beauty, and desire in Roman mythology?",
+      "answer": "Venus",
+      "alternatives": []
+    },
+    {
+      "id": 1619,
+      "category": "general trivia",
+      "question": "What object is used to write with liquid ink from a metal nib?",
+      "answer": "Fountain pen",
+      "alternatives": [
+        "pen"
+      ]
+    },
+    {
+      "id": 1620,
+      "category": "politics",
+      "question": "What is the legislative assembly of the European Union that is directly elected by citizens?",
+      "answer": "European Parliament",
+      "alternatives": [
+        "EU Parliament",
+        "Parliament"
+      ]
+    },
+    {
+      "id": 1621,
+      "category": "art",
+      "question": "Which sculpture by Rodin shows three large figures agonizing at a gateway?",
+      "answer": "The Gates of Hell",
+      "alternatives": [
+        "Gates of Hell"
+      ]
+    },
+    {
+      "id": 1622,
+      "category": "general trivia",
+      "question": "What small glass object is traditionally shaken to show whether a sentence is true or false?",
+      "answer": "Truth meter",
+      "alternatives": [
+        "lie detector"
+      ]
+    },
+    {
+      "id": 1623,
+      "category": "music",
+      "question": "What 12-bar form became a foundation of early blues and rock music?",
+      "answer": "Blues progression",
+      "alternatives": [
+        "12-bar blues",
+        "twelve-bar blues"
+      ]
+    },
+    {
+      "id": 1624,
+      "category": "history",
+      "question": "What 18th-century revolt led to the creation of modern Haiti?",
+      "answer": "Haitian Revolution",
+      "alternatives": [
+        "Revolution of Haiti"
+      ]
+    },
+    {
+      "id": 1625,
+      "category": "sport",
+      "question": "In football, what is awarded for a foul inside the penalty area?",
+      "answer": "Penalty",
+      "alternatives": [
+        "Penalty kick"
+      ]
+    },
+    {
+      "id": 1626,
+      "category": "technology",
+      "question": "What term describes secretly blocking or limiting internet traffic by authorities?",
+      "answer": "Censorship",
+      "alternatives": [
+        "Internet censorship"
+      ]
+    },
+    {
+      "id": 1627,
+      "category": "theater",
+      "question": "Which Henrik Ibsen play ends with Nora leaving her family?",
+      "answer": "A Dolls House",
+      "alternatives": [
+        "A Doll's House",
+        "Dolls House"
+      ]
+    },
+    {
+      "id": 1628,
+      "category": "architecture",
+      "question": "Which medieval defensive structure was designed as a square fort with high walls and corner towers?",
+      "answer": "Keep",
+      "alternatives": [
+        "Fortified tower"
+      ]
+    },
+    {
+      "id": 1629,
+      "category": "general trivia",
+      "question": "What word means a game result with no winner, especially in chess or sport?",
+      "answer": "Draw",
+      "alternatives": [
+        "Tie"
+      ]
+    },
+    {
+      "id": 1630,
+      "category": "technology",
+      "question": "What term describes a self-contained software package that can run consistently across systems?",
+      "answer": "Container",
+      "alternatives": [
+        "Software container"
+      ]
+    },
+    {
+      "id": 1631,
+      "category": "science",
+      "question": "What astronomical feature is the visible band of stars across our night sky called?",
+      "answer": "Milky Way",
+      "alternatives": [
+        "the Milky Way"
+      ]
+    },
+    {
+      "id": 1632,
+      "category": "history",
+      "question": "Which 1789 event marked the famous storming of a Paris fortress?",
+      "answer": "Bastille",
+      "alternatives": [
+        "the Bastille",
+        "Bastille prison"
+      ]
+    },
+    {
+      "id": 1633,
+      "category": "technology",
+      "question": "What does DNA stand for in biology?",
+      "answer": "Deoxyribonucleic acid",
+      "alternatives": [
+        "DNA"
+      ]
+    },
+    {
+      "id": 1634,
+      "category": "food/drink",
+      "question": "What thin French pancake can be filled with sweet or savory ingredients?",
+      "answer": "Crepe",
+      "alternatives": [
+        "crêpe",
+        "crepes",
+        "crêpes"
+      ]
+    },
+    {
+      "id": 1635,
+      "category": "games",
+      "question": "In chess, what is it called when a player has no legal move and is not in check?",
+      "answer": "Stalemate",
+      "alternatives": []
+    },
+    {
+      "id": 1636,
+      "category": "general trivia",
+      "question": "What paper or parchment roll was used in ancient times to store writing?",
+      "answer": "Scroll",
+      "alternatives": []
+    },
+    {
+      "id": 1637,
+      "category": "history",
+      "question": "Which 19th-century uprising briefly established a republic in Paris after the Franco-Prussian War?",
+      "answer": "Paris Commune",
+      "alternatives": [
+        "Commune of Paris"
+      ]
+    },
+    {
+      "id": 1638,
+      "category": "art",
+      "question": "Which sculptor created the steel mobiles and stabiles later associated with modern kinetic art?",
+      "answer": "Alexander Calder",
+      "alternatives": [
+        "Calder",
+        "Alex Calder"
+      ]
+    },
+    {
+      "id": 1639,
+      "category": "technology",
+      "question": "What does the abbreviation GPU stand for?",
+      "answer": "Graphics processing unit",
+      "alternatives": [
+        "Graphics Processor Unit"
+      ]
+    },
+    {
+      "id": 1640,
+      "category": "architecture",
+      "question": "What architectural feature is an upper projecting story supported from below?",
+      "answer": "Jetty",
+      "alternatives": []
+    },
+    {
+      "id": 1641,
+      "category": "geography",
+      "question": "Which river forms much of the border between England and Scotland?",
+      "answer": "Tweed",
+      "alternatives": [
+        "River Tweed"
+      ]
+    },
+    {
+      "id": 1642,
+      "category": "music",
+      "question": "Which composer wrote the “Brandenburg Concertos”?",
+      "answer": "Johann Sebastian Bach",
+      "alternatives": [
+        "J S Bach",
+        "Bach",
+        "Johann Bach"
+      ]
+    },
+    {
+      "id": 1643,
+      "category": "architecture",
+      "question": "What term describes the circular projecting window seen in Gothic churches?",
+      "answer": "Oriel",
+      "alternatives": []
+    },
+    {
+      "id": 1644,
+      "category": "mythology",
+      "question": "Which creature in Greek myth is half man and half bull?",
+      "answer": "Minotaur",
+      "alternatives": []
+    },
+    {
+      "id": 1645,
+      "category": "technology",
+      "question": "What is the common name for wireless local area networking based on IEEE 802.11?",
+      "answer": "Wi-Fi",
+      "alternatives": [
+        "Wifi",
+        "Wireless LAN"
+      ]
+    },
+    {
+      "id": 1646,
+      "category": "history",
+      "question": "Which 18th-century Scottish economist wrote about the invisible hand and free markets in The Wealth of Nations?",
+      "answer": "Adam Smith",
+      "alternatives": [
+        "Smith"
+      ]
+    },
+    {
+      "id": 1647,
+      "category": "science",
+      "question": "What is the name of the outermost layer of Earth's atmosphere, where particles can escape into space?",
+      "answer": "Exosphere",
+      "alternatives": []
+    },
+    {
+      "id": 1648,
+      "category": "music",
+      "question": "Which device is used to change the pitch of a violin by shortening the vibrating string?",
+      "answer": "Fingerboard",
+      "alternatives": []
+    },
+    {
+      "id": 1649,
+      "category": "technology",
+      "question": "What type of computer memory loses its contents when power is switched off?",
+      "answer": "Volatile memory",
+      "alternatives": [
+        "RAM"
+      ]
+    },
+    {
+      "id": 1650,
+      "category": "music",
+      "question": "Which brass instrument has a wide conical bore and is larger than a trumpet but smaller than a tuba?",
+      "answer": "Euphonium",
+      "alternatives": []
+    },
+    {
+      "id": 1651,
+      "category": "general trivia",
+      "question": "What common household object gives a quick steadying base to a table with an uneven leg?",
+      "answer": "Wedge",
+      "alternatives": []
+    },
+    {
+      "id": 1652,
+      "category": "literature",
+      "question": "Which American author created the novella The Old Man and the Sea?",
+      "answer": "Ernest Hemingway",
+      "alternatives": [
+        "Hemingway"
+      ]
+    },
+    {
+      "id": 1653,
+      "category": "geography",
+      "question": "Which capital city lies on the banks of the Danube and the Aare?",
+      "answer": "Vienna",
+      "alternatives": [
+        "Wien"
+      ]
+    },
+    {
+      "id": 1654,
+      "category": "general trivia",
+      "question": "What is the name for the protective outer covering of an egg?",
+      "answer": "Shell",
+      "alternatives": []
+    },
+    {
+      "id": 1655,
+      "category": "music",
+      "question": "What is the common name for a three-note chord built from every other note?",
+      "answer": "Triad",
+      "alternatives": []
+    },
+    {
+      "id": 1656,
+      "category": "history",
+      "question": "Which English queen had the shortest reign of any monarch in British history, lasting just nine days?",
+      "answer": "Lady Jane Grey",
+      "alternatives": [
+        "Jane Grey",
+        "Grey"
+      ]
+    },
+    {
+      "id": 1657,
+      "category": "sport",
+      "question": "In athletics, what race begins with the athletes crouched in starting blocks over 100 or 200 meters?",
+      "answer": "Sprint",
+      "alternatives": [
+        "sprint race"
+      ]
+    },
+    {
+      "id": 1658,
+      "category": "general trivia",
+      "question": "What kind of knot is typically used to secure a rope around a post or ring with one quick loop?",
+      "answer": "Slip knot",
+      "alternatives": [
+        "slipknot"
+      ]
+    },
+    {
+      "id": 1659,
+      "category": "science",
+      "question": "What do you call the mechanism in living organisms that keeps internal conditions stable?",
+      "answer": "Homeostasis",
+      "alternatives": []
+    },
+    {
+      "id": 1660,
+      "category": "literature",
+      "question": "Which novel opens with a character traveling to the Congo to find Kurtz?",
+      "answer": "Heart of Darkness",
+      "alternatives": [
+        "Heart Darkness"
+      ]
+    },
+    {
+      "id": 1661,
+      "category": "geography",
+      "question": "Which country is home to the ancient cliff city of Petra?",
+      "answer": "Jordan",
+      "alternatives": []
+    },
+    {
+      "id": 1662,
+      "category": "history",
+      "question": "Which empire was ruled from Cairo by the Mamluks?",
+      "answer": "Mamluk Sultanate",
+      "alternatives": [
+        "Mamluk Egypt",
+        "the Mamluks"
+      ]
+    },
+    {
+      "id": 1663,
+      "category": "literature",
+      "question": "Who wrote the novel about the Cape Cod whaling voyage led by Captain Ahab?",
+      "answer": "Herman Melville",
+      "alternatives": [
+        "Melville",
+        "Herman Melville"
+      ]
+    },
+    {
+      "id": 1664,
+      "category": "art",
+      "question": "Which Japanese printmaker created the wave print famously showing a huge curling breaker?",
+      "answer": "Hokusai",
+      "alternatives": [
+        "Katsushika Hokusai",
+        "Hokusai"
+      ]
+    },
+    {
+      "id": 1665,
+      "category": "sport",
+      "question": "What is the name of the scoreless act of taking down all ten pins on the first ball?",
+      "answer": "Strike",
+      "alternatives": []
+    },
+    {
+      "id": 1666,
+      "category": "politics",
+      "question": "What is the elected lower house of the parliament in Australia?",
+      "answer": "House of Representatives",
+      "alternatives": [
+        "Australian House of Representatives",
+        "the House of Representatives"
+      ]
+    },
+    {
+      "id": 1667,
+      "category": "fashion",
+      "question": "Which luxury Italian fashion house was founded by Giorgio Armani?",
+      "answer": "Armani",
+      "alternatives": [
+        "Giorgio Armani",
+        "Armani"
+      ]
+    },
+    {
+      "id": 1668,
+      "category": "science",
+      "question": "What term describes the cell’s process of taking in fluid by forming tiny vesicles?",
+      "answer": "Pinocytosis",
+      "alternatives": []
+    },
+    {
+      "id": 1669,
+      "category": "history",
+      "question": "Which 19th-century conflict was fought in South Africa between Britain and the Boer republics?",
+      "answer": "Boer War",
+      "alternatives": [
+        "Second Boer War",
+        "the Boer War"
+      ]
+    },
+    {
+      "id": 1670,
+      "category": "technology",
+      "question": "What does the acronym BIOS stand for in computing?",
+      "answer": "Basic Input Output System",
+      "alternatives": [
+        "Basic Input/Output System",
+        "BIOS"
+      ]
+    },
+    {
+      "id": 1671,
+      "category": "general trivia",
+      "question": "What is the common name for a hand tool used to tighten screws with a slot head?",
+      "answer": "Screwdriver",
+      "alternatives": []
+    },
+    {
+      "id": 1672,
+      "category": "geography",
+      "question": "Which South American country contains the vast salt flat called Salar de Uyuni?",
+      "answer": "Bolivia",
+      "alternatives": []
+    },
+    {
+      "id": 1673,
+      "category": "history",
+      "question": "Which Chinese dynasty followed the Tang and preceded the Song?",
+      "answer": "Five Dynasties",
+      "alternatives": [
+        "Five Dynasties period",
+        "the Five Dynasties"
+      ]
+    },
+    {
+      "id": 1674,
+      "category": "movies/TV",
+      "question": "Which 1999 film follows a former soccer player’s long drive across the American desert with his dying brother?",
+      "answer": "The Straight Story",
+      "alternatives": [
+        "Straight Story",
+        "The Straight Story"
+      ]
+    },
+    {
+      "id": 1675,
+      "category": "fashion",
+      "question": "What term describes clothing decorated with a pattern of stitched horizontal or vertical lines?",
+      "answer": "Quilted",
+      "alternatives": []
+    },
+    {
+      "id": 1676,
+      "category": "geography",
+      "question": "Which U-shaped valley is carved by glaciers and often leaves a steep-sided mountain trough?",
+      "answer": "U-shaped valley",
+      "alternatives": [
+        "glacial valley",
+        "U valley"
+      ]
+    },
+    {
+      "id": 1677,
+      "category": "language",
+      "question": "What is the term for a word formed by joining parts of other words, like smog?",
+      "answer": "Blend",
+      "alternatives": [
+        "portmanteau"
+      ]
+    },
+    {
+      "id": 1678,
+      "category": "literature",
+      "question": "Which Irish novelist wrote Ulysses and wrote extensively about Dublin?",
+      "answer": "James Joyce",
+      "alternatives": [
+        "Joyce"
+      ]
+    },
+    {
+      "id": 1679,
+      "category": "geography",
+      "question": "Which strait separates mainland Europe from the island of Great Britain?",
+      "answer": "English Channel",
+      "alternatives": [
+        "Channel"
+      ]
+    },
+    {
+      "id": 1680,
+      "category": "food/drink",
+      "question": "Which French sauce is made by emulsifying butter into white wine and vinegar reduction?",
+      "answer": "Buerre blanc",
+      "alternatives": [
+        "beurre blanc"
+      ]
+    },
+    {
+      "id": 1681,
+      "category": "geography",
+      "question": "Which Asian peninsula contains most of modern-day South Korea and North Korea?",
+      "answer": "Korean Peninsula",
+      "alternatives": [
+        "Korea"
+      ]
+    },
+    {
+      "id": 1682,
+      "category": "theater",
+      "question": "Which musical follows Maria and the von Trapp family in Austria?",
+      "answer": "The Sound of Music",
+      "alternatives": [
+        "Sound of Music"
+      ]
+    },
+    {
+      "id": 1683,
+      "category": "food/drink",
+      "question": "Which grain is the main ingredient in traditional Japanese sake?",
+      "answer": "Rice",
+      "alternatives": []
+    },
+    {
+      "id": 1684,
+      "category": "technology",
+      "question": "What do you call a webpage address entered in a browser?",
+      "answer": "URL",
+      "alternatives": [
+        "web address"
+      ]
+    },
+    {
+      "id": 1685,
+      "category": "food/drink",
+      "question": "Which Italian soup is traditionally made with stale bread, tomatoes, and vegetables?",
+      "answer": "Pappa al pomodoro",
+      "alternatives": [
+        "pappa pomodoro"
+      ]
+    },
+    {
+      "id": 1686,
+      "category": "literature",
+      "question": "Which novel opens with the line about a house with a thousand rooms, and follows the Morel family?",
+      "answer": "One Hundred Years of Solitude",
+      "alternatives": [
+        "100 Years of Solitude"
+      ]
+    },
+    {
+      "id": 1687,
+      "category": "general trivia",
+      "question": "What is the term for a legal agreement that ends a dispute between sides?",
+      "answer": "Settlement",
+      "alternatives": []
+    },
+    {
+      "id": 1688,
+      "category": "geography",
+      "question": "Which European capital is split by the River Danube and known for its thermal baths?",
+      "answer": "Budapest",
+      "alternatives": []
+    },
+    {
+      "id": 1689,
+      "category": "literature",
+      "question": "Which English novelist wrote Wuthering Heights?",
+      "answer": "Emily Bronte",
+      "alternatives": [
+        "Emily Brontë",
+        "Bronte"
+      ]
+    },
+    {
+      "id": 1690,
+      "category": "history",
+      "question": "Which Russian ruler was known as 'the Terrible' and became the first Tsar?",
+      "answer": "Ivan the Terrible",
+      "alternatives": [
+        "Ivan IV",
+        "Ivan IV of Russia"
+      ]
+    },
+    {
+      "id": 1691,
+      "category": "music",
+      "question": "Which Brazilian genre is strongly associated with Jobim and Bossa Nova?",
+      "answer": "Bossa Nova",
+      "alternatives": [
+        "bossa"
+      ]
+    },
+    {
+      "id": 1692,
+      "category": "literature",
+      "question": "Who wrote The Canterbury Tales?",
+      "answer": "Geoffrey Chaucer",
+      "alternatives": [
+        "Chaucer"
+      ]
+    },
+    {
+      "id": 1693,
+      "category": "art",
+      "question": "Which artist created the sculpture Bird in Space?",
+      "answer": "Constantin Brancusi",
+      "alternatives": [
+        "Brancusi",
+        "Constantin Brancuși"
+      ]
+    },
+    {
+      "id": 1694,
+      "category": "science",
+      "question": "What term describes a plant or animal cell taking in fluid by engulfing it with its membrane?",
+      "answer": "Endocytosis",
+      "alternatives": []
+    },
+    {
+      "id": 1695,
+      "category": "history",
+      "question": "Which 18th-century treaty ended the War of the Spanish Succession and ceded Gibraltar to Britain?",
+      "answer": "Treaty of Utrecht",
+      "alternatives": [
+        "Utrecht Treaty"
+      ]
+    },
+    {
+      "id": 1696,
+      "category": "music",
+      "question": "What jazz standard, famous for its repeated riff, is associated with Miles Davis and Thelonious Monk?",
+      "answer": "Round Midnight",
+      "alternatives": [
+        "'Round Midnight",
+        "Round About Midnight"
+      ]
+    },
+    {
+      "id": 1697,
+      "category": "geography",
+      "question": "Which European capital sits on the banks of the Tagus River near the Atlantic Ocean?",
+      "answer": "Lisbon",
+      "alternatives": []
+    },
+    {
+      "id": 1698,
+      "category": "movies/TV",
+      "question": "Which sitcom is set in the fictional New York apartment building where Jerry and friends live?",
+      "answer": "Seinfeld",
+      "alternatives": []
+    },
+    {
+      "id": 1699,
+      "category": "general trivia",
+      "question": "What seven-letter word means a perfectly round shape in geometry?",
+      "answer": "Circle",
+      "alternatives": []
+    },
+    {
+      "id": 1700,
+      "category": "history",
+      "question": "Which conflict in 1410 ended with the defeat of the Teutonic Knights at Grunwald?",
+      "answer": "Battle of Grunwald",
+      "alternatives": [
+        "Grunwald"
+      ]
+    },
+    {
+      "id": 1701,
+      "category": "food/drink",
+      "question": "Which small Japanese dish is vinegared rice topped with fish or seafood?",
+      "answer": "Nigiri",
+      "alternatives": [
+        "sushi nigiri"
+      ]
+    },
+    {
+      "id": 1702,
+      "category": "theater",
+      "question": "What is the name of the raised area in a theatre where the performance happens?",
+      "answer": "Stage",
+      "alternatives": []
+    },
+    {
+      "id": 1703,
+      "category": "history",
+      "question": "Which wartime leader was known as 'The Lion of the Desert' in Libya?",
+      "answer": "Omar Mukhtar",
+      "alternatives": [
+        "Mukhtar"
+      ]
+    },
+    {
+      "id": 1704,
+      "category": "music",
+      "question": "What term means the note or chord that comes after the tonic in a scale?",
+      "answer": "Supertonic",
+      "alternatives": []
+    },
+    {
+      "id": 1705,
+      "category": "geography",
+      "question": "Which sea lies between Italy and the Balkan Peninsula and includes the Adriatic basin?",
+      "answer": "Adriatic Sea",
+      "alternatives": [
+        "Adriatic"
+      ]
+    },
+    {
+      "id": 1706,
+      "category": "history",
+      "question": "Which Russian dynasty ruled before the Romanovs and was overthrown in 1598?",
+      "answer": "Rurikids",
+      "alternatives": [
+        "Rurik dynasty",
+        "Rurik"
+      ]
+    },
+    {
+      "id": 1707,
+      "category": "technology",
+      "question": "What file format became a universal way to share documents while preserving layout?",
+      "answer": "PDF",
+      "alternatives": [
+        "Portable Document Format"
+      ]
+    },
+    {
+      "id": 1708,
+      "category": "movies/TV",
+      "question": "Which film follows a retired boxer from Philadelphia as he gets an unlikely title shot?",
+      "answer": "Rocky",
+      "alternatives": []
+    },
+    {
+      "id": 1709,
+      "category": "science",
+      "question": "What branch of physics explains motion and forces at the level of atoms and particles?",
+      "answer": "Quantum mechanics",
+      "alternatives": [
+        "quantum theory"
+      ]
+    },
+    {
+      "id": 1710,
+      "category": "general trivia",
+      "question": "What common household object is traditionally used as a marker for keeping a place in a book?",
+      "answer": "Bookmark",
+      "alternatives": [
+        "book marker"
+      ]
+    },
+    {
+      "id": 1711,
+      "category": "games",
+      "question": "What chess opening begins with the moves 1.e4 e5 2.Nf3 Nc6 3.Bb5?",
+      "answer": "Ruy Lopez",
+      "alternatives": [
+        "Spanish Opening",
+        "Ruy Lopez Opening"
+      ]
+    },
+    {
+      "id": 1712,
+      "category": "geography",
+      "question": "Which city is crossed by the River Seine and is famous for the Louvre and Notre-Dame?",
+      "answer": "Paris",
+      "alternatives": []
+    },
+    {
+      "id": 1713,
+      "category": "music",
+      "question": "Which brass instrument is larger than a euphonium and often has a deep, mellow tone?",
+      "answer": "Tuba",
+      "alternatives": []
+    },
+    {
+      "id": 1714,
+      "category": "games",
+      "question": "In card games, what is a hand with no trump cards in bridge often called?",
+      "answer": "Void",
+      "alternatives": []
+    },
+    {
+      "id": 1715,
+      "category": "science",
+      "question": "What device converts chemical energy into electrical energy using a pair of electrodes?",
+      "answer": "Battery",
+      "alternatives": [
+        "cell"
+      ]
+    },
+    {
+      "id": 1716,
+      "category": "science",
+      "question": "What is the line of equal atmospheric pressure shown on weather maps?",
+      "answer": "Isobar",
+      "alternatives": []
+    },
+    {
+      "id": 1717,
+      "category": "geography",
+      "question": "Which African capital sits on a site once known for three hills and a lake?",
+      "answer": "Kigali",
+      "alternatives": []
+    },
+    {
+      "id": 1718,
+      "category": "music",
+      "question": "Which device lets a keyboard player sustain notes after releasing the keys?",
+      "answer": "Sustain pedal",
+      "alternatives": [
+        "pedal"
+      ]
+    },
+    {
+      "id": 1719,
+      "category": "food/drink",
+      "question": "Which fermented soybean paste is central to many Korean soups and stews?",
+      "answer": "Doenjang",
+      "alternatives": []
+    },
+    {
+      "id": 1720,
+      "category": "history",
+      "question": "Which 1791 document granted civil rights to Jews in revolutionary France?",
+      "answer": "French Constitution",
+      "alternatives": [
+        "Constitution of 1791"
+      ]
+    },
+    {
+      "id": 1721,
+      "category": "general trivia",
+      "question": "What is the small decorative ball on a hat or cap called?",
+      "answer": "Pom pom",
+      "alternatives": [
+        "pompom"
+      ]
+    },
+    {
+      "id": 1722,
+      "category": "food/drink",
+      "question": "Which pungent sauce, made from fish fermented in salt, is common in Southeast Asia?",
+      "answer": "Fish sauce",
+      "alternatives": []
+    },
+    {
+      "id": 1723,
+      "category": "movies/TV",
+      "question": "Which animated film features a young prince and a flying demon named Calcifer?",
+      "answer": "Howl's Moving Castle",
+      "alternatives": [
+        "Howls Moving Castle"
+      ]
+    },
+    {
+      "id": 1724,
+      "category": "politics",
+      "question": "What body of the United Nations includes all member states?",
+      "answer": "General Assembly",
+      "alternatives": [
+        "UN General Assembly"
+      ]
+    },
+    {
+      "id": 1725,
+      "category": "architecture",
+      "question": "Which roof feature rises in a series of steps or tiers above a church tower?",
+      "answer": "Stepped gable",
+      "alternatives": [
+        "crow-stepped gable"
+      ]
+    },
+    {
+      "id": 1726,
+      "category": "movies/TV",
+      "question": "Which film follows a jazz pianist and an actress through Los Angeles, ending in a fantasy epilogue?",
+      "answer": "La La Land",
+      "alternatives": []
+    },
+    {
+      "id": 1727,
+      "category": "mythology",
+      "question": "Which Mesopotamian goddess of war and love was identified with the planet Venus?",
+      "answer": "Ishtar",
+      "alternatives": [
+        "Inanna",
+        "Astarte"
+      ]
+    },
+    {
+      "id": 1728,
+      "category": "science",
+      "question": "What do you call a molecule with the same formula as another but a different arrangement of atoms?",
+      "answer": "Isomer",
+      "alternatives": []
+    },
+    {
+      "id": 1729,
+      "category": "general trivia",
+      "question": "Which object is traditionally carried by a conductor to keep time for an orchestra?",
+      "answer": "Batons",
+      "alternatives": [
+        "baton",
+        "conducting baton"
+      ]
+    },
+    {
+      "id": 1730,
+      "category": "music",
+      "question": "Which singer was nicknamed the Queen of Salsa and was born in Cuba?",
+      "answer": "Celia Cruz",
+      "alternatives": [
+        "Celia"
+      ]
+    },
+    {
+      "id": 1731,
+      "category": "movies/TV",
+      "question": "Which 2000 film features a swimming pool-obsessed Japanese businessman and a stolen briefcase in London?",
+      "answer": "Snatch",
+      "alternatives": []
+    },
+    {
+      "id": 1732,
+      "category": "geography",
+      "question": "Which sea lies between Great Britain and Scandinavia?",
+      "answer": "North Sea",
+      "alternatives": []
+    },
+    {
+      "id": 1733,
+      "category": "music",
+      "question": "Which 1991 album by Nirvana brought grunge into the mainstream?",
+      "answer": "Nevermind",
+      "alternatives": []
+    },
+    {
+      "id": 1734,
+      "category": "movies/TV",
+      "question": "Which 2019 film, set on a WWII battlefield, is designed to appear as one continuous take?",
+      "answer": "1917",
+      "alternatives": []
+    },
+    {
+      "id": 1735,
+      "category": "food/drink",
+      "question": "Which Japanese noodle broth is made from miso paste and is often topped with corn or butter?",
+      "answer": "Miso ramen",
+      "alternatives": [
+        "ramen"
+      ]
+    },
+    {
+      "id": 1736,
+      "category": "science",
+      "question": "What do you call the region around a black hole beyond which nothing can escape?",
+      "answer": "Event horizon",
+      "alternatives": [
+        "horizon"
+      ]
+    },
+    {
+      "id": 1737,
+      "category": "literature",
+      "question": "Which Italian poet wrote the Divine Comedy, beginning with Inferno?",
+      "answer": "Dante Alighieri",
+      "alternatives": [
+        "Dante"
+      ]
+    },
+    {
+      "id": 1738,
+      "category": "music",
+      "question": "What is the slow, stately opening movement of a symphony usually called?",
+      "answer": "Adagio",
+      "alternatives": []
+    },
+    {
+      "id": 1739,
+      "category": "movies/TV",
+      "question": "Which 1994 film pairs a hitman and a young woman named Mathilda?",
+      "answer": "Leon",
+      "alternatives": [
+        "Léon"
+      ]
+    },
+    {
+      "id": 1740,
+      "category": "general trivia",
+      "question": "What kind of puzzle uses letters arranged in a square grid for word-finding?",
+      "answer": "Word search",
+      "alternatives": [
+        "wordsearch"
+      ]
+    },
+    {
+      "id": 1741,
+      "category": "movies/TV",
+      "question": "Which film features a minotaur-like maze, a young hero, and an underground labyrinth?",
+      "answer": "Pan's Labyrinth",
+      "alternatives": [
+        "Pans Labyrinth",
+        "El laberinto del fauno"
+      ]
+    },
+    {
+      "id": 1742,
+      "category": "geography",
+      "question": "What is the southernmost continent, covered almost entirely by ice?",
+      "answer": "Antarctica",
+      "alternatives": []
+    },
+    {
+      "id": 1743,
+      "category": "technology",
+      "question": "What programming language was originally created by James Gosling at Sun Microsystems?",
+      "answer": "Java",
+      "alternatives": []
+    },
+    {
+      "id": 1744,
+      "category": "architecture",
+      "question": "What is the curved triangular support between arches or a dome and the surrounding walls?",
+      "answer": "Pendentive",
+      "alternatives": []
+    },
+    {
+      "id": 1745,
+      "category": "music",
+      "question": "What term describes a gradual decrease in volume in music?",
+      "answer": "Decrescendo",
+      "alternatives": [
+        "Diminuendo"
+      ]
+    },
+    {
+      "id": 1746,
+      "category": "general trivia",
+      "question": "Which kitchen tool is traditionally used to whisk egg whites and cream by hand?",
+      "answer": "Whisk",
+      "alternatives": [
+        "Egg whisk"
+      ]
+    },
+    {
+      "id": 1747,
+      "category": "technology",
+      "question": "What does the 'S' stand for in USB?",
+      "answer": "Serial",
+      "alternatives": []
+    },
+    {
+      "id": 1748,
+      "category": "theater",
+      "question": "Which musical by Rodgers and Hammerstein is set on a Pacific island during World War II?",
+      "answer": "South Pacific",
+      "alternatives": []
+    },
+    {
+      "id": 1749,
+      "category": "architecture",
+      "question": "What is the central dome-like space of a church, often directly beneath a dome?",
+      "answer": "Naos",
+      "alternatives": [
+        "Nave"
+      ]
+    },
+    {
+      "id": 1750,
+      "category": "fashion",
+      "question": "Which luxury brand is instantly recognized by its red-soled shoes?",
+      "answer": "Louboutin",
+      "alternatives": [
+        "Christian Louboutin"
+      ]
+    },
+    {
+      "id": 1751,
+      "category": "music",
+      "question": "Which jazz pianist led the Blue Note album 'The Sidewinder' and helped define hard bop?",
+      "answer": "Lee Morgan",
+      "alternatives": [
+        "Lee Morgan"
+      ]
+    },
+    {
+      "id": 1752,
+      "category": "technology",
+      "question": "What file format became the standard for compressing a sequence of images with sound in the 1990s?",
+      "answer": "MP4",
+      "alternatives": [
+        "MPEG-4",
+        "mp4"
+      ]
+    },
+    {
+      "id": 1753,
+      "category": "religion",
+      "question": "Which Islamic holy city is home to the Prophet's Mosque and the tomb traditionally linked to Muhammad?",
+      "answer": "Medina",
+      "alternatives": [
+        "Madinah",
+        "Medina"
+      ]
+    },
+    {
+      "id": 1754,
+      "category": "geography",
+      "question": "Which Scandinavian capital is built across islands and canals, and is famous for its harbor, Nyhavn?",
+      "answer": "Copenhagen",
+      "alternatives": [
+        "Kobenhavn",
+        "Copenhagen"
+      ]
+    },
+    {
+      "id": 1755,
+      "category": "history",
+      "question": "Which treaty ended the Thirty Years' War and reshaped the map of Europe in 1648?",
+      "answer": "Westphalia",
+      "alternatives": [
+        "Peace of Westphalia",
+        "Westphalia"
+      ]
+    },
+    {
+      "id": 1756,
+      "category": "music",
+      "question": "Which British band released the concept album 'The Wall' and recorded 'Dark Side of the Moon'?",
+      "answer": "Pink Floyd",
+      "alternatives": [
+        "Pink Floyd"
+      ]
+    },
+    {
+      "id": 1757,
+      "category": "general trivia",
+      "question": "What is the common name for the fear of spiders?",
+      "answer": "Arachnophobia",
+      "alternatives": []
+    },
+    {
+      "id": 1758,
+      "category": "literature",
+      "question": "Which 20th-century novel explores a surveillance state with Big Brother?",
+      "answer": "Nineteen Eighty Four",
+      "alternatives": [
+        "1984",
+        "1984"
+      ]
+    },
+    {
+      "id": 1759,
+      "category": "geography",
+      "question": "Which landlocked Central Asian country is known for the Aral Sea disaster?",
+      "answer": "Uzbekistan",
+      "alternatives": []
+    },
+    {
+      "id": 1760,
+      "category": "technology",
+      "question": "What is the name of the small program stored on a motherboard that starts a computer before the operating system loads?",
+      "answer": "BIOS",
+      "alternatives": [
+        "Basic Input Output System",
+        "Basic Input/Output System"
+      ]
+    },
+    {
+      "id": 1761,
+      "category": "mythology",
+      "question": "Which Greek god of the underworld rules the dead but is not the same as the personification of death?",
+      "answer": "Hades",
+      "alternatives": []
+    },
+    {
+      "id": 1762,
+      "category": "movies/TV",
+      "question": "Which 1950 film stars Gloria Swanson as a faded silent-era actress holding court in a decaying mansion?",
+      "answer": "Sunset Boulevard",
+      "alternatives": [
+        "Sunset Blvd"
+      ]
+    },
+    {
+      "id": 1763,
+      "category": "general trivia",
+      "question": "What everyday object is used to open a bottle with a metal cap by levering it off?",
+      "answer": "Bottle opener",
+      "alternatives": [
+        "opener"
+      ]
+    },
+    {
+      "id": 1764,
+      "category": "art",
+      "question": "Which sculpture by Michelangelo shows Mary holding the body of Jesus?",
+      "answer": "Pieta",
+      "alternatives": [
+        "Pietà"
+      ]
+    },
+    {
+      "id": 1765,
+      "category": "technology",
+      "question": "What word describes software that secretly gathers information about a user’s computer activity?",
+      "answer": "Spyware",
+      "alternatives": []
+    },
+    {
+      "id": 1766,
+      "category": "movies/TV",
+      "question": "Which film features a town where the soundtrack is dominated by a sultry twin-peaks theme?",
+      "answer": "Twin Peaks",
+      "alternatives": [
+        "Twin Peaks: Fire Walk with Me",
+        "Twin Peaks"
+      ]
+    },
+    {
+      "id": 1767,
+      "category": "science",
+      "question": "Which layer of the Sun is visible to the naked eye during a total solar eclipse?",
+      "answer": "Corona",
+      "alternatives": []
+    },
+    {
+      "id": 1768,
+      "category": "geography",
+      "question": "Which capital city sits on the Tiber and is famously linked with seven hills?",
+      "answer": "Rome",
+      "alternatives": []
+    },
+    {
+      "id": 1769,
+      "category": "music",
+      "question": "Which singer’s 1987 album includes the song ‘Nothing Compares 2 U’?",
+      "answer": "Sinead O'Connor",
+      "alternatives": [
+        "Sinéad O'Connor",
+        "Sinead OConnor",
+        "Sinead"
+      ]
+    },
+    {
+      "id": 1770,
+      "category": "technology",
+      "question": "What term describes a computer network address written in words rather than numbers, such as example.com?",
+      "answer": "Domain name",
+      "alternatives": [
+        "domain"
+      ]
+    },
+    {
+      "id": 1771,
+      "category": "general trivia",
+      "question": "What household item is designed to absorb liquid from wet surfaces?",
+      "answer": "Towel",
+      "alternatives": []
+    },
+    {
+      "id": 1772,
+      "category": "history",
+      "question": "Which 18th-century conflict was fought largely between Britain and France in North America, India, and Europe?",
+      "answer": "Seven Years War",
+      "alternatives": [
+        "Seven Years' War",
+        "Seven Years War"
+      ]
+    },
+    {
+      "id": 1773,
+      "category": "music",
+      "question": "What is the repeating accompaniment pattern, usually in the bass, that drives many baroque pieces?",
+      "answer": "Ostinato",
+      "alternatives": []
+    },
+    {
+      "id": 1774,
+      "category": "art",
+      "question": "Which painter is famous for geometric portraits and stylized nudes in the early 20th century, not his wartime murals?",
+      "answer": "Amedeo Modigliani",
+      "alternatives": [
+        "Modigliani",
+        "Amedeo Modigliani"
+      ]
+    },
+    {
+      "id": 1775,
+      "category": "sport",
+      "question": "In cricket, what term is used when a bowler takes four wickets in four balls?",
+      "answer": "Double hat-trick",
+      "alternatives": [
+        "double hat trick",
+        "4 in 4"
+      ]
+    },
+    {
+      "id": 1776,
+      "category": "history",
+      "question": "Which 19th-century conflict ended with the defeat of Napoleon at Waterloo?",
+      "answer": "Napoleonic Wars",
+      "alternatives": [
+        "Napoleonic war"
+      ]
+    },
+    {
+      "id": 1777,
+      "category": "art",
+      "question": "Which sculptor is known for sleek animal forms like large smooth birds?",
+      "answer": "Brancusi",
+      "alternatives": [
+        "Constantin Brancusi",
+        "Constantin Brancusi"
+      ]
+    },
+    {
+      "id": 1778,
+      "category": "technology",
+      "question": "What is the name of the tiny hardware component that performs arithmetic and logic operations inside a computer?",
+      "answer": "Processor",
+      "alternatives": [
+        "CPU",
+        "central processing unit"
+      ]
+    },
+    {
+      "id": 1779,
+      "category": "religion",
+      "question": "What sacred building in Sikhism is the central place of worship and community meal?",
+      "answer": "Gurdwara",
+      "alternatives": [
+        "gurudwara"
+      ]
+    },
+    {
+      "id": 1780,
+      "category": "food/drink",
+      "question": "What pungent blue cheese from France is traditionally made with sheep's milk?",
+      "answer": "Roquefort",
+      "alternatives": []
+    },
+    {
+      "id": 1781,
+      "category": "history",
+      "question": "Which reformer famously nailed his theses to a church door in Wittenberg, according to tradition?",
+      "answer": "Martin Luther",
+      "alternatives": [
+        "Luther",
+        "Martin Luther"
+      ]
+    },
+    {
+      "id": 1782,
+      "category": "literature",
+      "question": "Which novel begins with a sea voyage to a remote island laboratory run by a morally dubious scientist?",
+      "answer": "The Island of Dr Moreau",
+      "alternatives": [
+        "Island of Dr Moreau",
+        "Dr Moreau"
+      ]
+    },
+    {
+      "id": 1783,
+      "category": "general trivia",
+      "question": "What is the name for a single sheet of writing paper folded once to make four pages?",
+      "answer": "Folio",
+      "alternatives": []
+    },
+    {
+      "id": 1784,
+      "category": "movies/TV",
+      "question": "Which director is associated with the ‘Vertigo’ and ‘Psycho’ suspense style?",
+      "answer": "Hitchcock",
+      "alternatives": [
+        "Alfred Hitchcock"
+      ]
+    },
+    {
+      "id": 1785,
+      "category": "theater",
+      "question": "Which playwright wrote about Nora leaving a stifling marriage in ‘A Doll’s House’?",
+      "answer": "Ibsen",
+      "alternatives": [
+        "Henrik Ibsen"
+      ]
+    },
+    {
+      "id": 1786,
+      "category": "general trivia",
+      "question": "What do you call a person who writes or studies dictionaries and word origins?",
+      "answer": "Lexicographer",
+      "alternatives": []
+    },
+    {
+      "id": 1787,
+      "category": "music",
+      "question": "Which jazz saxophonist recorded the modal landmark ‘Kind of Blue’?",
+      "answer": "Coltrane",
+      "alternatives": [
+        "John Coltrane"
+      ]
+    },
+    {
+      "id": 1788,
+      "category": "literature",
+      "question": "Which poet wrote ‘The Waste Land’ and worked in modernist verse?",
+      "answer": "Eliot",
+      "alternatives": [
+        "T. S. Eliot",
+        "TS Eliot",
+        "Thomas Stearns Eliot"
+      ]
+    },
+    {
+      "id": 1789,
+      "category": "architecture",
+      "question": "What architectural feature projects outward and is often supported by a column or bracket?",
+      "answer": "Bay window",
+      "alternatives": [
+        "oriel"
+      ]
+    },
+    {
+      "id": 1790,
+      "category": "general trivia",
+      "question": "What small punctuation mark is used to separate items in a list?",
+      "answer": "Comma",
+      "alternatives": []
+    },
+    {
+      "id": 1791,
+      "category": "history",
+      "question": "Which 18th-century uprising in France began with the storming of a prison fortress?",
+      "answer": "Revolution",
+      "alternatives": [
+        "French Revolution"
+      ]
+    },
+    {
+      "id": 1792,
+      "category": "literature",
+      "question": "Which Russian novelist wrote ‘War and Peace’ and ‘Anna Karenina’?",
+      "answer": "Tolstoy",
+      "alternatives": [
+        "Leo Tolstoy",
+        "Lev Tolstoy"
+      ]
+    },
+    {
+      "id": 1793,
+      "category": "art",
+      "question": "Which architect designed the Guggenheim Museum in New York and Fallingwater?",
+      "answer": "Wright",
+      "alternatives": [
+        "Frank Lloyd Wright"
+      ]
+    },
+    {
+      "id": 1794,
+      "category": "sport",
+      "question": "In football, what is the term for a goal scored directly from a corner kick?",
+      "answer": "Olimpico",
+      "alternatives": [
+        "goal olimpico",
+        "Olympic goal"
+      ]
+    },
+    {
+      "id": 1795,
+      "category": "science",
+      "question": "Which particle’s antiparticle shares the same mass but opposite electric charge?",
+      "answer": "Positron",
+      "alternatives": []
+    },
+    {
+      "id": 1796,
+      "category": "art",
+      "question": "Which painter is famous for enormous, color-field canvases often installed in quiet chapel-like spaces?",
+      "answer": "Mark Rothko",
+      "alternatives": [
+        "Rothko"
+      ]
+    },
+    {
+      "id": 1797,
+      "category": "politics",
+      "question": "What is the term for a law-making body with two chambers?",
+      "answer": "Bicameralism",
+      "alternatives": []
+    },
+    {
+      "id": 1798,
+      "category": "fashion",
+      "question": "Which Japanese designer is known for deconstructed black clothing and avant-garde silhouettes?",
+      "answer": "Rei Kawakubo",
+      "alternatives": [
+        "Kawakubo",
+        "Rei"
+      ]
+    },
+    {
+      "id": 1799,
+      "category": "religion",
+      "question": "In Islam, what is the name of the charitable giving required of many Muslims?",
+      "answer": "Zakat",
+      "alternatives": []
+    },
+    {
+      "id": 1800,
+      "category": "games",
+      "question": "In chess, which piece can move diagonally any number of squares?",
+      "answer": "Bishop",
+      "alternatives": []
+    },
+    {
+      "id": 1801,
+      "category": "science",
+      "question": "What term describes the curved path a planet follows around a star?",
+      "answer": "Orbit",
+      "alternatives": []
+    },
+    {
+      "id": 1802,
+      "category": "art",
+      "question": "Which sculpture by Rodin shows a thinker seated with chin on hand?",
+      "answer": "The Thinker",
+      "alternatives": [
+        "Thinker"
+      ]
+    },
+    {
+      "id": 1803,
+      "category": "technology",
+      "question": "What device converts digital signals into sounds and images for output?",
+      "answer": "Speaker",
+      "alternatives": []
+    },
+    {
+      "id": 1804,
+      "category": "architecture",
+      "question": "Which building form uses repeated rounded arches and thick walls, common in medieval Europe?",
+      "answer": "Romanesque",
+      "alternatives": [
+        "Romanesque architecture"
+      ]
+    },
+    {
+      "id": 1805,
+      "category": "games",
+      "question": "Which board game involves balancing wooden blocks as a tower grows taller?",
+      "answer": "Jenga",
+      "alternatives": []
+    },
+    {
+      "id": 1806,
+      "category": "technology",
+      "question": "What does the “S” stand for in the file format CSV?",
+      "answer": "Separated",
+      "alternatives": [
+        "Comma-separated",
+        "Comma Separated"
+      ]
+    },
+    {
+      "id": 1807,
+      "category": "food/drink",
+      "question": "Which Japanese drink is made by fermenting rice and is often served warm?",
+      "answer": "Sake",
+      "alternatives": []
+    },
+    {
+      "id": 1808,
+      "category": "technology",
+      "question": "What file format uses three letters and commonly stores raw image data from digital cameras?",
+      "answer": "RAW",
+      "alternatives": [
+        "raw"
+      ]
+    },
+    {
+      "id": 1809,
+      "category": "general trivia",
+      "question": "What is the name for a plan or process that can be carried out in steps to solve a problem?",
+      "answer": "Algorithm",
+      "alternatives": []
+    },
+    {
+      "id": 1810,
+      "category": "history",
+      "question": "Which city was the center of the Hanseatic League's maritime trade in northern Europe?",
+      "answer": "Lubeck",
+      "alternatives": [
+        "Lübeck"
+      ]
+    },
+    {
+      "id": 1811,
+      "category": "theater",
+      "question": "Which 1955 play by Arthur Miller follows an aging salesman named Willy Loman?",
+      "answer": "Death of a Salesman",
+      "alternatives": [
+        "Death of Salesman"
+      ]
+    },
+    {
+      "id": 1812,
+      "category": "general trivia",
+      "question": "What is the collective noun for a group of crows?",
+      "answer": "Murder",
+      "alternatives": []
+    },
+    {
+      "id": 1813,
+      "category": "history",
+      "question": "Which empire was ruled from the city of Xi'an during the high medieval period in China?",
+      "answer": "Tang Dynasty",
+      "alternatives": [
+        "Tang"
+      ]
+    },
+    {
+      "id": 1814,
+      "category": "technology",
+      "question": "What is the standard abbreviation for a personal identification number?",
+      "answer": "PIN",
+      "alternatives": [
+        "pin"
+      ]
+    },
+    {
+      "id": 1815,
+      "category": "literature",
+      "question": "Which Russian novel begins with a philosophical wager between a devil and a writer in wartime?",
+      "answer": "The Master and Margarita",
+      "alternatives": [
+        "Master and Margarita"
+      ]
+    },
+    {
+      "id": 1816,
+      "category": "history",
+      "question": "What 19th-century pact unified most Italian states under one kingdom?",
+      "answer": "Risorgimento",
+      "alternatives": []
+    },
+    {
+      "id": 1817,
+      "category": "music",
+      "question": "Which jazz pianist made a famously sparse recording with just bass and drums titled 'The Köln Concert'?",
+      "answer": "Keith Jarrett",
+      "alternatives": [
+        "Jarrett"
+      ]
+    },
+    {
+      "id": 1818,
+      "category": "movies/TV",
+      "question": "Which 1994 film follows a fiddler and widow navigating a northern Japanese island after a death?",
+      "answer": "Maborosi",
+      "alternatives": []
+    },
+    {
+      "id": 1819,
+      "category": "art",
+      "question": "Which sculptor was known for smooth, rounded birds and human figures carved in wood and stone?",
+      "answer": "Barbara Hepworth",
+      "alternatives": [
+        "Hepworth"
+      ]
+    },
+    {
+      "id": 1820,
+      "category": "general trivia",
+      "question": "What household object is traditionally used to open a wine bottle by levering against the cork?",
+      "answer": "Corkscrew",
+      "alternatives": []
+    },
+    {
+      "id": 1821,
+      "category": "literature",
+      "question": "Which South African writer created the anti-apartheid novel 'Cry, the Beloved Country'?",
+      "answer": "Alan Paton",
+      "alternatives": [
+        "Paton"
+      ]
+    },
+    {
+      "id": 1822,
+      "category": "movies/TV",
+      "question": "Which 1958 Hitchcock thriller uses vertigo and mistaken identity around a woman in San Francisco?",
+      "answer": "Vertigo",
+      "alternatives": []
+    },
+    {
+      "id": 1823,
+      "category": "food/drink",
+      "question": "Which thin, crisp Indian flatbread is often served alongside curries?",
+      "answer": "Papadum",
+      "alternatives": [
+        "Papadam",
+        "Poppadom",
+        "Poppadam"
+      ]
+    },
+    {
+      "id": 1824,
+      "category": "religion",
+      "question": "Which sacred Jewish text is the central compilation of rabbinic discussion and law?",
+      "answer": "Talmud",
+      "alternatives": []
+    },
+    {
+      "id": 1825,
+      "category": "geography",
+      "question": "Which Asian capital sits at the confluence of the Ganges and Yamuna rivers?",
+      "answer": "Allahabad",
+      "alternatives": [
+        "Prayagraj"
+      ]
+    },
+    {
+      "id": 1826,
+      "category": "movies/TV",
+      "question": "Which animated film features a fish searching for his son across the ocean after a capture?",
+      "answer": "Finding Nemo",
+      "alternatives": []
+    },
+    {
+      "id": 1827,
+      "category": "mythology",
+      "question": "Which Norse hall receives warriors who die in battle?",
+      "answer": "Valhalla",
+      "alternatives": []
+    },
+    {
+      "id": 1828,
+      "category": "technology",
+      "question": "What is the small program that starts a computer and loads the operating system?",
+      "answer": "Bootloader",
+      "alternatives": []
+    },
+    {
+      "id": 1829,
+      "category": "politics",
+      "question": "What is the name of a system in which power is divided between central and regional governments?",
+      "answer": "Federalism",
+      "alternatives": []
+    },
+    {
+      "id": 1830,
+      "category": "theater",
+      "question": "Which playwright wrote A Midsummer Night's Dream and The Tempest?",
+      "answer": "Shakespeare",
+      "alternatives": [
+        "William Shakespeare",
+        "W. Shakespeare"
+      ]
+    },
+    {
+      "id": 1831,
+      "category": "general trivia",
+      "question": "What word describes a ship's journey from one port to another?",
+      "answer": "Voyage",
+      "alternatives": []
+    },
+    {
+      "id": 1832,
+      "category": "movies",
+      "question": "Which 1970s film is set aboard a starship pursuing a smaller vessel carrying a genocidal android?",
+      "answer": "Star Trek: The Motion Picture",
+      "alternatives": [
+        "Star Trek The Motion Picture"
+      ]
+    },
+    {
+      "id": 1833,
+      "category": "theater",
+      "question": "Which genre of play centers on mistaken identities and absurdly tangled situations?",
+      "answer": "Farce",
+      "alternatives": []
+    },
+    {
+      "id": 1834,
+      "category": "fashion",
+      "question": "Which fashion house is known for its red-soled high heels?",
+      "answer": "Christian Louboutin",
+      "alternatives": [
+        "Louboutin",
+        "Christian Louboutin"
+      ]
+    },
+    {
+      "id": 1835,
+      "category": "general trivia",
+      "question": "What term describes a standard recurring pattern in a song or poem?",
+      "answer": "Refrain",
+      "alternatives": []
+    },
+    {
+      "id": 1836,
+      "category": "history",
+      "question": "Which 19th-century uprising in India began with sepoy mutinies against the East India Company?",
+      "answer": "Indian Rebellion",
+      "alternatives": [
+        "Sepoy Mutiny",
+        "Rebellion of 1857"
+      ]
+    },
+    {
+      "id": 1837,
+      "category": "music",
+      "question": "Which piano style uses repeated left-hand patterns and was influential in early jazz?",
+      "answer": "Ragtime",
+      "alternatives": []
+    },
+    {
+      "id": 1838,
+      "category": "movies",
+      "question": "Which film features a stranded astronaut on a planet with giant sandworms and spice?",
+      "answer": "Dune",
+      "alternatives": []
+    },
+    {
+      "id": 1839,
+      "category": "religion",
+      "question": "Which Buddhist tradition emphasizes meditation, compassion, and the bodhisattva ideal?",
+      "answer": "Mahayana",
+      "alternatives": []
+    },
+    {
+      "id": 1840,
+      "category": "architecture",
+      "question": "What is the pointed arch commonly associated with medieval European cathedrals?",
+      "answer": "Gothic arch",
+      "alternatives": [
+        "Pointed arch"
+      ]
+    },
+    {
+      "id": 1841,
+      "category": "literature",
+      "question": "Which Shakespeare play features the line about a “winter” in one of its famous opening speeches?",
+      "answer": "Richard III",
+      "alternatives": [
+        "Richard the Third"
+      ]
+    },
+    {
+      "id": 1842,
+      "category": "music",
+      "question": "Which percussion instrument is made of paired metal discs and often used for bright accents in orchestras?",
+      "answer": "Cymbals",
+      "alternatives": [
+        "cymbal"
+      ]
+    },
+    {
+      "id": 1843,
+      "category": "technology",
+      "question": "What is the open standard used for exchanging data between software systems, often replacing heavier formats?",
+      "answer": "JSON",
+      "alternatives": [
+        "JavaScript Object Notation"
+      ]
+    },
+    {
+      "id": 1844,
+      "category": "general trivia",
+      "question": "What object did sailors traditionally use to determine direction by aligning with Earth’s magnetic field?",
+      "answer": "Compass",
+      "alternatives": []
+    },
+    {
+      "id": 1845,
+      "category": "history",
+      "question": "Which ancient law code is associated with the phrase “eye for eye, tooth for tooth”?",
+      "answer": "Code of Hammurabi",
+      "alternatives": [
+        "Hammurabi's Code"
+      ]
+    },
+    {
+      "id": 1846,
+      "category": "technology",
+      "question": "What term describes software instructions that are permanently stored on a device’s hardware?",
+      "answer": "Firmware",
+      "alternatives": []
+    },
+    {
+      "id": 1847,
+      "category": "religion",
+      "question": "Which festival marks the Buddha’s birth, enlightenment, and death in many Buddhist traditions?",
+      "answer": "Vesak",
+      "alternatives": [
+        "Wesak",
+        "Buddha Day"
+      ]
+    },
+    {
+      "id": 1848,
+      "category": "music",
+      "question": "What is the name for the highest female vocal range above soprano?",
+      "answer": "Coloratura",
+      "alternatives": [
+        "coloratura soprano"
+      ]
+    },
+    {
+      "id": 1849,
+      "category": "literature",
+      "question": "Which poet wrote “The Waste Land” and later “The Love Song of J. Alfred Prufrock”?",
+      "answer": "T S Eliot",
+      "alternatives": [
+        "T. S. Eliot",
+        "TS Eliot",
+        "Thomas Stearns Eliot"
+      ]
+    },
+    {
+      "id": 1850,
+      "category": "art",
+      "question": "Which Flemish artist painted crowded, energetic scenes such as hunters in winter and peasant festivals?",
+      "answer": "Pieter Bruegel",
+      "alternatives": [
+        "Bruegel",
+        "Pieter Bruegel the Elder"
+      ]
+    },
+    {
+      "id": 1851,
+      "category": "food/drink",
+      "question": "Which French sauce gets its richness from butter emulsified into reduced vinegar, shallots, and herbs?",
+      "answer": "Béarnaise",
+      "alternatives": [
+        "Bearnaise",
+        "béarnaise sauce"
+      ]
+    },
+    {
+      "id": 1852,
+      "category": "general trivia",
+      "question": "What word describes a passage that allows access through a building or wall?",
+      "answer": "Doorway",
+      "alternatives": [
+        "entryway"
+      ]
+    },
+    {
+      "id": 1853,
+      "category": "art",
+      "question": "Which sculptor created the massive abstract form known as “Cloud Gate” in Chicago?",
+      "answer": "Anish Kapoor",
+      "alternatives": [
+        "Kapoor"
+      ]
+    },
+    {
+      "id": 1854,
+      "category": "geography",
+      "question": "Which strait links the Arabian Sea to the Gulf of Oman?",
+      "answer": "Hormuz Strait",
+      "alternatives": [
+        "Strait of Hormuz",
+        "Hormuz"
+      ]
+    },
+    {
+      "id": 1855,
+      "category": "music",
+      "question": "What instrument does a classical concerto typically feature as the soloist against the orchestra?",
+      "answer": "Soloist",
+      "alternatives": [
+        "solo instrument"
+      ]
+    },
+    {
+      "id": 1856,
+      "category": "theater",
+      "question": "Which Chekhov play centers on a family estate threatened by sale and the chopping down of its orchard?",
+      "answer": "Cherry Orchard",
+      "alternatives": [
+        "The Cherry Orchard"
+      ]
+    },
+    {
+      "id": 1857,
+      "category": "general trivia",
+      "question": "What term means a deliberate departure from a rule or convention in art, speech, or behavior?",
+      "answer": "Deviation",
+      "alternatives": []
+    },
+    {
+      "id": 1858,
+      "category": "geography",
+      "question": "Which river forms much of the border between Germany and Poland before reaching the Baltic?",
+      "answer": "Oder",
+      "alternatives": [
+        "Odra",
+        "Oder River"
+      ]
+    },
+    {
+      "id": 1859,
+      "category": "literature",
+      "question": "Which novel by Chinua Achebe follows Okonkwo and the arrival of colonial influence in Igbo society?",
+      "answer": "Things Fall Apart",
+      "alternatives": []
+    },
+    {
+      "id": 1860,
+      "category": "history",
+      "question": "Which empire ruled much of Mexico from its capital at Tenochtitlan before Spanish conquest?",
+      "answer": "Aztec Empire",
+      "alternatives": [
+        "Aztecs",
+        "Mexica Empire"
+      ]
+    },
+    {
+      "id": 1861,
+      "category": "mythology",
+      "question": "Which Egyptian goddess is often depicted as a cat or lioness and associated with protection and joy?",
+      "answer": "Bastet",
+      "alternatives": [
+        "Bast"
+      ]
+    },
+    {
+      "id": 1862,
+      "category": "fashion",
+      "question": "Which item of neckwear is a formal scarf-like band worn by clergy at the collar?",
+      "answer": "Stole",
+      "alternatives": []
+    },
+    {
+      "id": 1863,
+      "category": "general trivia",
+      "question": "What word means an intentional omission or the state of leaving something out?",
+      "answer": "Exclusion",
+      "alternatives": []
+    },
+    {
+      "id": 1864,
+      "category": "literature",
+      "question": "Which novel by Harper Lee is narrated by Scout Finch and centers on a courtroom trial in Alabama?",
+      "answer": "To Kill a Mockingbird",
+      "alternatives": []
+    },
+    {
+      "id": 1865,
+      "category": "history",
+      "question": "Which 18th-century reform movement in Catholic Europe was driven by a desire to reduce papal authority?",
+      "answer": "Josephinism",
+      "alternatives": []
+    },
+    {
+      "id": 1866,
+      "category": "music",
+      "question": "What four-player string ensemble is the standard classical chamber group?",
+      "answer": "Quartet",
+      "alternatives": [
+        "string quartet"
+      ]
+    },
+    {
+      "id": 1867,
+      "category": "language",
+      "question": "What device makes one word or phrase mean the opposite of what is literally said through context or intent?",
+      "answer": "Irony",
+      "alternatives": []
+    },
+    {
+      "id": 1868,
+      "category": "mythology",
+      "question": "Which Norse giant is said to have caused the deep ocean as one of his daughters?",
+      "answer": "Aegir",
+      "alternatives": [
+        "Ægir"
+      ]
+    },
+    {
+      "id": 1869,
+      "category": "music",
+      "question": "What jazz term describes a piece sung without instrumental accompaniment?",
+      "answer": "A cappella",
+      "alternatives": [
+        "acapella"
+      ]
+    },
+    {
+      "id": 1870,
+      "category": "history",
+      "question": "What were the royal officials who governed provinces in the Ottoman Empire called?",
+      "answer": "Pashas",
+      "alternatives": [
+        "Pasha"
+      ]
+    },
+    {
+      "id": 1871,
+      "category": "food/drink",
+      "question": "Which Italian cured meat is made from pork cheek and often used in carbonara?",
+      "answer": "Guanciale",
+      "alternatives": []
+    },
+    {
+      "id": 1872,
+      "category": "architecture",
+      "question": "What architectural feature projects from a wall and is supported from below by an arch or bracket?",
+      "answer": "Corbel",
+      "alternatives": []
+    },
+    {
+      "id": 1873,
+      "category": "religion",
+      "question": "What is the Jewish day of rest that begins at sunset on Friday?",
+      "answer": "Shabbat",
+      "alternatives": [
+        "Sabbath"
+      ]
+    },
+    {
+      "id": 1874,
+      "category": "general trivia",
+      "question": "What device did Gutenberg's movable-type press make mass production of possible?",
+      "answer": "Books",
+      "alternatives": [
+        "book"
+      ]
+    },
+    {
+      "id": 1875,
+      "category": "geography",
+      "question": "Which African lake is the world's second-largest freshwater lake by surface area?",
+      "answer": "Lake Superior",
+      "alternatives": [
+        "Superior"
+      ]
+    },
+    {
+      "id": 1876,
+      "category": "literature",
+      "question": "Which poem begins with a traveler asking about a name that is 'written in the desert'?",
+      "answer": "Ozymandias",
+      "alternatives": []
+    },
+    {
+      "id": 1877,
+      "category": "history",
+      "question": "Which treaty ended the First Boer War and recognized limited Transvaal independence?",
+      "answer": "Pretoria Convention",
+      "alternatives": []
+    },
+    {
+      "id": 1878,
+      "category": "art",
+      "question": "Which sculptor created the bronze ballerina figures with elongated forms?",
+      "answer": "Degas",
+      "alternatives": [
+        "Edgar Degas",
+        "Edgar Hilaire Degas"
+      ]
+    },
+    {
+      "id": 1879,
+      "category": "religion",
+      "question": "Which sacred city is the holiest site in Sikhism?",
+      "answer": "Amritsar",
+      "alternatives": []
+    },
+    {
+      "id": 1880,
+      "category": "general trivia",
+      "question": "What is the name for a group of geese in flight?",
+      "answer": "Gaggle",
+      "alternatives": []
+    },
+    {
+      "id": 1881,
+      "category": "movies/TV",
+      "question": "Which film follows a young hero searching for a ring in Middle-earth?",
+      "answer": "The Lord of the Rings",
+      "alternatives": [
+        "Lord of the Rings"
+      ]
+    },
+    {
+      "id": 1882,
+      "category": "literature",
+      "question": "Which 20th-century novel opens with a miniature society that invites a visiting adult to shrink down?",
+      "answer": "The Borrowers",
+      "alternatives": [
+        "Borrowers"
+      ]
+    },
+    {
+      "id": 1883,
+      "category": "science",
+      "question": "What blood protein binds oxygen and gives red cells their color?",
+      "answer": "Hemoglobin",
+      "alternatives": [
+        "haemoglobin"
+      ]
+    },
+    {
+      "id": 1884,
+      "category": "music",
+      "question": "Which jazz standard, nicknamed the Jazz Messengers' calling card, is built around a looping minor riff?",
+      "answer": "Moanin'",
+      "alternatives": [
+        "Moanin"
+      ]
+    },
+    {
+      "id": 1885,
+      "category": "technology",
+      "question": "What is the standard protocol used to send email between servers?",
+      "answer": "SMTP",
+      "alternatives": [
+        "Simple Mail Transfer Protocol"
+      ]
+    },
+    {
+      "id": 1886,
+      "category": "food/drink",
+      "question": "What Japanese name is given to raw fish sliced for eating?",
+      "answer": "Sashimi",
+      "alternatives": []
+    },
+    {
+      "id": 1887,
+      "category": "mythology",
+      "question": "Which Norse goddess is associated with the hall of the dead, not Valhalla?",
+      "answer": "Hel",
+      "alternatives": []
+    },
+    {
+      "id": 1888,
+      "category": "fashion",
+      "question": "Which French designer made the zipperless black dress a fashion icon?",
+      "answer": "Givenchy",
+      "alternatives": [
+        "Hubert de Givenchy",
+        "Hubert Givenchy"
+      ]
+    },
+    {
+      "id": 1889,
+      "category": "geography",
+      "question": "Which African lake is shared by Malawi, Mozambique and Tanzania?",
+      "answer": "Lake Malawi",
+      "alternatives": [
+        "Nyasa",
+        "Lake Nyasa"
+      ]
+    },
+    {
+      "id": 1890,
+      "category": "general trivia",
+      "question": "What is the name of the small metallic object used to identify a key on a ring?",
+      "answer": "Key tag",
+      "alternatives": [
+        "tag"
+      ]
+    },
+    {
+      "id": 1891,
+      "category": "history",
+      "question": "Which Soviet leader introduced glasnost and perestroika?",
+      "answer": "Gorbachev",
+      "alternatives": [
+        "Mikhail Gorbachev"
+      ]
+    },
+    {
+      "id": 1892,
+      "category": "games",
+      "question": "In bridge, what is the term for the final target a partnership tries to reach?",
+      "answer": "Contract",
+      "alternatives": []
+    },
+    {
+      "id": 1893,
+      "category": "movies/TV",
+      "question": "Which 1968 film follows a chimpanzee astronaut and a monolith-filled journey through space?",
+      "answer": "Planet of the Apes",
+      "alternatives": [
+        "Apes"
+      ]
+    },
+    {
+      "id": 1894,
+      "category": "art",
+      "question": "Which French artist is closely associated with pointillism and A Sunday Afternoon on the Island of La Grande Jatte?",
+      "answer": "Seurat",
+      "alternatives": [
+        "Georges Seurat",
+        "Georges-Pierre Seurat"
+      ]
+    },
+    {
+      "id": 1895,
+      "category": "religion",
+      "question": "Which sacred Buddhist structure often houses relics and has a domed form?",
+      "answer": "Stupa",
+      "alternatives": []
+    },
+    {
+      "id": 1896,
+      "category": "technology",
+      "question": "What term describes a system that can repair itself after failure by switching to backup parts?",
+      "answer": "Redundancy",
+      "alternatives": []
+    },
+    {
+      "id": 1897,
+      "category": "theater",
+      "question": "What theatrical term describes the word spoken just before a famous line by another actor?",
+      "answer": "Cue",
+      "alternatives": []
+    },
+    {
+      "id": 1898,
+      "category": "music",
+      "question": "What is the Italian tempo marking for 'very fast' often used in sonatas?",
+      "answer": "Presto",
+      "alternatives": []
+    },
+    {
+      "id": 1899,
+      "category": "movies/TV",
+      "question": "Which TV drama follows the internal politics of a fictional American White House?",
+      "answer": "The West Wing",
+      "alternatives": [
+        "West Wing"
+      ]
+    },
+    {
+      "id": 1900,
+      "category": "history",
+      "question": "Which wall, completed in the 2nd century, marked the northern limit of Roman Britain?",
+      "answer": "Hadrians Wall",
+      "alternatives": [
+        "Hadrian's Wall"
+      ]
+    },
+    {
+      "id": 1901,
+      "category": "technology",
+      "question": "What is the common name for the set of rules computers follow to send data across networks?",
+      "answer": "Protocol",
+      "alternatives": []
+    },
+    {
+      "id": 1902,
+      "category": "sport",
+      "question": "In football, what do you call a score of 3-0 when one team wins without reply?",
+      "answer": "Clean sheet",
+      "alternatives": []
+    },
+    {
+      "id": 1903,
+      "category": "religion",
+      "question": "Which fast-breaking evening meal ends the daily fast during Ramadan?",
+      "answer": "Iftar",
+      "alternatives": []
+    },
+    {
+      "id": 1904,
+      "category": "sport",
+      "question": "What is the maximum score possible in a single frame of bowling?",
+      "answer": "30",
+      "alternatives": [
+        "thirty"
+      ]
+    },
+    {
+      "id": 1905,
+      "category": "literature",
+      "question": "Which Russian novel begins with the famous question about how to live if there is no God?",
+      "answer": "Brothers Karamazov",
+      "alternatives": [
+        "The Brothers Karamazov"
+      ]
+    },
+    {
+      "id": 1906,
+      "category": "art",
+      "question": "What name is given to the thick, opaque painting technique using densely applied pigments?",
+      "answer": "Impasto",
+      "alternatives": []
+    },
+    {
+      "id": 1907,
+      "category": "technology",
+      "question": "What device converts digital data into light pulses for transmission through fibre-optic cables?",
+      "answer": "Modem",
+      "alternatives": []
+    },
+    {
+      "id": 1908,
+      "category": "music",
+      "question": "Which jazz musician was nicknamed 'Bird' and helped pioneer bebop on saxophone?",
+      "answer": "Charlie Parker",
+      "alternatives": [
+        "Parker",
+        "Charlie"
+      ]
+    },
+    {
+      "id": 1909,
+      "category": "technology",
+      "question": "What do you call a portable program that runs from memory and doesn't need installation?",
+      "answer": "App",
+      "alternatives": [
+        "application"
+      ]
+    },
+    {
+      "id": 1910,
+      "category": "mythology",
+      "question": "Which Norse realm of the dead is ruled by the goddess Hel?",
+      "answer": "Helheim",
+      "alternatives": [
+        "Hel"
+      ]
+    },
+    {
+      "id": 1911,
+      "category": "history",
+      "question": "Which naval battle in 1805 secured British control of the seas against France and Spain?",
+      "answer": "Trafalgar",
+      "alternatives": [
+        "Battle of Trafalgar"
+      ]
+    },
+    {
+      "id": 1912,
+      "category": "language",
+      "question": "What is the figure of speech that compares two things using 'like' or 'as'?",
+      "answer": "Simile",
+      "alternatives": []
+    },
+    {
+      "id": 1913,
+      "category": "science",
+      "question": "Which chemical element has the symbol Fe?",
+      "answer": "Iron",
+      "alternatives": []
+    },
+    {
+      "id": 1914,
+      "category": "history",
+      "question": "Which 18th-century Chinese dynasty was overthrown in the Xinhai Revolution?",
+      "answer": "Qing dynasty",
+      "alternatives": [
+        "Qing"
+      ]
+    },
+    {
+      "id": 1915,
+      "category": "games",
+      "question": "In poker, what hand has all five cards in sequence but not the same suit?",
+      "answer": "Straight",
+      "alternatives": []
+    },
+    {
+      "id": 1916,
+      "category": "art",
+      "question": "Which sculptor is known for monumental spider sculptures?",
+      "answer": "Louise Bourgeois",
+      "alternatives": [
+        "Bourgeois"
+      ]
+    },
+    {
+      "id": 1917,
+      "category": "literature",
+      "question": "Which novel begins with a courtroom in a North African city and ends with moral ambiguity?",
+      "answer": "The Stranger",
+      "alternatives": [
+        "L'Etranger",
+        "L’etranger"
+      ]
+    },
+    {
+      "id": 1918,
+      "category": "art",
+      "question": "Which Spanish painter created the cubist collage style in partnership with Picasso?",
+      "answer": "Braque",
+      "alternatives": [
+        "Georges Braque"
+      ]
+    },
+    {
+      "id": 1919,
+      "category": "food/drink",
+      "question": "Which French sauce is made from a white stock and a blond roux?",
+      "answer": "Veloute",
+      "alternatives": [
+        "Velouté"
+      ]
+    },
+    {
+      "id": 1920,
+      "category": "science",
+      "question": "What is the term for a cell that has a nucleus and membrane-bound organelles?",
+      "answer": "Eukaryote",
+      "alternatives": []
+    },
+    {
+      "id": 1921,
+      "category": "geography",
+      "question": "Which mountain range forms the backbone of Italy from north to south?",
+      "answer": "Apennines",
+      "alternatives": [
+        "Apennine Mountains"
+      ]
+    },
+    {
+      "id": 1922,
+      "category": "literature",
+      "question": "Which playwright created Oedipus Rex and Antigone?",
+      "answer": "Sophocles",
+      "alternatives": []
+    },
+    {
+      "id": 1923,
+      "category": "food/drink",
+      "question": "Which coffee-based drink from Italy combines espresso, steamed milk, and foam?",
+      "answer": "Cappuccino",
+      "alternatives": []
+    },
+    {
+      "id": 1924,
+      "category": "general trivia",
+      "question": "What is the name for a number written using digits rather than words?",
+      "answer": "Numeral",
+      "alternatives": []
+    },
+    {
+      "id": 1925,
+      "category": "science",
+      "question": "What do you call the point in a lens system where parallel rays meet?",
+      "answer": "Focal point",
+      "alternatives": [
+        "focus"
+      ]
+    },
+    {
+      "id": 1926,
+      "category": "history",
+      "question": "Which 19th-century conflict ended with Germany unifying under Prussian leadership?",
+      "answer": "Franco-Prussian War",
+      "alternatives": [
+        "Franco Prussian War"
+      ]
+    },
+    {
+      "id": 1927,
+      "category": "music",
+      "question": "Which Italian term means gradually getting softer in music?",
+      "answer": "Diminuendo",
+      "alternatives": [
+        "decrescendo"
+      ]
+    },
+    {
+      "id": 1928,
+      "category": "literature",
+      "question": "Which novel features the floating island Laputa and the tiny nation Lilliput?",
+      "answer": "Gulliver's Travels",
+      "alternatives": [
+        "Gullivers Travels",
+        "Gulliver Travels"
+      ]
+    },
+    {
+      "id": 1929,
+      "category": "religion",
+      "question": "Which sacred river is central to Hindu pilgrimage and ritual cleansing?",
+      "answer": "Ganges",
+      "alternatives": [
+        "Ganga"
+      ]
+    },
+    {
+      "id": 1930,
+      "category": "fashion",
+      "question": "Which fashion house was founded by Cristobal Balenciaga?",
+      "answer": "Balenciaga",
+      "alternatives": [
+        "Cristobal Balenciaga"
+      ]
+    },
+    {
+      "id": 1931,
+      "category": "theater",
+      "question": "Which dramatic form uses exaggerated situations and often a happy ending?",
+      "answer": "Melodrama",
+      "alternatives": []
+    },
+    {
+      "id": 1932,
+      "category": "movies/TV",
+      "question": "Which 1994 film centers on a reclusive writer and a chess prodigy in a New York apartment building?",
+      "answer": "Searching for Bobby Fischer",
+      "alternatives": [
+        "Searching For Bobby Fischer"
+      ]
+    },
+    {
+      "id": 1933,
+      "category": "theater",
+      "question": "Which playwright wrote The Bald Soprano and helped shape the Theatre of the Absurd?",
+      "answer": "Eugene Ionesco",
+      "alternatives": [
+        "Ionesco",
+        "Eugen Ionesco"
+      ]
+    }
+  ],
+  "last_id": 1590
+}
