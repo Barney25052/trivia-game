@@ -18,9 +18,21 @@ describe("answer checker", () => {
     assert.strictEqual(checkAnswer("Carbon  dioxide", "Carbon dioxide"), true);
   });
 
+  it("spaces are irrelevant", () => {
+    assert.strictEqual(checkAnswer("Twenty  Two", "TwentyTwo"), true);
+  });
+
+  it("filler words are removed", () => {
+    assert.strictEqual(checkAnswer("Kermit The Frog", "KermitFrog"), true);
+  });
+
   it("numeric answers", () => {
     assert.strictEqual(checkAnswer("206", "206"), true);
     assert.strictEqual(checkAnswer(" 206 ", "206"), true);
+  });
+
+  it("partial match with transposition passes", () => {
+    assert.strictEqual(checkAnswer("Masr", "Mars"), true);
   });
 
   it("wrong answer returns false", () => {
@@ -31,7 +43,18 @@ describe("answer checker", () => {
     assert.strictEqual(checkAnswer("", "Mars"), false);
   });
 
-  it("partial match returns false", () => {
-    assert.strictEqual(checkAnswer("Mar", "Mars"), false);
+  it("partial match too far returns false", () => {
+    assert.strictEqual(checkAnswer("Xars", "Mars"), false);
+  });
+
+  it("handles common name typo: Marc Rufallo vs Mark Ruffalo", () => {
+    assert.strictEqual(checkAnswer("Marc Rufallo", "Mark Ruffalo"), true);
+  });
+
+  it("handles sentence typos: Tihs is a porly writen snetnece", () => {
+    assert.strictEqual(
+      checkAnswer("Tihs is a porly writen snetnece", "this is a poorly written sentence"),
+      true
+    );
   });
 });
