@@ -13,7 +13,7 @@ npm start
 ## Structure
 
 - `index.ts`: main entry point, register an empty room handler and attach [`@colyseus/monitor`](https://github.com/colyseus/colyseus-monitor)
-- `src/rooms/MyRoom.ts`: an empty room handler for you to implement your logic
+- `src/rooms/TriviaRoom.ts`: the asymmetric trivia game's room handler.
 - `src/rooms/schema/GameState.ts`: the asymmetric game's shared state schema.
 - `loadtest/example.ts`: scriptable client for the loadtest tool (see `npm run loadtest`)
 - `package.json`:

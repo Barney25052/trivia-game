@@ -14,17 +14,6 @@ export class GamePlayer extends Schema {
     @type("number") score: number = 0;
 }
 
-export class Question extends Schema {
-    @type("string") text = "";
-    @type(["string"]) options = new ArraySchema<string>();
-    @type("number") correctIndex = -1;
-}
-
-export class QuestionInstance extends Schema {
-    @type(Question) question: Question = new Question();
-    @type("number") playersAnswered: number = 0;
-}
-
 export class GameState extends Schema {
     @type({ map: GamePlayer }) players = new MapSchema<GamePlayer>();
     @type("string") currentPhase: GamePhase = GamePhase.Lobby;

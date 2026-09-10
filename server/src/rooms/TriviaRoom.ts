@@ -19,7 +19,7 @@ interface OfferAmounts {
   high: number;
 }
 
-export class MyRoom extends Room {
+export class TriviaRoom extends Room {
   maxClients = 4;
   state = new GameState();
 

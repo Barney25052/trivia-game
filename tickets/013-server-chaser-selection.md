@@ -15,7 +15,7 @@ The game must start with exactly **one Chaser** and the rest as Contestants, so 
   - `startGame` now `Lobby → ChaserSelection` with a single effect `{ type: "startChaserSelection" }` (instead of going straight to CashBuilder).
   - New `FlowEvent` `{ type: "chaserSelectionComplete"; chaserSessionId }` valid **only** in ChaserSelection → `CashBuilder`, effects `[{ type: "assignChaser"; sessionId }, { type: "startCashBuilder"; sessionId: <first in contestantsOrder>; round: 1 }]`. Throw if `contestantsOrder` is empty.
   - New `FlowEffect` `{ type: "assignChaser"; sessionId }`.
-- Room (`server/src/rooms/MyRoom.ts`) — all handlers authoritative + role/phase-checked, reject + log otherwise:
+- Room (`server/src/rooms/TriviaRoom.ts`) — all handlers authoritative + role/phase-checked, reject + log otherwise:
   - `setChaserMode { mode }` — host only, Lobby phase only, `mode ∈ {random, vote}`; store on `state.chaserSelectionMode`.
   - `chaserVote { targetSessionId }` — ChaserSelection phase only; any player, once each (reject if `chaserVote` already set); reject self-vote→no, self-vote IS allowed, but `targetSessionId` must exist in `state.players`; store on `player.chaserVote`.
   - `startGame` — **restrict to host** (closes the pre-existing hole where anyone could start; add test).

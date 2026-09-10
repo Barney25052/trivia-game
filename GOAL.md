@@ -53,7 +53,7 @@ Repeat cash builder + offer + chase for every contestant.
 - Working today (server): create/join `trivia` room; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers (`src/timer.ts`); open-ended question bank (45 free-text questions) with loader + non-repeating random picker; a **pure `gameFlow` state machine** whose `FlowEffect`s the room applies. `npm test` is green (42 tests).
 - The room (tickets 007–008) dispatches real `gameFlow` transitions: `startGame` → cash builder → offer → chase, repeating per contestant, then team final → chaser final → game end, with server-authoritative timers wired. Client has screens for the new phases (ticket 009) and `SERVER_URL` is configurable via `VITE_SERVER_URL` (ticket 010).
 - NOT done yet: no lobby/chaser selection (Phase 1); no real question gameplay — cash-builder answer checking is unwired (Phase 2), offers are broadcast but not sent in the UI flow, and the MC board-chase against opentdb isn't implemented (Phase 4). Pot/score fields exist but nothing plays through them yet.
-- Ticket 012 (backlog) removes template/legacy cruft left over from the refactor (`MyRoom`, dead `Question`/`Answer` phases and schema).
+- Ticket 012 (done) removed template/legacy cruft: `MyRoom` → `TriviaRoom`, dropped the dead `Question`/`Answer` game phases and `Question`/`QuestionInstance` schema classes, and renamed the server package to `trivia-server`.
 
 ## Plan
 

@@ -6,7 +6,7 @@ The room only accepts well-formed players and rejects bad join options up front,
 
 ## Scope
 
-- In `server/src/rooms/MyRoom.ts` `onJoin` (MyRoom.ts:208-220): validate `options.playerName`:
+- In `server/src/rooms/TriviaRoom.ts` `onJoin` (TriviaRoom.ts:208-220): validate `options.playerName`:
   - must be a non-empty string after trimming,
   - trimmed length ≤ 24 chars,
   - **reject the join** (throw — do not add to `players`/`contestantsOrder`) when invalid.
@@ -23,4 +23,4 @@ The room only accepts well-formed players and rejects bad join options up front,
 
 ## Dependencies
 
-- None (safe to run in parallel with 013/014/015; touches `onJoin` only — only 013 also touches `MyRoom.ts`, so merge 016 first or last).
+- None (safe to run in parallel with 013/014/015; touches `onJoin` only — only 013 also touches `TriviaRoom.ts`, so merge 016 first or last).

@@ -1,8 +1,8 @@
 {
   "private": true,
-  "name": "my-app",
+  "name": "trivia-server",
   "version": "0.17.0",
-  "description": "npm init template for bootstrapping an empty Colyseus project",
+  "description": "Colyseus server for the asymmetric trivia game (Chaser vs contestants).",
   "type": "module",
   "main": "build/index.js",
   "engines": {

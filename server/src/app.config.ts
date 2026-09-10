@@ -10,14 +10,14 @@ import {
 /**
  * Import your Room files
  */
-import { MyRoom } from "./rooms/MyRoom.js";
+import { TriviaRoom } from "./rooms/TriviaRoom.js";
 
 const server = defineServer({
     /**
      * Define your room handlers:
      */
     rooms: {
-        trivia: defineRoom(MyRoom)
+        trivia: defineRoom(TriviaRoom)
     },
 
     /**
