@@ -52,6 +52,10 @@ export const CHASE_QUESTION = {
     answerWindowMs: 5_000
 } as const;
 
+export const ROOM_SETTINGS = {
+    max_clients: 6
+} as const;
+
 export const FINAL_ROUND = {
     teamDurationMs: TEAM_FINAL_DURATION_MS,
     chaserDurationMs: CHASER_FINAL_DURATION_MS,

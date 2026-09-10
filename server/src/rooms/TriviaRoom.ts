@@ -9,7 +9,7 @@ import {
   OfferTier,
 } from "../gameFlow.js";
 import { scheduleTimer, TimerHandle } from "../timer.js";
-import { CASH_BUILDER, CHASER_SELECTION, FINAL_ROUND, PLAYER_NAME, REVEAL_READY } from "../gameConfig.js";
+import { CASH_BUILDER, CHASER_SELECTION, FINAL_ROUND, PLAYER_NAME, REVEAL_READY, ROOM_SETTINGS } from "../gameConfig.js";
 
 const OFFER_TIERS: OfferTier[] = ["low", "middle", "high"];
 
@@ -23,7 +23,7 @@ interface OfferAmounts {
 }
 
 export class TriviaRoom extends Room {
-  maxClients = 6;
+  maxClients = ROOM_SETTINGS.max_clients;
   state = new GameState();
   seatIdToSessionId = new Map<string, string>();
 
@@ -116,7 +116,7 @@ export class TriviaRoom extends Room {
     return this.state.players.get(client.sessionId)?.isHost === true;
   }
 
-  private pickRandomChaser(): string {
+  public pickRandomChaser(): string {
     const sessionIds = [...this.state.players.keys()];
     return sessionIds[Math.floor(Math.random() * sessionIds.length)];
   }
@@ -145,7 +145,7 @@ export class TriviaRoom extends Room {
     return true;
   }
 
-  private tallyChaserVotes(): string {
+  public tallyChaserVotes(): string {
     const votes = new Map<string, number>();
     for (const player of this.state.players.values()) {
       if (player.chaserVote !== "") {
@@ -161,7 +161,7 @@ export class TriviaRoom extends Room {
     return leaders[Math.floor(Math.random() * leaders.length)];
   }
 
-  private dispatch(event: FlowEvent) {
+  public dispatch(event: FlowEvent) {
     try {
       const result = transition(event, this.flowContext());
       this.clearTimer();
@@ -319,6 +319,10 @@ export class TriviaRoom extends Room {
     }
   }
 
+  public scheduleTimer(delayMs: number, onFire: () => void) {
+    return scheduleTimer(this, delayMs, onFire)
+  }
+
   messages = {
     startGame: (client: Client, message: any) => {
       if (!this.isHost(client)) {
@@ -468,7 +472,6 @@ export class TriviaRoom extends Room {
     this.seatIdToSessionId.set(newPlayer.seatId, client.sessionId);
     this.state.contestantsOrder.push(client.sessionId);
     console.log("Client joined room", this.roomId);
-    console.log(options)
   }
 
   onLeave (client: Client, code: CloseCode) {

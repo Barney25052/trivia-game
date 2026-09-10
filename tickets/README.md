@@ -52,7 +52,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 026 | Drop the synced GamePlayer.sessionId field — use map keys for identity | done |
 | 027 | Remove template cruft and dead CSS | done |
 | 028 | Clear the chaser-wheel overlay on leave/disconnect | done |
-| 029 | Move maxClients into gameConfig; remove raw join-options log | backlog |
+| 029 | Move maxClients into gameConfig; remove raw join-options log | done |
 | 030 | Add per-round question event schema + first-class seat/spectator axis | done |
 | 031 | Extract TriviaRoom handler dispatch into a handlers module | backlog |
 | 032 | Normalise GamePhase.GameEnd value to camelCase | done |

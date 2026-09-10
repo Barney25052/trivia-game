@@ -1,9 +1,10 @@
-import { GamePhase } from "../TriviaTypes.js";
+import { GamePhase, PlayerRole } from "../../TriviaTypes.js";
 import { Room, Client } from "colyseus";
-import { GameState } from "./schema/GameState.js";
-import { FlowEffect, GameFlowContext } from "../gameFlow.js";
-import { CASH_BUILDER, CHASER_SELECTION, FINAL_ROUND, REVEAL_READY } from "../gameConfig.js";
-import { OfferTier } from "../gameFlow.js";
+import { GameState } from "../schema/GameState.js";
+import { FlowEffect, GameFlowContext, GameFlowResult } from "../../gameFlow.js";
+import { CASH_BUILDER, CHASER_SELECTION, FINAL_ROUND, REVEAL_READY } from "../../gameConfig.js";
+import { OfferTier } from "../../gameFlow.js";
+import { TriviaRoom } from "../TriviaRoom.js";
 
 export const applyEffects = (effects: FlowEffect[], room: TriviaRoom, context: GameFlowContext): GameFlowResult => {
     for (const effect of effects) {
