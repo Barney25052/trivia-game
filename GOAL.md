@@ -35,6 +35,8 @@ Current tech foundation (to be extended):
 
 Repeat cash builder + offer + chase for every contestant.
 
+**Play is strictly turn-based, one contestant at a time.** The contestants take turns in a fixed order: only the active contestant plays their cash builder → offer → chase; every other contestant waits (they're spectators at the table — see the social/dead-player features). No two contestants ever play at the same time. The only round where everyone answers at once is the **team final** ("answering as a group" below). The **Chaser** is not idle — they're active in *every* contestant's round (making offers, then answering the chase questions head-to-head) — but contestants never overlap each other.
+
 ### Final round (team vs Chaser)
 - The **team** gets **2 minutes** of open-ended questions, answering as a group. Every correct answer is **+1**.
 - The team starts with **X points, where X = the number of contestants who made it back**.
