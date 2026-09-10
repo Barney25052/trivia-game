@@ -100,6 +100,7 @@ Found on the first playthrough + security review; tracked as tickets (no BUGS.md
 - [ ] Roles reveal becomes a real phase baked into the flow (`ChaserSelection → RolesReveal → CashBuilder`) with an all-ready vote + "get ready" cooldown — 021 (server) + 022 (client)
 - [ ] Authority/phase guards on the offer/chase/final handlers — 023 (server)
 - [ ] Clamp room-option duration overrides to gameConfig bounds — 024 (server)
+- [ ] Make "random" the explicit default chaser mode (state stores `"random"`, not the silent `""` that broke 019's wheel) — 025 (server + client)
 
 ### Phase 2 — Cash builder
 - [ ] 60-second open-ended question round (typed answers from the question bank)
