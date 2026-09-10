@@ -55,6 +55,9 @@ watch(
         if (screen === "chaserSelection" && chaserSelectionMode.value === "random") {
             wheelActive.value = true;
         }
+        if(screen == "rolesReveal") {
+          wheelActive.value = false;
+        }
     }
 );
 
@@ -72,6 +75,10 @@ async function joinLobby(playerName, roomCode) {
     } else {
       room.value = await client.joinById(roomCode, {playerName : playerName});
     }
+    
+    room.value.onLeave(() => {
+      handleLeave();
+    })
 
     wheelActive.value = false;
 
@@ -165,6 +172,7 @@ function chaserReachedScore() {
 }
 
 function handleLeave() {
+  wheelActive.value = false;
   room.value?.leave()
   room.value  = null
 }
