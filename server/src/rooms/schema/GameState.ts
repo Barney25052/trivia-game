@@ -5,6 +5,7 @@ import { BOARD, CHASER_POT, CHASER_SELECTION } from "../../gameConfig.js";
 export class GamePlayer extends Schema {
     @type("string") name: string = "";
     @type("string") sessionId: string = "";
+    @type("string") seatId: string = "";
     @type("string") role: PlayerRole = PlayerRole.Contestant;
     @type("number") cashBuilderMoney: number = 0;
     @type("number") boardPos: number = BOARD.escapeSpace;

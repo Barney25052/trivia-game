@@ -25,6 +25,7 @@ interface OfferAmounts {
 export class TriviaRoom extends Room {
   maxClients = 6;
   state = new GameState();
+  seatIdToSessionId = new Map<string, string>();
 
   cashBuilderDurationMs: number = CASH_BUILDER.durationMs;
   chaserSelectionDurationMs: number | null = null;
@@ -447,11 +448,12 @@ export class TriviaRoom extends Room {
     const newPlayer = new GamePlayer();
     newPlayer.name = name;
     newPlayer.sessionId = client.sessionId;
-    newPlayer.role = PlayerRole.Contestant;
+    newPlayer.seatId = client.sessionId.slice(0, 8);
     if (this.state.players.size === 0) {
       newPlayer.isHost = true;
     }
     this.state.players.set(client.sessionId, newPlayer);
+    this.seatIdToSessionId.set(newPlayer.seatId, client.sessionId);
     this.state.contestantsOrder.push(client.sessionId);
     console.log("Client joined room", this.roomId);
     console.log(options)
@@ -463,6 +465,7 @@ export class TriviaRoom extends Room {
       this.disconnect(6767)
     }
     this.state.players.delete(client.sessionId);
+    this.seatIdToSessionId.delete(player.seatId);
     const contestantIndex = this.state.contestantsOrder.indexOf(client.sessionId);
     if(contestantIndex >= 0) {
       this.state.contestantsOrder.splice(contestantIndex, 1);
