@@ -22,6 +22,7 @@ Multiplayer trivia game built on Colyseus. Two independent npm projects — ther
 - Game flow: create/`joinById` room `trivia` with `{ playerName }`; first joiner is host; phases progress `Lobby → ChaserSelection → CashBuilder → Offer → Chase` (repeating per contestant) `→ TeamFinal → ChaserFinal → GameEnd`. Transitions come from the pure state machine `server/src/gameFlow.ts` (a `FlowEvent` + context → `nextPhase` + `FlowEffect[]`), which the room (`server/src/rooms/TriviaRoom.ts`) applies; timers are server-authoritative via `scheduleTimer` (`server/src/timer.ts`) with durations from `server/src/gameConfig.ts`. Host leaving disconnects the room (`onLeave`, close code 6767).
 - PM2 deploy config (`server/ecosystem.config.cjs`) runs `build/index.js`, so `npm run build` is required before deploying. `@colyseus/monitor` is exposed at `/monitor`; the Colyseus playground serves at `/` except in production.
 - `client/package.json` has `allowScripts` for `msgpackr-extract`; this can matter if `npm install` fails under restricted script settings.
+- **`sessionId` is ephemeral**: a reload/refresh joins a *new* player — reload = forfeit the seat (rejoin as spectator or in the next round). Never build durable-identity assumptions on sessionIds in handlers, scoring, or round order. Reconnection is deferred; the only planned exception is **host-reconnect** via Colyseus `allowReconnection` (stretch goal) — today a host drop disconnects the room (close code 6767).
 
 ## Code requirements
 
@@ -56,6 +57,14 @@ Documented standards — there is no formatter or linter; conventions are enforc
 - `gameFlow.ts` is **pure**: it takes a `FlowEvent` + context and returns `nextPhase` + `FlowEffect[]`. The room applies effects and runs timers; it never decides transitions itself.
 - All tunables live in `server/src/gameConfig.ts` (durations, money, board layout, offer math). No magic numbers in room code.
 - Message handlers are **authoritative and role-checked**: only the expected client may trigger an event (e.g. host starts, chaser finishes the final), only in the right phase. Reject + log otherwise.
+
+### Security
+- **Server-authoritative by default**: every inbound message/join-option is attacker-controlled input. Beyond role/phase checks, validate shape, types, and bounds (numbers in range, strings non-empty/capped, expected values) and reject + log anything malformed. Never trust client-sent values for scoring, roles, pots, positions, room options, or answer correctness.
+- **Clamp room options**: `onCreate`/join options (e.g. `cashBuilderDurationMs`) come from the client — clamp them to `gameConfig` bounds instead of trusting raw values. Short-duration overrides exist for tests; keep them working but bounded.
+- **Never broadcast the correct answer before reveal**: the correct MC index and accepted free-text answers must stay server-side until the moment of resolution. Anything put in the synced `GameState` schema goes to **every** client (including the Chaser) — a leak breaks the game, not just the security of it. This extends to opentdb questions in Phase 4.
+- **Escape all player-controlled text**: names, answers, messages. Vue interpolates/escapes by default — never render player-controlled content with `v-html`.
+- **Abuse caps**: cap active rooms and connections, and rate-limit per-player messages (matters when taunts/emotes/picks land). No unbounded loops, broadcasts, or delayed-timer chains from client input.
+- **No secrets or telemetry**: nothing in code, configs, or logs; no analytics/PII. The game stores no personal data — keep it that way.
 
 ### Naming
 - Rename template artifacts (`MyRoom`, `my-app`, template package metadata) out when touched — descriptive names over template ones.

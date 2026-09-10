@@ -98,7 +98,7 @@ Granular agent tasks live in `tickets/` (013–016, tracked in `tickets/README.m
 - [ ] Configurable values (durations, money, offer multipliers), SERVER_URL not hardcoded
 - [ ] Fix/remove stale tests; real server tests for the state machine
 - [ ] Graceful opentdb/question-bank failure handling
-- [ ] Deployment: PM2 build + serving client from the server
+- [ ] Deployment: PM2 build + serving client from the server; protect `/monitor` with auth; TLS/wss behind a reverse proxy; cap rooms/connections/message rate (see AGENTS.md "Security")
 
 ### Stretch goals
 - [ ] **Chaser special abilities** (toggle-able in settings): e.g. once-per-round 50/50, others to discuss
@@ -110,6 +110,7 @@ Granular agent tasks live in `tickets/` (013–016, tracked in `tickets/README.m
 - [ ] **Dead-player: ghost scoreboard** — eliminated (and waiting) players keep answering live questions anyway; their picks accumulate into a personal ghost score, and a board shows how well you'd have done vs everyone else. Counts for nothing; pure bragging rights. (MC questions → pick an option; open-ended ones → they can type too.)
 - [ ] **Question-bank editor**: an admin panel or a small standalone Python program (matches the `api-test.py` precedent at repo root) with an easy interface for adding/editing questions in `server/data/questions.json` (`{ questions: [{ id, category, question, answer }] }`) instead of hand-editing the JSON. Useful extras: duplicate-id/empty-field validation, category browsing, and a quick "answer matches?" preview.
 - [ ] **Deferred, officials-tier (revisit when the base game is fun)**: human **judge panel** for lenient open-ended answers (possibly all open-ended rounds) and crowd **boosters/curses**. Both would give eliminated players *real* power; parked on flow/balance grounds for now. (The judge panel also ties into open question #2.)
+- [ ] **Host reconnection**: if the host's connection drops mid-game, let them reconnect within a grace window (e.g. Colyseus `allowReconnection` + a "host left, waiting…" state) instead of kicking everyone. Regular player reload = **forfeit seat** (rejoin as spectator / next round) — we deliberately keep identities `sessionId`-ephemeral and add no durable player accounts.
 
 ## Open questions
 
