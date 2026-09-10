@@ -421,9 +421,7 @@ ul {
 }
 
 .revealScreen {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -457,6 +455,13 @@ ul {
   font-size: 52px;
   text-align: center;
   margin: 0;
+}
+
+.revealChaserRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
 }
 
 .revealChaserYou {
@@ -538,12 +543,52 @@ ul {
   font-size: 16px;
 }
 
+.revealReadyTick {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background-color: #31c31e;
+  color: #ffffff;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.revealReadyTick-empty {
+  background-color: transparent;
+  border: 2px solid #ffffff;
+  color: transparent;
+}
+
+.contestantReadyRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .revealContinue {
   width: 200px;
   height: 60px;
   margin: 20px auto;
   background-color: #ffffff;
   color: var(--chaser-red-dark);
+}
+
+.revealContinue:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: default;
+}
+
+.getReadyCountdown {
+  animation: press-me 1s ease-in-out infinite;
 }
 
 @keyframes pan-bg {

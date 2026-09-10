@@ -26,8 +26,7 @@ const chaserSessionId = ref("");
 const teamScore = ref(0);
 const currentOffer = ref(null);
 const winner = ref(null);
-const hasRevealedRoles = ref(false);
-const rolesRevealOpen = ref(false);
+const getReadyCooldownMs = ref(0);
 const wheelActive = ref(false);
 
 const currentScreen = computed(() => {
@@ -35,6 +34,7 @@ const currentScreen = computed(() => {
   switch (currentPhase.value) {
     case GamePhase.Lobby: return "lobby";
     case GamePhase.ChaserSelection: return "chaserSelection";
+    case GamePhase.RolesReveal: return "rolesReveal";
     case GamePhase.CashBuilder: return "cashBuilder";
     case GamePhase.Offer: return "offer";
     case GamePhase.Chase: return "chase";
@@ -73,8 +73,6 @@ async function joinLobby(playerName, roomCode) {
       room.value = await client.joinById(roomCode, {playerName : playerName});
     }
 
-    hasRevealedRoles.value = false;
-    rolesRevealOpen.value = false;
     wheelActive.value = false;
 
     room.value.onStateChange((newState) => {
@@ -85,11 +83,6 @@ async function joinLobby(playerName, roomCode) {
       activeContestantSessionId.value = newState.activeContestantSessionId;
       chaserSessionId.value = newState.chaserSessionId;
       teamScore.value = newState.teamScore;
-
-      if (newState.chaserSessionId && !hasRevealedRoles.value && chaserSelectionMode.value !== "random") {
-        hasRevealedRoles.value = true;
-        rolesRevealOpen.value = true;
-      }
     });
 
     room.value.onMessage("phase", (message) => {
@@ -98,6 +91,10 @@ async function joinLobby(playerName, roomCode) {
 
     room.value.onMessage("offer", (message) => {
       currentOffer.value = message;
+    });
+
+    room.value.onMessage("getReady", (message) => {
+      getReadyCooldownMs.value = message.cooldownMs;
     });
 
     room.value.onMessage("endGame", (message) => {
@@ -172,19 +169,17 @@ function handleLeave() {
   room.value  = null
 }
 
-function closeRolesReveal() {
-  rolesRevealOpen.value = false;
-}
+function revealReady() {
+  try {
+    room.value?.send("revealReady", {});
 
-function openRolesReveal() {
-  if (hasRevealedRoles.value) return;
-  hasRevealedRoles.value = true;
-  rolesRevealOpen.value = true;
+  } catch (e) {
+    console.error("Failed to send reveal ready:", e);
+  }
 }
 
 function handleWheelReveal() {
   wheelActive.value = false;
-  openRolesReveal();
 }
 </script>
 
@@ -217,8 +212,15 @@ function handleWheelReveal() {
       :mySessionId="mySessionId"
       @chaserVote="chaserVote"
     />
+    <RolesRevealScreen
+      v-if="currentScreen=='rolesReveal'"
+      :players="players"
+      :mySessionId="mySessionId"
+      @ready="revealReady"
+    />
     <CashBuilderScreen 
       v-if="currentScreen=='cashBuilder'"
+      :getReadyCooldownMs="getReadyCooldownMs"
     />
     <OfferScreen
       v-if="currentScreen=='offer'"
@@ -248,12 +250,6 @@ function handleWheelReveal() {
       :winner="winner"
       :players="players"
       @leave="handleLeave"
-    />
-    <RolesRevealScreen
-      v-if="rolesRevealOpen"
-      :players="players"
-      :mySessionId="mySessionId"
-      @continue="closeRolesReveal"
     />
   </div>
 </template>
