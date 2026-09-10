@@ -7,6 +7,21 @@ import { cleanup, getTestServer } from "./testServer.js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const waitForPhase = async (
+  room: { state: { currentPhase: GamePhase } },
+  phase: GamePhase,
+  timeoutMs = 2000
+): Promise<void> => {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (room.state.currentPhase === phase) {
+      return;
+    }
+    await sleep(20);
+  }
+  assert.fail(`timed out waiting for phase ${phase}; got ${room.state.currentPhase}`);
+};
+
 describe("roomFlow", () => {
   let colyseus: ColyseusTestServer<typeof appConfig>;
 
@@ -92,40 +107,33 @@ describe("roomFlow", () => {
     alice.send("setChaserMode", { mode: "random" });
     await sleep(30);
     alice.send("startGame");
-    await sleep(300);
-    assert.strictEqual(room.state.currentPhase, GamePhase.Offer);
+    await waitForPhase(room, GamePhase.Offer);
 
     // First contestant: cashBuilder -> offer -> chase (escapes; her round's offer is $0)
     const first = bySession.get(room.state.activeContestantSessionId);
     first.send("offerChoice", { offer: "high" });
-    await sleep(80);
-    assert.strictEqual(room.state.currentPhase, GamePhase.Chase);
+    await waitForPhase(room, GamePhase.Chase);
 
     first.send("chaseResult", { escaped: true });
-    await sleep(80);
-    assert.strictEqual(room.state.currentPhase, GamePhase.CashBuilder);
+    await waitForPhase(room, GamePhase.CashBuilder);
     const second = bySession.get(room.state.activeContestantSessionId);
     assert.ok(second && second.sessionId !== first.sessionId, "second contestant is not the chaser");
     assert.strictEqual(room.state.activeRound, 2);
     assert.strictEqual(room.state.players.get(first.sessionId).madeItBack, true);
 
     // Second contestant: cashBuilder -> offer -> chase (gets caught)
-    await sleep(150);
-    assert.strictEqual(room.state.currentPhase, GamePhase.Offer);
+    await waitForPhase(room, GamePhase.Offer);
 
     second.send("offerChoice", { offer: "middle" });
-    await sleep(80);
-    assert.strictEqual(room.state.currentPhase, GamePhase.Chase);
+    await waitForPhase(room, GamePhase.Chase);
 
     second.send("chaseResult", { escaped: false });
-    await sleep(80);
-    assert.strictEqual(room.state.currentPhase, GamePhase.TeamFinal);
+    await waitForPhase(room, GamePhase.TeamFinal);
     assert.strictEqual(room.state.players.get(second.sessionId).isEliminated, true);
     assert.strictEqual(room.state.teamScore, 1, "only the first contestant survived, so the team starts at 1");
 
     // Team final timer -> chaser final
-    await sleep(150);
-    assert.strictEqual(room.state.currentPhase, GamePhase.ChaserFinal);
+    await waitForPhase(room, GamePhase.ChaserFinal);
 
     // Stub handler: chaser reaches the team score -> game end
     alice.send("finalChaserScore");
