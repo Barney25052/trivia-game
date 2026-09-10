@@ -6,4 +6,3 @@ Status values: `todo`, `done`.
 
 | File | What it is | Where it's used | Status |
 |------|------------|-----------------|--------|
-| character_face.png | 2D avatar face for the contestants' reaction panel | client corner panel (stretch: at-the-table reactions) | todo |

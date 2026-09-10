@@ -38,6 +38,7 @@ Repeat cash builder + offer + chase for every contestant.
 ### Final round (team vs Chaser)
 - The **team** gets **2 minutes** of open-ended questions, answering as a group. Every correct answer is **+1**.
 - The team starts with **X points, where X = the number of contestants who made it back**.
+- **Eliminated players rejoin for this round**: everyone — including contestants who were caught — answers in the team's group round. X is unchanged and still only counts survivors; eliminated players just add their answers to the 2-minute tally.
 - Then the **Chaser** gets **2 minutes** of open-ended questions:
   - Correct answer → Chaser **+1**.
   - Wrong answer → the team gets a chance to answer; if they're right they **push the Chaser back** one.
@@ -102,16 +103,19 @@ Granular agent tasks live in `tickets/` (013–016, tracked in `tickets/README.m
 ### Stretch goals
 - [ ] **Chaser special abilities** (toggle-able in settings): e.g. once-per-round 50/50, others to discuss
 - [ ] **Chaser characters**: the Chaser player picks *which Chaser* they want to be from a roster (each with their own name/identity/ability and — like the show — contestants don't see which Chaser they're facing until the reveal, i.e. when they walk out at the offer stage). Not concrete yet; idea only.
-- [ ] **Something to do for eliminated contestants** during the game (idea TBD — see Open questions)
-- [ ] **At-the-table reactions (party layer)**: while a question is live, every non-active player (waiting contestants + eliminated players) picks an option themselves; their pick drives a live face — smile when the picked option is the correct one, eeeek/:( when it's wrong or when it mismatches the active player's pick. The faces float in a small corner panel with the other contestants' faces, like a party game. Server only broadcasts picks — never affects game outcomes. (This also gives eliminated/waiting players a real job, feeding the goal above.)
-- [ ] **Pickable 2D avatars**: players pick a little 2D "funny guy" character when they join; avatars sit at the table in the corner panel (reactions above) and next to the active player/Chaser. Flat 2D art style — explicitly not 3D — to make the game feel social. Contestants pick their own avatar; distinct from the Chaser-character roster (above) which only the Chaser chooses. (Character art the user must draw is tracked in `HUMAN_TASKS.md`.)
+- [ ] **At-the-table faces (live players)**: a corner panel of the **live** players' faces reacting to the moment — smile when a contestant gets a question right, eeeek/:( when they're about to get caught — a cheer layer for the people actually in the game. Server only broadcasts what happened; faces never affect outcomes.
+- [ ] **Pickable 2D avatars**: players pick a little 2D "funny guy" character when they join; avatars sit at the table (in the faces panel above), on the dead-player bench, and next to the active player/Chaser. Flat 2D art style — explicitly not 3D — to make the game feel social. Contestants pick their own avatar; distinct from the Chaser-character roster (above) which only the Chaser chooses. (Character art the user must draw is tracked in `HUMAN_TASKS.md`.)
+- [ ] **Dead-player: taunt bar** — eliminated players blast quick emotes/taunts at the active player or the Chaser ("OOH!", "BOO!", skull, laugh) through the same corner/bench panel. Pure banter, zero game impact.
+- [ ] **Dead-player: prediction pool** — eliminated players gamble *candy points* (fun-only currency) on offer picks, escape-vs-caught, and the final winner; the results screen shows a "most candy earned" leaderboard for bragging rights. Effect-free stakes that keep the bench invested in every round.
+- [ ] **Dead-player: ghost scoreboard** — eliminated (and waiting) players keep answering live questions anyway; their picks accumulate into a personal ghost score, and a board shows how well you'd have done vs everyone else. Counts for nothing; pure bragging rights. (MC questions → pick an option; open-ended ones → they can type too.)
 - [ ] **Question-bank editor**: an admin panel or a small standalone Python program (matches the `api-test.py` precedent at repo root) with an easy interface for adding/editing questions in `server/data/questions.json` (`{ questions: [{ id, category, question, answer }] }`) instead of hand-editing the JSON. Useful extras: duplicate-id/empty-field validation, category browsing, and a quick "answer matches?" preview.
+- [ ] **Deferred, officials-tier (revisit when the base game is fun)**: human **judge panel** for lenient open-ended answers (possibly all open-ended rounds) and crowd **boosters/curses**. Both would give eliminated players *real* power; parked on flow/balance grounds for now. (The judge panel also ties into open question #2.)
 
 ## Open questions
 
 Things we discussed but haven't locked down yet. When you decide, move the answer into the rules above:
 1. High/lower offer **multipliers** relative to the middle (and how strictly they're constrained by the Chaser's pot).
 2. Open-ended answer checking: exact-match vs lenient (misspellings, case, "an/a").
-3. What to give **eliminated contestants** to do during the game.
+3. ~~What to give **eliminated contestants** to do during the game~~ → **answered (audience-first)**: taunt bar, prediction pool, ghost scoreboard, and final-round rejoin (see Stretch goals + Final round rules). Still open: how much flavor to layer on each.
 4. Chaser abilities list to start with (50/50 confirmed as a candidate; others to discuss).
 5. **Chaser characters**: roster size, who the Chaser pick happens (before reveal), and how the reveal ties into the show's drama.
