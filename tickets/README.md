@@ -36,6 +36,10 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 010 | Client: make SERVER_URL configurable | done |
 | 011 | Stale test/loadtest cleanup + green baseline | done |
 | 012 | De-template legacy cruft (`MyRoom` → `TriviaRoom`, dead phases/schema) | backlog |
+| 013 | Server: authoritative chaser selection (random + vote) | backlog |
+| 014 | Client: chaser-selection screens (mode pick + votes) | backlog |
+| 015 | Client: show roles + rules to all players | backlog |
+| 016 | Harden player setup (server-side name validation) | backlog |
 
 Status values: `backlog`, `in-progress`, `done`.
 

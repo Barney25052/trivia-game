@@ -67,9 +67,10 @@ Granular agent tasks for this phase live in `tickets/` (001–012, tracked in `t
 - [x] Restructure client screens for the new flow; unify/clean `GamePhase` (cleanup pending in 012)
 
 ### Phase 1 — Lobby & chaser selection
-- [ ] Player setup (names, room code)
-- [ ] Chaser selection with **random** and **vote** options
-- [ ] Show roles + rules to all players
+Granular agent tasks live in `tickets/` (013–016, tracked in `tickets/README.md`).
+- [ ] Player setup (names, room code) — 016 (UI exists; server-side validation)
+- [ ] Chaser selection with **random** and **vote** options — 013 (server) + 014 (client)
+- [ ] Show roles + rules to all players — 015
 
 ### Phase 2 — Cash builder
 - [ ] 60-second open-ended question round (typed answers from the question bank)
