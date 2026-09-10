@@ -84,6 +84,30 @@ describe("roomFlow", () => {
     assert.ok(phases.includes(GamePhase.Offer), "should have broadcast offer phase");
   });
 
+  it("default chaser mode is random: a game started without setChaserMode runs random picks", async () => {
+    const room = await colyseus.createRoom<GameState>("trivia", {
+      cashBuilderDurationMs: 80,
+      chaserSelectionDurationMs: 80
+    });
+
+    const alice = await colyseus.connectTo(room, { playerName: "Alice" });
+    const bob = await colyseus.connectTo(room, { playerName: "Bob" });
+    await sleep(100);
+
+    assert.strictEqual(room.state.chaserSelectionMode, "random");
+    assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
+
+    alice.send("startGame");
+    await waitForPhase(room, GamePhase.CashBuilder);
+
+    assert.strictEqual(room.state.chaserSelectionMode, "random");
+    assert.ok(
+      room.state.chaserSessionId === alice.sessionId || room.state.chaserSessionId === bob.sessionId,
+      "default random mode picks one of the players as chaser"
+    );
+    assert.strictEqual(room.state.players.get(room.state.chaserSessionId).role, PlayerRole.Chaser);
+  });
+
   it("walks the full flow end-to-end via the stub handlers", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       cashBuilderDurationMs: 80,
@@ -214,7 +238,7 @@ describe("roomFlow", () => {
     bob.send("setChaserMode", { mode: "vote" });
     await sleep(50);
 
-    assert.strictEqual(room.state.chaserSelectionMode, "");
+    assert.strictEqual(room.state.chaserSelectionMode, "random");
     assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
   });
 

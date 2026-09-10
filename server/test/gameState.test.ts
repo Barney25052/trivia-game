@@ -3,7 +3,7 @@ import { ColyseusTestServer } from "@colyseus/testing";
 import appConfig from "../src/app.config.js";
 import { GameState } from "../src/rooms/schema/GameState.js";
 import { GamePhase, PlayerRole } from "../src/TriviaTypes.js";
-import { CHASER_POT } from "../src/gameConfig.js";
+import { CHASER_POT, CHASER_SELECTION } from "../src/gameConfig.js";
 import { cleanup, getTestServer } from "./testServer.js";
 
 describe("GameState", () => {
@@ -22,7 +22,7 @@ describe("GameState", () => {
     assert.strictEqual(room.state.players.size, 0);
     assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
     assert.strictEqual(room.state.chaserSessionId, "");
-    assert.strictEqual(room.state.chaserSelectionMode, "");
+    assert.strictEqual(room.state.chaserSelectionMode, CHASER_SELECTION.defaultMode);
     assert.strictEqual(room.state.chaserPot, CHASER_POT.initial);
     assert.strictEqual(room.state.teamPot, 0);
     assert.strictEqual(room.state.activeContestantSessionId, "");

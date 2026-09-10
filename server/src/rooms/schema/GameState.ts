@@ -1,6 +1,6 @@
 import { ArraySchema, MapSchema, Schema, type } from "@colyseus/schema";
 import { GamePhase, PlayerRole } from "../../TriviaTypes.js";
-import { BOARD, CHASER_POT } from "../../gameConfig.js";
+import { BOARD, CHASER_POT, CHASER_SELECTION } from "../../gameConfig.js";
 
 export class GamePlayer extends Schema {
     @type("string") name: string = "";
@@ -18,7 +18,7 @@ export class GamePlayer extends Schema {
 export class GameState extends Schema {
     @type({ map: GamePlayer }) players = new MapSchema<GamePlayer>();
     @type("string") currentPhase: GamePhase = GamePhase.Lobby;
-    @type("string") chaserSelectionMode: string = "";
+    @type("string") chaserSelectionMode: string = CHASER_SELECTION.defaultMode;
     @type("string") chaserSessionId: string = "";
     @type("number") chaserPot: number = CHASER_POT.initial;
     @type("number") teamPot: number = 0;

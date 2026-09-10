@@ -43,12 +43,12 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 017 | Fix flaky `roomFlow` end-to-end test (server) | done |
 | 018 | TriviaTypes.ts trailing-newline parity (server vs client) | done |
 | 019 | Chaser selection: random-mode animation (client) | backlog |
-| 020 | Lobby screen polish — readable names, settings to the side, drop "How to Play" | backlog |
+| 020 | Lobby screen polish — readable names, settings to the side, drop "How to Play" | done |
 | 021 | Server: roles-reveal ready gate + cash-builder cooldown | backlog |
 | 022 | Client: roles-reveal ready vote + get-ready countdown (depends 021) | backlog |
 | 023 | Authority + phase guards on offer/chase/final handlers (server) | backlog |
 | 024 | Clamp room-option duration overrides to gameConfig bounds (server) | backlog |
-| 025 | Make "random" the explicit default chaser-selection mode (kills the silent `""`) | backlog |
+| 025 | Make "random" the explicit default chaser-selection mode (kills the silent `""`) | done |
 
 Status values: `backlog`, `in-progress`, `done`.
 

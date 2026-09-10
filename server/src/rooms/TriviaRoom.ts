@@ -124,7 +124,7 @@ export class TriviaRoom extends Room {
     for (const effect of effects) {
       switch (effect.type) {
         case "startChaserSelection": {
-          const mode = this.state.chaserSelectionMode || CHASER_SELECTION.defaultMode;
+          const mode = this.state.chaserSelectionMode;
           const duration =
             this.chaserSelectionDurationMs ??
             (mode === "vote" ? CHASER_SELECTION.voteDurationMs : CHASER_SELECTION.randomDurationMs);
