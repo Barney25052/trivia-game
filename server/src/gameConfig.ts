@@ -30,6 +30,12 @@ export const CHASER_POT = {
     perRound: 30_000
 } as const;
 
+export const CHASER_CHARACTERS = [
+    { id: "blight", name: "Blight", ability: "50/50 toggle" },
+    { id: "riker", name: "Riker", ability: "Skip turn" },
+    { id: "vasquez", name: "Vasquez", ability: "Double time" }
+] as const;
+
 export const BOARD = {
     /** Spaces on the board are 1..spaces inclusive. */
     spaces: 7,

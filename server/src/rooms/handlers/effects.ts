@@ -87,9 +87,11 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
             `Offer for ${effect.sessionId}: low ${room.currentOffer.low} / ` +
             `middle ${room.currentOffer.middle} / high ${room.currentOffer.high}`
           );
+          const chaser = room.state.players.get(room.state.chaserSessionId);
           room.broadcast("offer", {
             sessionId: effect.sessionId,
-            offers: room.currentOffer
+            offers: room.currentOffer,
+            chaserCharacterId: chaser?.chaserCharacterId ?? ""
           });
           break;
         }

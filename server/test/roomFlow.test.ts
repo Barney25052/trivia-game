@@ -79,7 +79,7 @@ describe("roomFlow", () => {
     assert.strictEqual(room.state.activeContestantSessionId, "");
 
     // A lone revealReady from one player does not advance the room.
-    alice.send("revealReady");
+    alice.send("revealReady", { characterId: "blight" });
     await sleep(100);
     assert.strictEqual(room.state.currentPhase, GamePhase.RolesReveal);
     assert.strictEqual(room.state.players.get(alice.sessionId).revealReady, true);
@@ -128,8 +128,8 @@ describe("roomFlow", () => {
     );
     assert.strictEqual(room.state.players.get(room.state.chaserSessionId).role, PlayerRole.Chaser);
 
-    alice.send("revealReady");
-    bob.send("revealReady");
+    alice.send("revealReady", { characterId: "blight" });
+    bob.send("revealReady", { characterId: "blight" });
     await waitForPhase(room, GamePhase.CashBuilder);
     assert.strictEqual(room.state.activeContestantSessionId, room.state.chaserSessionId === alice.sessionId ? bob.sessionId : alice.sessionId);
     assert.strictEqual(room.state.activeRound, 1);
@@ -158,11 +158,11 @@ describe("roomFlow", () => {
 
     alice.send("setChaserMode", { mode: "random" });
     await sleep(30);
-    alice.send("startGame");
+alice.send("startGame");
     await waitForPhase(room, GamePhase.RolesReveal);
-    alice.send("revealReady");
-    bob.send("revealReady");
-    carol.send("revealReady");
+    alice.send("revealReady", { characterId: "blight" });
+    bob.send("revealReady", { characterId: "blight" });
+    carol.send("revealReady", { characterId: "blight" });
     await waitForPhase(room, GamePhase.Offer);
 
     // First contestant: cashBuilder -> offer -> chase (escapes; her round's offer is $0)
@@ -221,7 +221,7 @@ describe("roomFlow", () => {
 
     alice.send("startGame");
     await waitForPhase(room, GamePhase.RolesReveal);
-    alice.send("revealReady");
+    alice.send("revealReady", { characterId: "blight" });
     bob.send("revealReady");
     await waitForPhase(room, GamePhase.Offer);
 
@@ -256,7 +256,7 @@ describe("roomFlow", () => {
 
     alice.send("startGame");
     await waitForPhase(room, GamePhase.RolesReveal);
-    alice.send("revealReady");
+    alice.send("revealReady", { characterId: "blight" });
     bob.send("revealReady");
     await waitForPhase(room, GamePhase.Offer);
 
@@ -293,7 +293,7 @@ describe("roomFlow", () => {
 
     alice.send("startGame");
     await waitForPhase(room, GamePhase.RolesReveal);
-    alice.send("revealReady");
+    alice.send("revealReady", { characterId: "blight" });
     bob.send("revealReady");
     await waitForPhase(room, GamePhase.Offer);
 
@@ -343,12 +343,12 @@ describe("roomFlow", () => {
     assert.strictEqual(room.state.players.get(bob.sessionId).role, PlayerRole.Chaser);
     assert.deepStrictEqual([...room.state.contestantsOrder], [alice.sessionId, carol.sessionId]);
 
-    alice.send("revealReady");
+    alice.send("revealReady", { characterId: "blight" });
     carol.send("revealReady");
     await sleep(100);
     assert.strictEqual(room.state.currentPhase, GamePhase.RolesReveal, "waiting on bob before advancing");
 
-    bob.send("revealReady");
+    bob.send("revealReady", { characterId: "blight" });
     await waitForPhase(room, GamePhase.CashBuilder);
     assert.strictEqual(room.state.activeContestantSessionId, alice.sessionId);
     assert.strictEqual(room.state.activeRound, 1);
@@ -382,8 +382,8 @@ describe("roomFlow", () => {
     assert.strictEqual(room.state.contestantsOrder.length, 1);
     assert.ok(![...room.state.contestantsOrder].includes(room.state.chaserSessionId));
 
-    alice.send("revealReady");
-    bob.send("revealReady");
+    alice.send("revealReady", { characterId: "blight" });
+    bob.send("revealReady", { characterId: "blight" });
     await waitForPhase(room, GamePhase.CashBuilder);
   });
 

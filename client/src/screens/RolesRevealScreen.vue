@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from "vue";
-import { PlayerRole } from "../TriviaTypes.ts";
+import { PlayerRole, ChaserCharacter } from "../TriviaTypes.ts";
 
 const props = defineProps(["players", "mySessionId"]);
 const emit = defineEmits(["ready"]);
@@ -13,6 +13,21 @@ const myRevealReady = computed(
 const allReady = computed(
     () => props.players.length > 0 && props.players.every((p) => p.revealReady === true)
 );
+const myCharacter = computed(
+    () => props.players.find((p) => p.sessionId === props.mySessionId)?.chaserCharacterId
+);
+const myCharacterInfo = computed(() => {
+    if (!myCharacter.value) return null;
+    const character = Object.values(ChaserCharacter).find(
+        (c) => ChaserCharacter[c] === myCharacter.value
+    );
+    return character ? { name: character, ability: character } : null;
+});
+const availableCharacters = computed(() => [
+    { id: ChaserCharacter.Blight, name: "Blight", ability: "50/50 toggle" },
+    { id: ChaserCharacter.Riker, name: "Riker", ability: "Skip turn" },
+    { id: ChaserCharacter.Vasquez, name: "Vasquez", ability: "Double time" }
+]);
 </script>
 
 <template>
@@ -48,7 +63,24 @@ const allReady = computed(
                 </li>
             </ul>
             <p class="playerName">{{ allReady ? "All ready!" : "Waiting for everyone to be ready…" }}</p>
-            <button class="revealContinue" :disabled="myRevealReady" @click="emit('ready')">Ready</button>
+            <div v-if="chaser?.sessionId === mySessionId && !myRevealReady" class="characterPicker">
+                <h4 class="characterPickerLabel">Choose your Chaser character</h4>
+                <div class="characterOptions">
+                    <label v-for="character in availableCharacters" :key="character.id" class="characterOption">
+                        <input
+                            type="radio"
+                            :name=" 'character-' + chaser?.name"
+                            :value="character.id"
+                            v-model="myCharacter"
+                        />
+                        <span>
+                            <strong>{{ character.name }}</strong>
+                            <span class="characterAbility">{{ character.ability }}</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            <button class="revealContinue" :disabled="myRevealReady || !myCharacter" @click="emit('ready')">Ready</button>
         </div>
     </div>
 </template>

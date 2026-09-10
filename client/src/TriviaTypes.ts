@@ -14,3 +14,9 @@ export enum PlayerRole {
     Contestant = "contestant",
     Chaser = "chaser"
 }
+
+export enum ChaserCharacter {
+    Blight = "blight",
+    Riker = "riker",
+    Vasquez = "vasquez"
+}

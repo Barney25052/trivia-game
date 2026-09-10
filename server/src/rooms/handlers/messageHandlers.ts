@@ -72,10 +72,33 @@ export function revealReady(client: any, message: any, room: any) {
         console.log(client.sessionId, "Already confirmed ready for the roles reveal!");
         return;
     }
-    player.revealReady = true;
-    console.log(`${client.sessionId} confirmed ready for the cash builder`);
-    if (allPlayersReady(room)) {
-        room.dispatch({ type: "revealAllReady" });
+    if (player.role === PlayerRole.Chaser) {
+        const characterId = message?.characterId;
+        if (!characterId) {
+            console.log(client.sessionId, "Chaser must select a character before ready!");
+            return;
+        }
+        const valid = ["blight", "riker", "vasquez"].includes(characterId);
+        if (!valid) {
+            console.log(client.sessionId, "Invalid chaser character ID:", characterId);
+            return;
+        }
+        player.revealReady = true;
+        player.chaserCharacterId = characterId;
+        console.log(`${client.sessionId} confirmed ready with character ${characterId} for the roles reveal`);
+    } else {
+        player.revealReady = true;
+        console.log(`${client.sessionId} confirmed ready for the cash builder`);
+    }
+    // Only check if Chaser is ready (non-Chasers are always "ready" once they connect)
+    const chaser = [...room.state.players.values()].find((p) => p.role === PlayerRole.Chaser);
+    if (!chaser || chaser.revealReady) {
+        const allReady = [...room.state.players.values()].every(
+            (p) => p.revealReady === true
+        );
+        if (allReady) {
+            room.dispatch({ type: "revealAllReady" });
+        }
     }
 }
 
