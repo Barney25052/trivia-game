@@ -149,7 +149,7 @@ Found on the first playthrough + security review; tracked as tickets and verifie
 
 ## Open questions
 
-Things we discussed but haven't locked down yet. When you decide, move the answer into the rules above:
+Things we discussed but haven't locked down yet. When you decide, move the answer into the rules above: 
 2. Open-ended answer checking: exact-match vs lenient (misspellings, case, "an/a").
 3. ~~What to give **eliminated contestants** to do during the game~~ → **answered (audience-first)**: taunt bar, prediction pool, ghost scoreboard, and final-round rejoin (see Stretch goals + Final round rules). Still open: how much flavor to layer on each.
 4. Chaser abilities list to start with (50/50 confirmed as a candidate; others to discuss).
