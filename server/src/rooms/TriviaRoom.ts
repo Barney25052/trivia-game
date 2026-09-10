@@ -23,7 +23,7 @@ interface OfferAmounts {
 }
 
 export class TriviaRoom extends Room {
-  maxClients = 4;
+  maxClients = 6;
   state = new GameState();
 
   cashBuilderDurationMs: number = CASH_BUILDER.durationMs;

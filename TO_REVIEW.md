@@ -28,9 +28,9 @@ Add entries like so:
     WHY: Works today because App.vue maps via the enum, but any string comparison with `"gameEnd"` (camelCase) would silently fail. Minor now, but the inconsistency could bite when Phase 2+ adds more string-based routing or logging. Worth a quick normalise while the enum is small.
     STATUS: open
 
-3.  WHAT: Offer multipliers (low = take/2, high = take*2) are hardcoded in TriviaRoom.ts:238-239 instead of living in gameConfig.
-    WHERE: server/src/rooms/TriviaRoom.ts:238-239
-    WHY: Already called out in GOAL.md Phase 3 as a known open item. Flagging here to ensure it doesn't get lost — as soon as the Chaser pot mechanic lands (Phase 3), these multipliers interact with pot constraints and should be configurable and testable in isolation.
+3.  WHAT: Offer multipliers (low = take/2, high = take*2) are hardcoded in TriviaRoom.ts:238-239 instead of living in gameConfig. GOAL.md Phase 3 has since been fleshed out: low must be lower than middle, high higher; low can go negative (floor at $0 player pot); offers capped by the Chaser's pot; Chaser pot +$30k/round randomized per game.
+    WHERE: server/src/rooms/TriviaRoom.ts:238-239, server/src/gameConfig.ts:28-31 (CHASER_POT.perRound is a fixed 30k — needs the randomized-per-game form when Phase 3 lands)
+    WHY: Open question #1 (multipliers) is now resolved in the rules — the offer math is no longer an open design question but a concrete Phase 3 spec. Flagging so it's not lost: when Phase 3 lands, move the math into gameConfig honoring low<middle<high (with negative-low down to $0) and the chaser-pot cap, and turn CHASER_POT.perRound into a per-game randomized tunable with a test.
     STATUS: open
 
 4.  WHAT: Dead schema fields (boardPos, score, chaserPot) are synced to clients but have no room logic behind them yet.

@@ -110,8 +110,8 @@ Found on the first playthrough + security review; tracked as tickets and verifie
 - [ ] Pot display + transition to offer
 
 ### Phase 3 — The offer
-- [ ] Offer math lives in `gameConfig` — currently hardcoded inline in `TriviaRoom.ts` (`low = cashBuilder ÷ 2`, `high × 2`, `startOffer` effect); move it into config and resolve open question #1 (multipliers)
-- [ ] Chaser pot starts at $50k, **+$30k per round**; offers draw from and payout against it
+- [ ] Chaser get to pick the high and low offers based on the medium offer (what the current player earned). Low offer must be lower, high offer must be higher. Low offers can be negative as long as the player pot does not go below $0. The chaser can only offer as much as is in their pot.
+- [ ] Chaser pot starts at $50k, **+$30k per round** - randomized per game; offers draw from and payout against it
 - [ ] Chaser picks high/middle (= cash-builder total)/lower; contestant chooses
 - [ ] High/low multiplier strategy visible to the Chaser (pot remaining)
 
@@ -136,10 +136,11 @@ Found on the first playthrough + security review; tracked as tickets and verifie
 
 ### Stretch goals
 - [ ] **Chaser special abilities** (toggle-able in settings): e.g. once-per-round 50/50, others to discuss
-- [ ] **Chaser characters**: the Chaser player picks *which Chaser* they want to be from a roster (each with their own name/identity/ability and — like the show — contestants don't see which Chaser they're facing until the reveal, i.e. when they walk out at the offer stage). Not concrete yet; idea only.
-- [ ] **At-the-table faces (live players)**: a corner panel of the **live** players' faces reacting to the moment — smile when a contestant gets a question right, eeeek/:( when they're about to get caught — a cheer layer for the people actually in the game. Server only broadcasts what happened; faces never affect outcomes.
+- [ ] **Chaser characters**: the Chaser player picks *which Chaser* they want to be from a roster (each with their own name/identity/ability and — like the show — contestants don't see which Chaser they're facing until the reveal, i.e. when they walk out at the offer stage). Different chasers have different abilities.
+- [ ] **At-the-table faces (all players)**: a corner panel of the **all** players' faces reacting to the moment — smile when a contestant gets a question right, eeeek/:( when they're about to get caught — a cheer layer for the people actually in the game. Server only broadcasts what happened; faces never affect outcomes.
+- [ ] Non choosing players can react to the offer to influence the choosing player with emojis indicating, high, medium and low.
 - [ ] **Pickable 2D avatars**: players pick a little 2D "funny guy" character when they join; avatars sit at the table (in the faces panel above), on the dead-player bench, and next to the active player/Chaser. Flat 2D art style — explicitly not 3D — to make the game feel social. Contestants pick their own avatar; distinct from the Chaser-character roster (above) which only the Chaser chooses. (Character art the user must draw is tracked in `HUMAN_TASKS.md`.)
-- [ ] **Dead-player: taunt bar** — eliminated players blast quick emotes/taunts at the active player or the Chaser ("OOH!", "BOO!", skull, laugh) through the same corner/bench panel. Pure banter, zero game impact.
+- [ ] **All-player: taunt bar** — eliminated and non-eliminated players blast quick emotes/taunts at the active player or the Chaser ("OOH!", "BOO!", skull, laugh) through the same corner/bench panel. Pure banter, zero game impact.
 - [ ] **Dead-player: prediction pool** — eliminated players gamble *candy points* (fun-only currency) on offer picks, escape-vs-caught, and the final winner; the results screen shows a "most candy earned" leaderboard for bragging rights. Effect-free stakes that keep the bench invested in every round.
 - [ ] **Dead-player: ghost scoreboard** — eliminated (and waiting) players keep answering live questions anyway; their picks accumulate into a personal ghost score, and a board shows how well you'd have done vs everyone else. Counts for nothing; pure bragging rights. (MC questions → pick an option; open-ended ones → they can type too.)
 - [ ] **Question-bank editor**: an admin panel or a small standalone Python program (matches the `api-test.py` precedent at repo root) with an easy interface for adding/editing open-ended *and* multiple-choice questions in `server/data/questions.json` instead of hand-editing the JSON. Useful extras: duplicate-id/empty-field validation, category browsing, and a quick "answer matches?" preview. If storage moves to SQLite later, the JSON stays the seed/export format.
@@ -149,7 +150,6 @@ Found on the first playthrough + security review; tracked as tickets and verifie
 ## Open questions
 
 Things we discussed but haven't locked down yet. When you decide, move the answer into the rules above:
-1. High/lower offer **multipliers** relative to the middle (and how strictly they're constrained by the Chaser's pot).
 2. Open-ended answer checking: exact-match vs lenient (misspellings, case, "an/a").
 3. ~~What to give **eliminated contestants** to do during the game~~ → **answered (audience-first)**: taunt bar, prediction pool, ghost scoreboard, and final-round rejoin (see Stretch goals + Final round rules). Still open: how much flavor to layer on each.
 4. Chaser abilities list to start with (50/50 confirmed as a candidate; others to discuss).
