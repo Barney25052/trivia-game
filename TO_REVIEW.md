@@ -80,3 +80,13 @@ All items reviewed. Closed items (#3, #4) deleted; open items converted to ticke
     WHY: AGENTS.md Security says "cap active rooms and connections, and rate-limit per-player messages (matters when taunts/emotes/picks land)." The social stretches are exactly that "when". Cheapest now is to add a thin per-client `scheduleTimer`-backed or timestamp-based throttle at the messages layer (or just document the plan). Without it, the taunt/emote feature is an invitation to be spammed (and to spam other players' render loops). Decide the throttle shape before the social channel lands.
     STATUS: decided
     DECISION: Low priority — game is for friends, not large-scale. Add a thin per-client timestamp throttle before social channels land. → Ticket 037.
+
+13. WHAT: The Phase 2 question broadcast is sent to ALL clients with a `targetSessionId`, and the client filters it out for non-targets (`client/src/App.vue` `currentRoundQuestion`).
+    WHERE: server/src/rooms/TriviaRoom.ts:95-106 (`broadcastQuestion`), server/src/rooms/handlers/effects.ts:80-90, client/src/App.vue:64-68
+    WHY: This is the ticket-030 "ghost scoreboard" seam (the board chase's MC `correctIndex` and the final's answers must NEVER reach the Chaser). Today a client renders the prompt only for the matching target, so it works — but the sensitivity live in the *client's* filter. A future UI regression (forgetting the `currentRoundQuestion` filter, rendering a shared ref) would leak the active contestant's question to the Chaser. The final-round answers that both sides must not see each other's are server-gated by NOT broadcasting at all — worth deciding whether the cash-builder question should be server-targeted too (`targetSeatId` channel) to keep one consistent rule.
+    STATUS: open
+
+14. WHAT: Answer-checker leniency is a product decision hiding in code: `checkAnswer("Tihs is a porly writen snetnece", "this is a poorly written sentence") === true`, and any pair within a 0.3 edit-distance ratio passes as long as it is not a single-position edit.
+    WHERE: server/src/questions/answerChecker.ts:1-86 (FILLER_WORDS + MAX_DISTANCE_RATIO + matchesSingle), server/src/gameConfig.ts:89-92 (`ANSWER_CHECK`, currently unused)
+    WHY: This is GOAL.md open question #2 ("exact-match vs lenient") answered implicitly by the implementer: filler words are stripped, transpositions pass, single substitutions fail, multi-edit smudges pass. It directly shapes the cash-builder difficulty and how wrong a "right" can be. Since Phase 4 (final rounds + MC) reuses the same checker, flip this into an explicit decision (ticket 047 tracks the reconciliation); the artifacts go in `ANSWER_CHECK` or the docstring, not in the code's assumptions.
+    STATUS: open

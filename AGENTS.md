@@ -12,7 +12,7 @@ Multiplayer trivia game built on Colyseus. Two independent npm projects — ther
   - `npm run dev` — Vite dev server
   - `npm run build` — `vue-tsc -b && vite build` (this is the typecheck step; there is no separate typecheck script)
 - `api-test.py` — root-level scratch script for testing the opentdb.com API; not part of the app.
-- The open-ended question bank (`server/src/questions/bank.ts`, 45 questions) is loaded on the server and covered by tests; wiring it into the cash-builder/final phases is Phase 2+. The board chase plans to pull multiple-choice questions from opentdb (Phase 4); nothing fetches from opentdb at runtime yet.
+- The open-ended question bank (`server/src/questions/bank.ts`, loaded from `server/data/questions.json`, 572 questions) is loaded on the server, covered by tests, and wired into the cash builder (Phase 2); wiring it into the final phases is Phase 2+. The board chase plans to pull multiple-choice questions from the same owned bank (Phase 4); nothing fetches from opentdb at runtime yet.
 
 ## Gotchas
 

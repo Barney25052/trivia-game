@@ -8,7 +8,7 @@ Wire the cash builder into a real gameplay loop: the server draws questions from
   - `QuestionManager` class (or set of pure functions) that owns:
     - A `usedIds: Map<string, Set<number>>` tracking which question IDs have been shown to each contestant (keyed by seatId — depends on ticket 034; if 034 hasn't landed yet, use sessionId and note the migration).
     - `initContestant(seatId: string)` — creates the exclusion set for a contestant.
-    - `drawNext(bank, seatId)` → `BankQuestion | null` — calls `pickRandom` with the contestant's exclusion set (count=1), records the ID as used, returns the question. Returns `null` if the bank is exhausted (unlikely with 45 questions and ~60s rounds, but handle gracefully).
+    - `drawNext(bank, seatId)` → `BankQuestion | null` — calls `pickRandom` with the contestant's exclusion set (count=1), records the ID as used, returns the question. Returns `null` if the bank is exhausted (unlikely with 572 questions and ~60s rounds, but handle gracefully).
     - `getCurrentQuestion(seatId)` → `BankQuestion | undefined` — returns the last-drawn question for a contestant (used by the answer handler to validate against).
   - The `QuestionManager` is a room-local instance (not synced to schema). It lives on `TriviaRoom` as a field.
 - **Schema addition** — `server/src/rooms/schema/GameState.ts`:
