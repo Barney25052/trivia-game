@@ -1,6 +1,7 @@
 export enum GamePhase {
     Lobby = "lobby",
     ChaserSelection = "chaserSelection",
+    ChaserReveal = "chaserReveal",
     RolesReveal = "rolesReveal",
     CashBuilder = "cashBuilder",
     Offer = "offer",

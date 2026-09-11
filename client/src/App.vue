@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch} from "vue";
+import { ref, computed } from "vue";
 import { Client } from "@colyseus/sdk";
 import { GamePhase } from "./TriviaTypes.ts";
 import HomeScreen from "./screens/HomeScreen.vue"
@@ -27,13 +27,13 @@ const teamScore = ref(0);
 const currentOffer = ref(null);
 const winner = ref(null);
 const getReadyCooldownMs = ref(0);
-const wheelActive = ref(false);
 
 const currentScreen = computed(() => {
   if (!room.value) return "home";
   switch (currentPhase.value) {
     case GamePhase.Lobby: return "lobby";
     case GamePhase.ChaserSelection: return "chaserSelection";
+    case GamePhase.ChaserReveal: return "chaserReveal";
     case GamePhase.RolesReveal: return "rolesReveal";
     case GamePhase.CashBuilder: return "cashBuilder";
     case GamePhase.Offer: return "offer";
@@ -48,18 +48,6 @@ const currentScreen = computed(() => {
 const myPlayer = computed(() => playersMap.value?.get(room.value?.sessionId));
 const mySessionId = computed(() => room.value?.sessionId);
 const isHost = computed(() => myPlayer.value?.isHost === true);
-
-watch(
-    () => currentScreen.value,
-    (screen) => {
-        if (screen === "chaserSelection" && chaserSelectionMode.value === "random") {
-            wheelActive.value = true;
-        }
-        if(screen == "rolesReveal") {
-          wheelActive.value = false;
-        }
-    }
-);
 
 async function handleJoin({ playerName, roomCode }) {
   await joinLobby(playerName, roomCode);
@@ -79,8 +67,6 @@ async function joinLobby(playerName, roomCode) {
     room.value.onLeave(() => {
       handleLeave();
     })
-
-    wheelActive.value = false;
 
     room.value.onStateChange((newState) => {
       currentPhase.value = newState.currentPhase;
@@ -172,7 +158,6 @@ function chaserReachedScore() {
 }
 
 function handleLeave() {
-  wheelActive.value = false;
   room.value?.leave()
   room.value  = null
 }
@@ -184,10 +169,6 @@ function revealReady({ characterId } = {}) {
   } catch (e) {
     console.error("Failed to send reveal ready:", e);
   }
-}
-
-function handleWheelReveal() {
-  wheelActive.value = false;
 }
 </script>
 
@@ -205,20 +186,19 @@ function handleWheelReveal() {
       :room = "room"
       :chaserSelectionMode="chaserSelectionMode"
     />
-    <ChaserWheelScreen
-      v-if="wheelActive"
-      :players="players"
-      :chaserSessionId="chaserSessionId"
-      @reveal="handleWheelReveal"
-    />
     <ChaserSelectionScreen
-      v-if="currentScreen=='chaserSelection' && chaserSelectionMode!=='random'"
+      v-if="currentScreen=='chaserSelection'"
       :players="players"
       :isHost="isHost"
       :chaserSelectionMode="chaserSelectionMode"
       :chaserSessionId="chaserSessionId"
       :mySessionId="mySessionId"
       @chaserVote="chaserVote"
+    />
+    <ChaserWheelScreen
+      v-else-if="currentScreen=='chaserReveal'"
+      :players="players"
+      :chaserSessionId="chaserSessionId"
     />
     <RolesRevealScreen
       v-if="currentScreen=='rolesReveal'"

@@ -34,20 +34,20 @@ describe("gameFlow transition", () => {
     });
 
     describe("chaserSelectionComplete", () => {
-        it("chaserSelection + complete -> rolesReveal for the first contestant, chaser assigned first", () => {
+        it("chaserSelection + complete -> chaserReveal for the wheel, chaser assigned first", () => {
             const ctx = context({ currentPhase: GamePhase.ChaserSelection });
             const result = transition(
                 { type: "chaserSelectionComplete", chaserSessionId: "carol" },
                 ctx
             );
-            assert.strictEqual(result.nextPhase, GamePhase.RolesReveal);
+            assert.strictEqual(result.nextPhase, GamePhase.ChaserReveal);
             assert.deepStrictEqual(result.effects, [
                 { type: "assignChaser", sessionId: "carol" },
-                { type: "startRolesReveal" }
+                { type: "startChaserReveal" }
             ]);
             assert.ok(
                 !result.effects.some((effect) => effect.type === "startCashBuilder"),
-                "no cash-builder timer is scheduled during the roles reveal"
+                "no cash-builder timer is scheduled during the chaser reveal"
             );
         });
 
@@ -59,7 +59,7 @@ describe("gameFlow transition", () => {
             );
             assert.deepStrictEqual(result.effects, [
                 { type: "assignChaser", sessionId: "alice" },
-                { type: "startRolesReveal" }
+                { type: "startChaserReveal" }
             ]);
         });
 
@@ -75,6 +75,22 @@ describe("gameFlow transition", () => {
             assert.throws(
                 () => transition({ type: "chaserSelectionComplete", chaserSessionId: "alice" }, context()),
                 /chaserSelectionComplete is not valid in phase lobby/
+            );
+        });
+    });
+
+    describe("chaserRevealComplete", () => {
+        it("chaserReveal + complete -> rolesReveal for the reveal screen", () => {
+            const ctx = context({ currentPhase: GamePhase.ChaserReveal });
+            const result = transition({ type: "chaserRevealComplete" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.RolesReveal);
+            assert.deepStrictEqual(result.effects, [{ type: "startRolesReveal" }]);
+        });
+
+        it("throws if not in chaserReveal", () => {
+            assert.throws(
+                () => transition({ type: "chaserRevealComplete" }, context()),
+                /chaserRevealComplete is not valid in phase lobby/
             );
         });
     });
@@ -276,6 +292,7 @@ describe("gameFlow transition", () => {
             const events: FlowEvent[] = [
                 { type: "startGame" },
                 { type: "chaserSelectionComplete", chaserSessionId: "bob" },
+                { type: "chaserRevealComplete" },
                 { type: "revealAllReady" },
                 { type: "readyCooldownDone" },
                 { type: "cashBuilderTimeout" },
@@ -315,6 +332,7 @@ describe("gameFlow transition", () => {
 
             assert.deepStrictEqual(phases, [
                 GamePhase.ChaserSelection,
+                GamePhase.ChaserReveal,
                 GamePhase.RolesReveal,
                 GamePhase.CashBuilder,   // ready cooldown, then...
                 GamePhase.CashBuilder,    // ...the cash builder runs

@@ -56,7 +56,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 030 | Add per-round question event schema + first-class seat/spectator axis | done |
 | 031 | Extract TriviaRoom handler dispatch into a handlers module | backlog |
 | 032 | Normalise GamePhase.GameEnd value to camelCase | done |
-| 033 | Move chaser wheel overlay into its own screen in the phase flow | backlog |
+| 033 | Move chaser wheel overlay into its own screen in the phase flow | done |
 | 034 | Rekey players map with seat ID — stop leaking sessionIds to clients (absorbs 026) | done |
 | 035 | Shared type definitions for server→client message payloads | done |
 | 036 | Chaser character picker during roles-reveal, identity revealed at offer stage | backlog |

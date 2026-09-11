@@ -6,6 +6,7 @@ export type OfferTier = "low" | "middle" | "high";
 export type FlowEvent =
     | { type: "startGame" }
     | { type: "chaserSelectionComplete"; chaserSessionId: string }
+    | { type: "chaserRevealComplete" }
     | { type: "revealAllReady" }
     | { type: "readyCooldownDone" }
     | { type: "cashBuilderTimeout" }
@@ -35,6 +36,7 @@ export interface GameFlowContext {
 export type FlowEffect =
     | { type: "startChaserSelection" }
     | { type: "assignChaser"; sessionId: string }
+    | { type: "startChaserReveal" }
     | { type: "startRolesReveal" }
     | { type: "startReadyCooldown"; sessionId: string; round: number }
     | { type: "startCashBuilder"; sessionId: string; round: number }
@@ -98,11 +100,19 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
                 throw new Error("gameFlow: chaserSelectionComplete requires at least one contestant");
             }
             return {
-                nextPhase: GamePhase.RolesReveal,
+                nextPhase: GamePhase.ChaserReveal,
                 effects: [
                     { type: "assignChaser", sessionId: event.chaserSessionId },
-                    { type: "startRolesReveal" }
+                    { type: "startChaserReveal" }
                 ]
+            };
+        }
+
+        case "chaserRevealComplete": {
+            ensurePhase(event, context, GamePhase.ChaserReveal);
+            return {
+                nextPhase: GamePhase.RolesReveal,
+                effects: [{ type: "startRolesReveal" }]
             };
         }
 

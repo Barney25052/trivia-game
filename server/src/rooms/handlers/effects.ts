@@ -1,7 +1,7 @@
 import { FlowEffect } from "../../gameFlow.js";
 import { PlayerRole } from "../../TriviaTypes.js";
 import * as chaserSelection from "./chaserSelection.js";
-import { CHASER_SELECTION } from "../../gameConfig.js";
+import { CHASER_REVEAL, CHASER_SELECTION } from "../../gameConfig.js";
 
 export function applyEffects(effects: FlowEffect[], room: any, context: any): void {
     for (const effect of effects) {
@@ -41,6 +41,15 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
             room.state.contestantsOrder.splice(chaserPosition, 1);
           }
           console.log(`${effect.sessionId} is the Chaser`);
+          break;
+        }
+
+        case "startChaserReveal": {
+          const duration = room.chaserRevealDurationMs ?? CHASER_REVEAL.durationMs;
+          console.log(`Chaser reveal — wheel plays for ${duration}ms`);
+          room.activeTimer = room.scheduleTimer(duration, () => {
+            room.dispatch({ type: "chaserRevealComplete" });
+          });
           break;
         }
 

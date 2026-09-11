@@ -11,6 +11,7 @@ import {
 import { scheduleTimer, TimerHandle } from "../timer.js";
 import {
   CASH_BUILDER,
+  CHASER_REVEAL,
   CHASER_SELECTION,
   FINAL_ROUND,
   PLAYER_NAME,
@@ -46,6 +47,7 @@ export class TriviaRoom extends Room {
 
   cashBuilderDurationMs: number = CASH_BUILDER.durationMs;
   chaserSelectionDurationMs: number | null = null;
+  chaserRevealDurationMs: number = CHASER_REVEAL.durationMs;
   revealReadyCooldownMs: number = REVEAL_READY.cooldownMs;
   teamFinalDurationMs: number = FINAL_ROUND.teamDurationMs;
   chaserFinalDurationMs: number = FINAL_ROUND.chaserDurationMs;
@@ -67,6 +69,13 @@ export class TriviaRoom extends Room {
         options.chaserSelectionDurationMs,
         CHASER_SELECTION.minMs,
         CHASER_SELECTION.maxMs
+      );
+    }
+    if (typeof options?.chaserRevealDurationMs === "number") {
+      this.chaserRevealDurationMs = clampDuration(
+        options.chaserRevealDurationMs,
+        CHASER_REVEAL.minMs,
+        CHASER_REVEAL.maxMs
       );
     }
     if (typeof options?.revealReadyCooldownMs === "number") {

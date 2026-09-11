@@ -2,14 +2,12 @@
 import { computed, ref, watch, onBeforeUnmount } from "vue";
 
 const props = defineProps(["players", "chaserSessionId"]);
-const emit = defineEmits(["reveal"]);
 
 const slotH = 60;
 const viewportCenter = 90;
 const trackCopies = 120;
 const spinMs = 3000;
 const wobbleMs = 500;
-const holdMs = 1500;
 const scanSpeed = 24;
 const scanInterval = 16;
 const landingAhead = 40;
@@ -17,7 +15,6 @@ const landingAhead = 40;
 const trackEl = ref(null);
 let trackY = 0;
 let tickId = null;
-let holdTimer = null;
 
 const rows = computed(() => {
     const resolved = props.players.find((p) => p.sessionId === props.chaserSessionId);
@@ -78,7 +75,6 @@ function runLanding() {
             clearTick();
             trackY = endY;
             apply();
-            holdTimer = setTimeout(() => emit("reveal"), holdMs);
             return;
         }
         if (elapsed < spinMs) {
@@ -94,10 +90,6 @@ function runLanding() {
 
 function stopAll() {
     clearTick();
-    if (holdTimer) {
-        clearTimeout(holdTimer);
-        holdTimer = null;
-    }
 }
 
 watch(
@@ -117,7 +109,7 @@ onBeforeUnmount(stopAll);
 </script>
 
 <template>
-    <div class="wheelOverlay">
+    <div class="wheelScreen">
         <h2 class="lobbyTitle">Picking the Chaser…</h2>
         <div class="wheelViewport">
             <div ref="trackEl" class="wheelTrack">
