@@ -86,7 +86,7 @@ describe("roomFlow", () => {
     assert.strictEqual(room.state.players.get(bob.sessionId).revealReady, false);
 
     // Everyone ready -> getReady broadcast -> cooldown -> cash builder -> offer.
-    bob.send("revealReady");
+    bob.send("revealReady", { characterId: "blight" });
     await waitForPhase(room, GamePhase.CashBuilder);
     const getReady = await getReadyMessage;
     assert.strictEqual(getReady.cooldownMs, 100);

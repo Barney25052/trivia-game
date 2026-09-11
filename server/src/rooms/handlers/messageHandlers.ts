@@ -1,5 +1,5 @@
 import { GamePhase, PlayerRole } from "../../TriviaTypes.js";
-import { allPlayersReady, allPlayersVoted, tallyChaserVotes } from "./chaserSelection";
+import { allPlayersReady, allPlayersVoted, tallyChaserVotes } from "./chaserSelection.js";
 
 export function startGame(client: any, message: any, room: any) {
     if (!room.isHost(client)) {
