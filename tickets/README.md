@@ -72,13 +72,19 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 045 | Null-guard `onLeave` before dereferencing `player.seatId` | done (covered by 042) |
 | 046 | Remove dead CSS — `.rotate` rule and `pan-bg` keyframe | done |
 | 047 | Reconcile the answer checker with ticket 038's spec — then wire `ANSWER_CHECK` | done |
-| 048 | Cash builder — pot/score doesn't visibly increase during the round | done |
+| 048 | Cash builder — pot/score doesn't visibly increase during the round | done* |
 | 049 | Contestant lineup intro screen before the first cash builder | done |
+
+\* 048 closed after only proving the server patch path — the on-screen render fix never landed; see ticket 053 (reopened by user report, `bug-005`).
 
 ### Phase 3 — The Offer
 | 050 | Chaser pot — lifecycle, payouts, and cap (server) | backlog |
 | 051 | Chaser sets the high & low offers; contestant picks (server) | backlog |
 | 052 | Offer screen — Chaser sets high/low with pot visibility; contestant picks; spectators wait | backlog |
+
+### Follow-up bug fixes
+| 053 | Cash builder — on-screen pot/count still don't increase (`bug-005`) | backlog |
+| 054 | Random chaser — skip the ChaserSelection player-list hold, go straight to the wheel (`bug-006`) | backlog |
 
 Status values: `backlog`, `in-progress`, `done`.
 

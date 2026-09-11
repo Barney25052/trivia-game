@@ -32,3 +32,17 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: a departing-seat exit from `Lineup` resolves forward (advance to `CashBuilder`, or end the game/room) instead of stalling.
 - Repro steps: prefer 2-player room (host+chaser and one contestant); walk to RolesReveal, both send `revealReady`, wait until `Lineup`, then `alice.leave()`; observe phase stays `lineup` past the `lineupDurationMs` timer.
 - Status: open
+
+## `bug-005` — Cash builder: on-screen pot and "correct answers" count still don't increase (ticket 048 closed without a client fix)
+- Found: 2026-09-11 · user report (ticket 048 reopened) · `client/src/App.vue`, `client/src/screens/CashBuilderScreen.vue`
+- What you saw: during a contestant's cash builder, answering correctly leaves the on-screen pot and the "X correct answers" label static. Ticket 048 (commit `a5404a4`) was marked done but only added a server-side regression test — its diff touches `GOAL.md`, `server/test/cashBuilderFlow.test.ts`, and `tickets/README.md`, **no client code**. A live probe (real WebSocket, 2 SDK clients) confirms the Colyseus layer patches `money 0→1000` / `count 0→1` to *both* clients, so the broken link is downstream of `onStateChange` in the Vue render path — which no automated test exercises.
+- Expected: each correct answer visibly grows the pot by $1000 and increments the correct-answer count, with the pot flash, on the active contestant's screen and every spectator's screen.
+- Repro steps: 1. Run `server` + `client` dev. 2. Walk a game to a cash builder. 3. Answer a question correctly. 4. Watch the pot/count on screen.
+- Status: triaged — ticket 053
+
+## `bug-006` — Random chaser mode shows the player-list screen for ~8s before the wheel; should go straight to the spinner
+- Found: 2026-09-11 · user report · `server/src/rooms/handlers/effects.ts` (`startChaserSelection`), `server/src/gameConfig.ts` (`CHASER_SELECTION.randomDurationMs`), `client/src/screens/ChaserSelectionScreen.vue`
+- What you saw: starting a game in random mode (the default) drops everyone onto the `ChaserSelection` screen — the full player list with "Picking the chaser…" — and holds it for the full `CHASER_SELECTION.randomDurationMs` (8s) before `pickRandomChaser` fires; only then does the `ChaserReveal` wheel appear. Random mode needs no player input, so the hold is redundant — the wheel (ticket 019/033) is the reveal.
+- Expected: in random mode the pick resolves immediately and the room goes straight to the wheel; vote mode still holds on the player-list screen for the vote timer.
+- Repro steps: 1. Host joins (default mode is random). 2. Start the game. 3. Observe ~8s of the player-list screen before the wheel.
+- Status: triaged — ticket 054
