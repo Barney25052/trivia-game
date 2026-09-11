@@ -17,9 +17,9 @@ const allReady = computed(
     () => props.players.length > 0 && props.players.every((p) => p.revealReady === true)
 );
 const availableCharacters = computed(() => [
-    { id: ChaserCharacter.Bezos, name: "Bezos" },
-    { id: ChaserCharacter.BigStan, name: "Big Stan" },
-    { id: ChaserCharacter.Nami, name: "Nami" }
+    { id: ChaserCharacter.Bezos, name: "Bezos", img: bezosIcon, },
+    { id: ChaserCharacter.BigStan, name: "Big Stan", img: bigStanIcon, },
+    { id: ChaserCharacter.Nami, name: "Nami", img: namiIcon, }
 ]);
 
 function handleCharacterSelect(characterId) {
@@ -43,10 +43,7 @@ function handleCharacterSelect(characterId) {
                         :disabled="selectedCharacterId !== null"
                         @click="handleCharacterSelect(character.id)"
                     >
-                        <svg class="chaserSilhouette" viewBox="0 0 120 170" aria-label="chaser silhouette">
-                            <circle class="sil" cx="60" cy="50" r="35" />
-                            <path class="sil" d="M60 95 C 25 95, 8 120, 8 170 L 112 170 C 112 120, 95 95, 60 95 z" />
-                        </svg>
+                        <img :src="character.img" class="chaserImage"></img>
                         <strong>{{ character.name }}</strong>
                     </button>
                 </div>
