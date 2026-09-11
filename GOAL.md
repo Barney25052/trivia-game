@@ -50,7 +50,7 @@ Repeat cash builder + offer + chase for every contestant.
 - If the Chaser **reaches/passes the team's score** → Chaser wins. If the Chaser **runs out of time first** → the team wins.
 
 ### Question bank
-- **Open-ended** questions (cash builder + final) come from a **custom free-text question bank** we maintain (a `server/data/questions.json`-style file loaded by the server; server checks typed answers — decide whether answers are exact-match or lenient later).
+- **Open-ended** questions (cash builder + final) come from a **custom free-text question bank** we maintain (a `server/data/questions.json`-style file loaded by the server; server checks typed answers — see the **lenient** policy under Open questions #2, decided).
 - **Multiple-choice** (board chase) comes from the **same owned bank** (Phase 4 extends the format to MC: `options[]` + server-held `correctIndex`; show 3 of 4 options). **Use opentdb at runtime for multiple choice only** — decided; a local bank removes an external dependency and keeps the correct index server-only until reveal. The loader sits behind a thin get-questions interface so the source can swap later.
 - **Storage**: file-based (JSON) for now. If a DB is ever warranted (large curated set, admin editing, stats), **SQLite** is the planned path — a single file, zero ops, PM2-friendly, and the JSON stays the seed/export format. Not decided, parked with the question-bank-editor stretch goal.
 
@@ -153,7 +153,7 @@ Found on the first playthrough + security review; tracked as tickets and verifie
 ## Open questions
 
 Things we discussed but haven't locked down yet. When you decide, move the answer into the rules above: 
-2. Open-ended answer checking: exact-match vs lenient (misspellings, case, "an/a").
+2. ~~Open-ended answer checking: exact-match vs lenient (misspellings, case, "an/a")~~ → **answered (lenient single-edit)**: after normalising (trim, collapse whitespace, lowercase, drop filler words), a typed answer passes if it is **one edit** from the canonical answer (substitution, insertion, deletion or transposition — `"Xars"` → `"Mars"`) **or** within an **edit-distance ratio of 0.3** of the longer answer (forgiving multi-typo sentences, still rejecting clearly different answers like `"Earth"` vs `"Mars"`). Tunables live in `ANSWER_CHECK` in `server/src/gameConfig.ts` and are consumed by `checkAnswer`. Decided with ticket 047.
 3. ~~What to give **eliminated contestants** to do during the game~~ → **answered (audience-first)**: taunt bar, prediction pool, ghost scoreboard, and final-round rejoin (see Stretch goals + Final round rules). Still open: how much flavor to layer on each.
 4. Chaser abilities list to start with (50/50 confirmed as a candidate; others to discuss).
 5. **Chaser characters**: roster size, who the Chaser pick happens (before reveal), and how the reveal ties into the show's drama.

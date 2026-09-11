@@ -17,3 +17,11 @@ Ticket 038's acceptance criteria say single-letter substitutions should pass *an
 
 ## Dependencies
 - Requires a human ruling on intended leniency (GOAL open question #2) before the rewrite.
+
+## Result (done 2026-09-11)
+- **Ruling**: lenient single-edit (user decision). After normalising, one edit (substitution/insertion/deletion/transposition) always passes, plus any answer within a 0.3 edit-distance ratio of the longer answer; clearly different answers fail.
+- `server/src/gameConfig.ts`: `ANSWER_CHECK` is now `{ normaliseWhitespace, caseInsensitive, allowSingleEdit, editDistanceRatio }` and is **consumed** by the checker (no longer decorative).
+- `server/src/questions/answerChecker.ts`: `normalize` reads the whitespace/case flags; `matchesSingle` rewritten to the agreed policy; the strict transposition-only gate and `countPositionalDiffs`/`hasAdjacentTransposition` helpers removed; contract stays pure `checkAnswer(playerAnswer, accepted)`.
+- `server/test/answerChecker.test.ts`: asserts the agreed behaviour explicitly — single-letter substitution ("Xars"→"Mars"), insertion ("Marss"), deletion ("Mas"), transposition ("Masr") all pass; "Earth"→"Mars" and the 2-edit "Xarm"→"Mars" fail.
+- Docs reconciled: ticket 038, `GOAL.md` open question #2 (now answered), and `TO_REVIEW.md` #14.
+- `cd server && npm test` and `cd server && npm run build` both pass.

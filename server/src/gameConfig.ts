@@ -87,8 +87,14 @@ export const PLAYER_NAME = {
 } as const;
 
 export const ANSWER_CHECK = {
+    /** Trim + collapse runs of internal whitespace before comparing. */
     normaliseWhitespace: true,
-    caseInsensitive: true
+    /** Lowercase both answers before comparing. */
+    caseInsensitive: true,
+    /** A single edit (substitution/insertion/deletion/transposition) always passes. */
+    allowSingleEdit: true,
+    /** Beyond a single edit, accept answers within this edit-distance ratio of the longer answer. */
+    editDistanceRatio: 0.3
 } as const;
 
 export const RATE_LIMIT = {

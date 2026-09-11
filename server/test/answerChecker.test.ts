@@ -35,6 +35,18 @@ describe("answer checker", () => {
     assert.strictEqual(checkAnswer("Masr", "Mars"), true);
   });
 
+  it("single-letter substitution passes", () => {
+    assert.strictEqual(checkAnswer("Xars", "Mars"), true);
+  });
+
+  it("single-letter insertion passes", () => {
+    assert.strictEqual(checkAnswer("Marss", "Mars"), true);
+  });
+
+  it("single-letter deletion passes", () => {
+    assert.strictEqual(checkAnswer("Mas", "Mars"), true);
+  });
+
   it("wrong answer returns false", () => {
     assert.strictEqual(checkAnswer("Earth", "Mars"), false);
   });
@@ -44,8 +56,8 @@ describe("answer checker", () => {
     assert.strictEqual(checkAnswer("   ", "Mars"), false);
   });
 
-  it("partial match too far returns false", () => {
-    assert.strictEqual(checkAnswer("Xars", "Mars"), false);
+  it("a too-distant typo on a short answer fails", () => {
+    assert.strictEqual(checkAnswer("Xarm", "Mars"), false);
   });
 
   it("handles common name typo: Marc Rufallo vs Mark Ruffalo", () => {

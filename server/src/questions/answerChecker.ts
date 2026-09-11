@@ -1,11 +1,24 @@
+import { ANSWER_CHECK } from "../gameConfig.js";
+
 const FILLER_WORDS = new Set(["the", "of", "and", "a", "an", "to", "in", "for", "on", "with"]);
 
-/** Maximum edit distance as a share of the longer normalised answer. */
-const MAX_DISTANCE_RATIO = 0.3;
-
+/**
+ * Normalise player and canonical answers: trim, collapse whitespace and
+ * lowercase per `ANSWER_CHECK`, then drop filler words and join the remaining
+ * words without spaces (so spacing and articles never decide a match).
+ */
 function normalize(value: string): string {
-    const words = value.trim().toLowerCase().split(/\s+/);
-    return words.filter((word) => word.length > 0 && !FILLER_WORDS.has(word)).join("");
+    let normalized = value.trim();
+    if (ANSWER_CHECK.normaliseWhitespace) {
+        normalized = normalized.replace(/\s+/g, " ");
+    }
+    if (ANSWER_CHECK.caseInsensitive) {
+        normalized = normalized.toLowerCase();
+    }
+    return normalized
+        .split(/\s+/)
+        .filter((word) => word.length > 0 && !FILLER_WORDS.has(word))
+        .join("");
 }
 
 /**
@@ -37,24 +50,13 @@ function editDistance(a: string, b: string): number {
     return d[a.length][b.length];
 }
 
-function hasAdjacentTransposition(a: string, b: string): boolean {
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length - 1; i++) {
-        const swapped = a.slice(0, i) + a[i + 1] + a[i] + a.slice(i + 2);
-        if (swapped === b) return true;
-    }
-    return false;
-}
-
-function countPositionalDiffs(a: string, b: string): number {
-    let diffs = 0;
-    const shared = Math.min(a.length, b.length);
-    for (let i = 0; i < shared; i++) {
-        if (a[i] !== b[i]) diffs++;
-    }
-    return diffs + Math.abs(a.length - b.length);
-}
-
+/**
+ * Leniency policy (ticket 047, GOAL open question #2): after normalising,
+ * an answer passes when it is a single edit from the canonical answer
+ * (substitution, insertion, deletion or transposition — "Xars" → "Mars")
+ * or when its edit distance is within `ANSWER_CHECK.editDistanceRatio` of
+ * the longer answer. Clearly different answers ("Earth" → "Mars") fail.
+ */
 function matchesSingle(playerAnswer: string, canonicalAnswer: string): boolean {
     const p = normalize(playerAnswer);
     const c = normalize(canonicalAnswer);
@@ -64,14 +66,8 @@ function matchesSingle(playerAnswer: string, canonicalAnswer: string): boolean {
     if (longest === 0) return false;
 
     const distance = editDistance(p, c);
-    if (distance / longest > MAX_DISTANCE_RATIO) return false;
-
-    // A single edit only passes for an adjacent transposition ("Masr" vs
-    // "Mars"); a plain substitution/insertion/deletion stays strict
-    // ("Xars" vs "Mars" fails).
-    if (distance <= 1) return hasAdjacentTransposition(p, c);
-    if (countPositionalDiffs(p, c) <= 1) return false;
-    return true;
+    if (ANSWER_CHECK.allowSingleEdit && distance <= 1) return true;
+    return distance / longest <= ANSWER_CHECK.editDistanceRatio;
 }
 
 /**

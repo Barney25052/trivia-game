@@ -89,4 +89,5 @@ All items reviewed. Closed items (#3, #4) deleted; open items converted to ticke
 14. WHAT: Answer-checker leniency is a product decision hiding in code: `checkAnswer("Tihs is a porly writen snetnece", "this is a poorly written sentence") === true`, and any pair within a 0.3 edit-distance ratio passes as long as it is not a single-position edit.
     WHERE: server/src/questions/answerChecker.ts:1-86 (FILLER_WORDS + MAX_DISTANCE_RATIO + matchesSingle), server/src/gameConfig.ts:89-92 (`ANSWER_CHECK`, currently unused)
     WHY: This is GOAL.md open question #2 ("exact-match vs lenient") answered implicitly by the implementer: filler words are stripped, transpositions pass, single substitutions fail, multi-edit smudges pass. It directly shapes the cash-builder difficulty and how wrong a "right" can be. Since Phase 4 (final rounds + MC) reuses the same checker, flip this into an explicit decision (ticket 047 tracks the reconciliation); the artifacts go in `ANSWER_CHECK` or the docstring, not in the code's assumptions.
-    STATUS: open
+    STATUS: decided
+    DECISION: Lenient single-edit policy chosen — `checkAnswer` now consumes `ANSWER_CHECK` (normaliseWhitespace, caseInsensitive, allowSingleEdit, editDistanceRatio); GOAL.md open question #2 answered. → Ticket 047.
