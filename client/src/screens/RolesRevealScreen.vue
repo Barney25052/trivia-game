@@ -36,18 +36,16 @@ function handleCharacterSelect(characterId) {
             <div v-if="chaser?.seatId === mySeatId && !myRevealReady" class="characterPicker">
                 <h1 class="characterPickerLabel">Choose your Chaser character</h1>
                 <div class="characterOptions">
-                    <button
+                    <img
                         v-for="character in availableCharacters"
                         :key="character.id"
                         type="button"
-                        class="characterOption"
-                        :class="{ 'characterOption-selected': selectedCharacterId === character.id }"
+                        class="chaserImage"
                         :disabled="selectedCharacterId !== null"
                         @click="handleCharacterSelect(character.id)"
+                        :src = "character.img"
                     >
-                        <img :src="character.img" class="chaserImage" />
-                        <strong>{{ character.name }}</strong>
-                    </button>
+                </img>
                 </div>
             </div>
             <div v-else>
