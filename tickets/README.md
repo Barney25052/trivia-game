@@ -70,7 +70,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 043 | Rename `cashBuilderQuestionsAsked` → `cashBuilderCorrectAnswers` (truthful correct count) | done |
 | 044 | Finish the seat-id rekey — players map keyed by `GamePlayer.seatId`, not `sessionId` | done |
 | 045 | Null-guard `onLeave` before dereferencing `player.seatId` | done (covered by 042) |
-| 046 | Remove dead CSS — `.rotate` rule and `pan-bg` keyframe | backlog |
+| 046 | Remove dead CSS — `.rotate` rule and `pan-bg` keyframe | done |
 | 047 | Reconcile the answer checker with ticket 038's spec — then wire `ANSWER_CHECK` | backlog |
 | 048 | Cash builder — pot/score doesn't visibly increase during the round | backlog |
 | 049 | Contestant lineup intro screen before the first cash builder | backlog |

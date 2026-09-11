@@ -10,3 +10,8 @@
 ## Acceptance
 - `cd client && npm run build` passes (typecheck + vite).
 - Grep for `rotate` (the dead rule) and `pan-bg` returns nothing outside any intentionally-kept animation.
+
+## Result (done 2026-09-11)
+- The "confirm zero references" step FAILED for `.rotate`: it is still applied by `class="rotate"` in `client/src/screens/HomeScreen.vue:42` (the home-screen logo wrapper; the img inside separately uses `.logo` / `scale-logo`). Per user decision, `.rotate` is **kept** — it is working, referenced styling, not dead code.
+- `@keyframes pan-bg` had zero references and was **removed**.
+- `cd client && npm run build` passes; grep for `pan-bg` returns nothing.
