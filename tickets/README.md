@@ -72,6 +72,13 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 045 | Null-guard `onLeave` before dereferencing `player.seatId` | backlog |
 | 046 | Remove dead CSS — `.rotate` rule and `pan-bg` keyframe | backlog |
 | 047 | Reconcile the answer checker with ticket 038's spec — then wire `ANSWER_CHECK` | backlog |
+| 048 | Cash builder — pot/score doesn't visibly increase during the round | backlog |
+| 049 | Contestant lineup intro screen before the first cash builder | backlog |
+
+### Phase 3 — The Offer
+| 050 | Chaser pot — lifecycle, payouts, and cap (server) | backlog |
+| 051 | Chaser sets the high & low offers; contestant picks (server) | backlog |
+| 052 | Offer screen — Chaser sets high/low with pot visibility; contestant picks; spectators wait | backlog |
 
 Status values: `backlog`, `in-progress`, `done`.
 
