@@ -31,9 +31,9 @@ export const CHASER_POT = {
 } as const;
 
 export const CHASER_CHARACTERS = [
-    { id: "blight", name: "Blight", ability: "50/50 toggle" },
-    { id: "riker", name: "Riker", ability: "Skip turn" },
-    { id: "vasquez", name: "Vasquez", ability: "Double time" }
+    { id: "bezos", name: "Bezos" },
+    { id: "big stan", name: "Big Stan" },
+    { id: "nami", name: "Nami"}
 ] as const;
 
 export const BOARD = {

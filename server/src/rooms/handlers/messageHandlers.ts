@@ -78,7 +78,7 @@ export function revealReady(client: any, message: any, room: any) {
             console.log(client.sessionId, "Chaser must select a character before ready!");
             return;
         }
-        const valid = ["blight", "riker", "vasquez"].includes(characterId);
+        const valid = ["bezos", "big stan", "nami"].includes(characterId);
         if (!valid) {
             console.log(client.sessionId, "Invalid chaser character ID:", characterId);
             return;
