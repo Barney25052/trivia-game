@@ -15,6 +15,7 @@ import {
   CASH_BUILDER,
   CHASER_REVEAL,
   FINAL_ROUND,
+  LINEUP,
   PLAYER_NAME,
   RATE_LIMIT,
   REVEAL_READY,
@@ -52,6 +53,7 @@ export class TriviaRoom extends Room {
   chaserSelectionDurationMs: number | null = null;
   chaserRevealDurationMs: number = CHASER_REVEAL.durationMs;
   revealReadyCooldownMs: number = REVEAL_READY.cooldownMs;
+  lineupDurationMs: number = LINEUP.durationMs;
   teamFinalDurationMs: number = FINAL_ROUND.teamDurationMs;
   chaserFinalDurationMs: number = FINAL_ROUND.chaserDurationMs;
   rateLimitMaxMessages: number = RATE_LIMIT.maxMessages;

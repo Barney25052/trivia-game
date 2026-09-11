@@ -96,13 +96,11 @@ describe("gameFlow transition", () => {
     });
 
     describe("revealAllReady", () => {
-        it("rolesReveal + all ready -> cashBuilder, starting the ready cooldown for the first contestant", () => {
+        it("rolesReveal + all ready -> lineup, showing the turn order before the cash builder", () => {
             const ctx = context({ currentPhase: GamePhase.RolesReveal, activeRound: 0 });
             const result = transition({ type: "revealAllReady" }, ctx);
-            assert.strictEqual(result.nextPhase, GamePhase.CashBuilder);
-            assert.deepStrictEqual(result.effects, [
-                { type: "startReadyCooldown", seatId: "alice", round: 1 }
-            ]);
+            assert.strictEqual(result.nextPhase, GamePhase.Lineup);
+            assert.deepStrictEqual(result.effects, [{ type: "startLineup" }]);
         });
 
         it("throws if there are no contestants", () => {
@@ -117,6 +115,32 @@ describe("gameFlow transition", () => {
             assert.throws(
                 () => transition({ type: "revealAllReady" }, context()),
                 /revealAllReady is not valid in phase lobby/
+            );
+        });
+    });
+
+    describe("lineupComplete", () => {
+        it("lineup + complete -> cashBuilder, starting the ready cooldown for the first contestant", () => {
+            const ctx = context({ currentPhase: GamePhase.Lineup, activeRound: 0 });
+            const result = transition({ type: "lineupComplete" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.CashBuilder);
+            assert.deepStrictEqual(result.effects, [
+                { type: "startReadyCooldown", seatId: "alice", round: 1 }
+            ]);
+        });
+
+        it("throws if there are no contestants", () => {
+            const ctx = context({ currentPhase: GamePhase.Lineup, contestantsOrder: [] });
+            assert.throws(
+                () => transition({ type: "lineupComplete" }, ctx),
+                /at least one contestant/
+            );
+        });
+
+        it("throws if not in lineup", () => {
+            assert.throws(
+                () => transition({ type: "lineupComplete" }, context()),
+                /lineupComplete is not valid in phase lobby/
             );
         });
     });
@@ -355,6 +379,7 @@ describe("gameFlow transition", () => {
                 { type: "chaserSelectionComplete", chaserSeatId: "bob" },
                 { type: "chaserRevealComplete" },
                 { type: "revealAllReady" },
+                { type: "lineupComplete" },
                 { type: "readyCooldownDone" },
                 { type: "cashBuilderTimeout" },
                 { type: "contestantChoice", offer: "high" },
@@ -395,6 +420,7 @@ describe("gameFlow transition", () => {
                 GamePhase.ChaserSelection,
                 GamePhase.ChaserReveal,
                 GamePhase.RolesReveal,
+                GamePhase.Lineup,       // the turn-order interstitial
                 GamePhase.CashBuilder,   // ready cooldown, then...
                 GamePhase.CashBuilder,    // ...the cash builder runs
                 GamePhase.Offer,

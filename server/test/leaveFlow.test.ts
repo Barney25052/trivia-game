@@ -53,6 +53,7 @@ async function createForfeitRoom(
         chaserSelectionDurationMs: 10000,
         chaserRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
+        lineupDurationMs: 80,
         teamFinalDurationMs: 80
     });
     const carol = await colyseus.connectTo(room, { playerName: "Carol" });

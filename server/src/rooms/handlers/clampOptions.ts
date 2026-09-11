@@ -4,6 +4,7 @@ import {
     CHASER_REVEAL,
     CHASER_SELECTION,
     FINAL_ROUND,
+    LINEUP,
     RATE_LIMIT,
     REVEAL_READY,
 } from "../../gameConfig.js";
@@ -38,6 +39,13 @@ export function clampRoomOptions(room: TriviaRoom, options: any): void {
             options.revealReadyCooldownMs,
             REVEAL_READY.minMs,
             REVEAL_READY.maxMs
+        );
+    }
+    if (typeof options?.lineupDurationMs === "number") {
+        room.lineupDurationMs = clamp(
+            options.lineupDurationMs,
+            LINEUP.minMs,
+            LINEUP.maxMs
         );
     }
     if (typeof options?.teamFinalDurationMs === "number") {

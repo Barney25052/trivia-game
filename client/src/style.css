@@ -548,6 +548,94 @@ ul {
   cursor: default;
 }
 
+.lineupScreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.lineupTitle {
+  font-size: 40px;
+  text-align: center;
+  margin: 0 0 30px;
+}
+
+.lineupList {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  padding: 0;
+  margin: 0;
+  max-width: 900px;
+  background-color: transparent;
+  overflow: visible;
+}
+
+.lineupCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 160px;
+  padding: 15px;
+  background-color: #ffffff;
+  border-radius: 15px;
+}
+
+.lineupCard-first {
+  animation: press-me 1s ease-in-out infinite;
+}
+
+.lineupAvatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background-color: #ddeef8;
+  object-fit: cover;
+  -ms-interpolation-mode: nearest-neighbor;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+.lineupOrdinal {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--contestant-blue-glow);
+  color: #ffffff;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lineupFirstTag {
+  position: absolute;
+  top: -12px;
+  right: -8px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background-color: #31c31e;
+  color: #ffffff;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+}
+
 .getReadyCountdown {
   animation: press-me 1s ease-in-out infinite;
 }

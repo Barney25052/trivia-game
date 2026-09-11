@@ -8,6 +8,7 @@ export type FlowEvent =
     | { type: "chaserSelectionComplete"; chaserSeatId: string }
     | { type: "chaserRevealComplete" }
     | { type: "revealAllReady" }
+    | { type: "lineupComplete" }
     | { type: "readyCooldownDone" }
     | { type: "cashBuilderTimeout" }
     | { type: "contestantChoice"; offer: OfferTier }
@@ -39,6 +40,7 @@ export type FlowEffect =
     | { type: "assignChaser"; seatId: string }
     | { type: "startChaserReveal" }
     | { type: "startRolesReveal" }
+    | { type: "startLineup" }
     | { type: "startReadyCooldown"; seatId: string; round: number }
     | { type: "startCashBuilder"; seatId: string; round: number }
     | { type: "startOffer"; seatId: string }
@@ -122,6 +124,18 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
             const first = context.contestantsOrder[0];
             if (first === undefined) {
                 throw new Error("gameFlow: revealAllReady requires at least one contestant");
+            }
+            return {
+                nextPhase: GamePhase.Lineup,
+                effects: [{ type: "startLineup" }]
+            };
+        }
+
+        case "lineupComplete": {
+            ensurePhase(event, context, GamePhase.Lineup);
+            const first = context.contestantsOrder[0];
+            if (first === undefined) {
+                throw new Error("gameFlow: lineupComplete requires at least one contestant");
             }
             return {
                 nextPhase: GamePhase.CashBuilder,

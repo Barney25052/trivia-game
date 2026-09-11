@@ -43,7 +43,8 @@ async function openCashBuilder(
         cashBuilderDurationMs: opts?.cashBuilderDurationMs ?? 8000,
         chaserSelectionDurationMs: 80,
         chaserRevealDurationMs: 80,
-        revealReadyCooldownMs: 80
+        revealReadyCooldownMs: 80,
+        lineupDurationMs: 80
     });
     if (opts?.bankOverride) {
         room.questionBank = opts.bankOverride;
@@ -225,7 +226,8 @@ describe("cashBuilderFlow (integration)", () => {
             cashBuilderDurationMs: 80,
             chaserSelectionDurationMs: 80,
             chaserRevealDurationMs: 80,
-            revealReadyCooldownMs: 80
+            revealReadyCooldownMs: 80,
+            lineupDurationMs: 80
         });
         const alice = await colyseus.connectTo(room, { playerName: "Alice" });
         const bob = await colyseus.connectTo(room, { playerName: "Bob" });

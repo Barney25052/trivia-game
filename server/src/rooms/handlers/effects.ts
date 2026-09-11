@@ -1,7 +1,7 @@
 import { FlowEffect } from "../../gameFlow.js";
 import { PlayerRole } from "../../TriviaTypes.js";
 import * as chaserSelection from "./chaserSelection.js";
-import { CHASER_CHARACTERS, CHASER_REVEAL, CHASER_SELECTION } from "../../gameConfig.js";
+import { CHASER_CHARACTERS, CHASER_REVEAL, CHASER_SELECTION, LINEUP } from "../../gameConfig.js";
 
 export function applyEffects(effects: FlowEffect[], room: any, context: any): void {
     for (const effect of effects) {
@@ -55,6 +55,15 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
 
         case "startRolesReveal": {
           console.log("Roles reveal — waiting for all players to confirm before the cash builder");
+          break;
+        }
+
+        case "startLineup": {
+          const duration = room.lineupDurationMs ?? LINEUP.durationMs;
+          console.log(`Contestant lineup — showing the turn order for ${duration}ms`);
+          room.activeTimer = room.scheduleTimer(duration, () => {
+            room.dispatch({ type: "lineupComplete" });
+          });
           break;
         }
 

@@ -1,5 +1,5 @@
 import assert from "assert";
-import { CASH_BUILDER, CHASER_POT, BOARD, CHASE_QUESTION, FINAL_ROUND, CHASER_CHARACTERS } from "../src/gameConfig.js";
+import { CASH_BUILDER, CHASER_POT, BOARD, CHASE_QUESTION, FINAL_ROUND, CHASER_CHARACTERS, LINEUP } from "../src/gameConfig.js";
 import { PlayerRole, ChaserCharacter } from "../src/TriviaTypes.js";
 
 describe("gameConfig", () => {
@@ -31,6 +31,12 @@ describe("gameConfig", () => {
   it("final round: 2 minutes per side", () => {
     assert.strictEqual(FINAL_ROUND.teamDurationMs, 120_000);
     assert.strictEqual(FINAL_ROUND.chaserDurationMs, 120_000);
+  });
+
+  it("lineup: ~7s interstitial, clamped like the other durations", () => {
+    assert.strictEqual(LINEUP.durationMs, 7_000);
+    assert.ok(LINEUP.minMs <= LINEUP.durationMs, "min clamp is at or below the default");
+    assert.ok(LINEUP.maxMs >= LINEUP.durationMs, "max clamp is at or above the default");
   });
 
   it("PlayerRole has both roles", () => {

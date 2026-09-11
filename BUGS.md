@@ -25,3 +25,10 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Root cause (suspected): `waitForPhase` polls server state directly and returns as soon as state matches; the Colyseus `phase` broadcast message is delivered asynchronously, so alice's `onMessage` handler may not have run yet when the assert fires. Classic client-delivery-vs-server-state race.
 - Repro: `cd server && npm test` on clean `dev` HEAD — "chaser reveal is its own phase" fails; re-runs also fail.
 - Status: open
+
+## `bug-004` — Room can stall in `Lineup` if the last contestant leaves during the 7s hold
+- Found: 2026-09-11 · ticket 049 · `server/src/rooms/TriviaRoom.ts` (`onLeave`), `server/src/gameFlow.ts` (`lineupComplete`)
+- What you saw: ticket 049 inserts a `Lineup` hold after the roles-reveal ready gate. If every remaining contestant leaves during that 7s window (e.g. a 2-contestant room where one is the chaser and the other forfeits), `onLeave` removes them from `contestantsOrder`, then the pending lineup timer fires `lineupComplete`, which throws "at least one contestant" — dispatch catches and logs, but the room is stuck in `Lineup` forever (gridlocked like the pre-existing no-contestants cases).
+- Expected: a departing-seat exit from `Lineup` resolves forward (advance to `CashBuilder`, or end the game/room) instead of stalling.
+- Repro steps: prefer 2-player room (host+chaser and one contestant); walk to RolesReveal, both send `revealReady`, wait until `Lineup`, then `alice.leave()`; observe phase stays `lineup` past the `lineupDurationMs` timer.
+- Status: open

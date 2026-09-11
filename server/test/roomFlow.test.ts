@@ -36,7 +36,8 @@ describe("roomFlow", () => {
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
-      revealReadyCooldownMs: 100
+      revealReadyCooldownMs: 100,
+      lineupDurationMs: 80
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -151,11 +152,45 @@ describe("roomFlow", () => {
     assert.ok(phases.includes(GamePhase.RolesReveal), "should have broadcast rolesReveal phase");
   });
 
+  it("lineup is its own hold phase: after all-ready it shows the turn order, then the timer auto-advances to the cash builder", async () => {
+    const room = await colyseus.createRoom<GameState>("trivia", {
+      cashBuilderDurationMs: 80,
+      chaserSelectionDurationMs: 80,
+      chaserRevealDurationMs: 80,
+      revealReadyCooldownMs: 80,
+      lineupDurationMs: 200
+    });
+
+    const alice = await colyseus.connectTo(room, { playerName: "Alice" });
+    const bob = await colyseus.connectTo(room, { playerName: "Bob" });
+    await sleep(100);
+
+    const phases: string[] = [];
+    alice.onMessage("phase", (message: any) => phases.push(message.phase));
+
+    alice.send("startGame");
+    await waitForPhase(room, GamePhase.RolesReveal);
+    alice.send("revealReady", { characterId: "bezos" });
+    bob.send("revealReady", { characterId: "nami" });
+    await waitForPhase(room, GamePhase.Lineup);
+
+    // The lineup is a hold: no contestant is active and it lingers until the timer fires.
+    assert.strictEqual(room.state.activeContestantSeatId, "");
+    await sleep(80);
+    assert.strictEqual(room.state.currentPhase, GamePhase.Lineup);
+
+    await waitForPhase(room, GamePhase.CashBuilder);
+    assert.ok(phases.includes(GamePhase.Lineup), "should have broadcast lineup phase");
+    assert.strictEqual(room.state.activeRound, 1);
+    assert.ok(room.state.activeContestantSeatId, "first contestant is active once the cash builder starts");
+  });
+
   it("default chaser mode is random: a game started without setChaserMode runs random picks", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
-      chaserRevealDurationMs: 80
+      chaserRevealDurationMs: 80,
+      lineupDurationMs: 80
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -192,6 +227,7 @@ describe("roomFlow", () => {
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
+      lineupDurationMs: 80,
       teamFinalDurationMs: 80
     });
 
@@ -262,7 +298,8 @@ alice.send("startGame");
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
-      revealReadyCooldownMs: 80
+      revealReadyCooldownMs: 80,
+      lineupDurationMs: 80
     });
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
@@ -298,7 +335,8 @@ alice.send("startGame");
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
-      revealReadyCooldownMs: 80
+      revealReadyCooldownMs: 80,
+      lineupDurationMs: 80
     });
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
@@ -336,6 +374,7 @@ alice.send("startGame");
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
+      lineupDurationMs: 80,
       teamFinalDurationMs: 80
     });
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -373,7 +412,8 @@ alice.send("startGame");
   it("vote mode: majority vote becomes the chaser once everyone has voted", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       chaserSelectionDurationMs: 500,
-      chaserRevealDurationMs: 80
+      chaserRevealDurationMs: 80,
+      lineupDurationMs: 80
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -411,7 +451,8 @@ assert.strictEqual(room.state.chaserSeatId, seatIdOf(room, bob));
   it("vote mode: a tie between voters resolves to one of the tied players", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       chaserSelectionDurationMs: 500,
-      chaserRevealDurationMs: 80
+      chaserRevealDurationMs: 80,
+      lineupDurationMs: 80
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -458,7 +499,8 @@ assert.strictEqual(room.state.chaserSeatId, seatIdOf(room, bob));
   it("a player can only vote once for the chaser", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       chaserSelectionDurationMs: 500,
-      chaserRevealDurationMs: 80
+      chaserRevealDurationMs: 80,
+      lineupDurationMs: 80
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });

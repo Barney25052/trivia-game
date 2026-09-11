@@ -7,6 +7,7 @@ import LobbyScreen from "./screens/LobbyScreen.vue";
 import ChaserSelectionScreen from "./screens/ChaserSelectionScreen.vue";
 import ChaserWheelScreen from "./screens/ChaserWheelScreen.vue";
 import RolesRevealScreen from "./screens/RolesRevealScreen.vue";
+import ContestantLineupScreen from "./screens/ContestantLineupScreen.vue";
 import CashBuilderScreen from "./screens/CashBuilderScreen.vue";
 import OfferScreen from "./screens/OfferScreen.vue";
 import ChaseScreen from "./screens/ChaseScreen.vue";
@@ -24,6 +25,7 @@ const chaserSelectionMode = ref("");
 const activeContestantSeatId = ref("");
 const chaserSeatId = ref("");
 const mySeatId = ref("");
+const contestantsOrder = ref([]);
 const teamScore = ref(0);
 const currentOffer = ref(null);
 const winner = ref(null);
@@ -37,6 +39,7 @@ const currentScreen = computed(() => {
     case GamePhase.ChaserSelection: return "chaserSelection";
     case GamePhase.ChaserReveal: return "chaserReveal";
     case GamePhase.RolesReveal: return "rolesReveal";
+    case GamePhase.Lineup: return "lineup";
     case GamePhase.CashBuilder: return "cashBuilder";
     case GamePhase.Offer: return "offer";
     case GamePhase.Chase: return "chase";
@@ -66,6 +69,11 @@ const currentRoundQuestion = computed(() => {
     if (currentQuestion.value.targetSeatId !== activeContestantSeatId.value) return null;
     return currentQuestion.value;
 });
+const lineupContestants = computed(() =>
+    contestantsOrder.value
+        .map((seatId) => players.value.find((p) => p.seatId === seatId))
+        .filter(Boolean)
+);
 
 async function handleJoin({ playerName, roomCode }) {
   await joinLobby(playerName, roomCode);
@@ -94,6 +102,7 @@ async function joinLobby(playerName, roomCode) {
       activeContestantSeatId.value = newState.activeContestantSeatId;
       chaserSeatId.value = newState.chaserSeatId;
       teamScore.value = newState.teamScore;
+      contestantsOrder.value = Array.from(newState.contestantsOrder);
     });
 
     room.value.onMessage("seatId", (message) => {
@@ -245,6 +254,11 @@ function submitAnswer({ answer, questionId }) {
       :players="players"
       :mySeatId="mySeatId"
       @ready="revealReady"
+    />
+    <ContestantLineupScreen
+      v-if="currentScreen=='lineup'"
+      :contestants="lineupContestants"
+      :mySeatId="mySeatId"
     />
     <CashBuilderScreen 
       v-if="currentScreen=='cashBuilder'"
