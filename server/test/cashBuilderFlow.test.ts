@@ -153,6 +153,55 @@ describe("cashBuilderFlow (integration)", () => {
         );
     });
 
+    it("a correct answer patches the pot to BOTH clients: the active contestant and the bench spectator observe the incremented cashBuilderMoney (ticket 048)", async () => {
+        const { room, activeClient, benchClient, activeSeatId } = await openCashBuilder(colyseus, {
+            cashBuilderDurationMs: 800
+        });
+
+        const q1 = await activeClient.waitForMessage("question");
+        const canonical1 = bank.find((q) => q.id === q1.questionId);
+        assert.ok(canonical1, "question id resolves in the bank");
+
+        // Attach the reactive state readers that mirror the client render path
+        // (App.vue onStateChange -> players array -> activeContestantMoney).
+        const observed: Record<string, number> = {
+            active: -1,
+            bench: -1
+        };
+        const reader = (label: string, player: string) => (state: any) => {
+            const value = state.players.get(player)?.cashBuilderMoney;
+            if (typeof value === "number") observed[label] = value;
+        };
+        activeClient.onStateChange(reader("active", activeSeatId));
+        benchClient.onStateChange(reader("bench", activeSeatId));
+
+        activeClient.send("submitAnswer", {
+            answer: canonical1.answer,
+            questionId: q1.questionId
+        });
+
+        const deadline = Date.now() + 1500;
+        while (Date.now() < deadline && observed.active !== CASH_BUILDER.rewardPerCorrect) {
+            await sleep(20);
+        }
+
+        assert.strictEqual(
+            observed.active,
+            CASH_BUILDER.rewardPerCorrect,
+            "active contestant's client sees the pot grow"
+        );
+        assert.strictEqual(
+            observed.bench,
+            CASH_BUILDER.rewardPerCorrect,
+            "bench spectator's client sees the pot grow"
+        );
+        assert.strictEqual(
+            room.state.players.get(activeSeatId).cashBuilderMoney,
+            CASH_BUILDER.rewardPerCorrect,
+            "server state agrees"
+        );
+    });
+
     it("submitAnswer from a non-active player is rejected (no pot change, no question advance)", async () => {
         const { room, benchClient, activeClient, activeSeatId } = await openCashBuilder(colyseus);
 
