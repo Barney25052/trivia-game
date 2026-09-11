@@ -16,6 +16,7 @@ import {
   CHASER_REVEAL,
   FINAL_ROUND,
   PLAYER_NAME,
+  RATE_LIMIT,
   REVEAL_READY,
   ROOM_SETTINGS,
 } from "../gameConfig.js";
@@ -51,12 +52,15 @@ export class TriviaRoom extends Room {
   revealReadyCooldownMs: number = REVEAL_READY.cooldownMs;
   teamFinalDurationMs: number = FINAL_ROUND.teamDurationMs;
   chaserFinalDurationMs: number = FINAL_ROUND.chaserDurationMs;
+  rateLimitMaxMessages: number = RATE_LIMIT.maxMessages;
+  rateLimitWindowMs: number = RATE_LIMIT.windowMs;
 
   activeTimer: TimerHandle | null = null;
   currentOffer: OfferAmounts | null = null;
   currentOfferAmount = 0;
   questionManager = new QuestionManager();
   questionBank: BankQuestion[] = [];
+  private messageTimes: Map<string, number[]> = new Map();
 
   onCreate (options: any) {
     clampRoomOptions(this, options);
@@ -121,15 +125,59 @@ export class TriviaRoom extends Room {
     return scheduleTimer(this, delayMs, onFire)
   }
 
-  messages = {
-    startGame: (client: Client, message: any) => startGame(client, message, this),
-    setChaserMode: (client: Client, message: any) => setChaserMode(client, message, this),
-    chaserVote: (client: Client, message: any) => chaserVote(client, message, this),
-    revealReady: (client: Client, message: any) => revealReady(client, message, this),
-    offerChoice: (client: Client, message: any) => offerChoice(client, message, this),
-    chaseResult: (client: Client, message: any) => chaseResult(client, message, this),
-    finalChaserScore: (client: Client, message: any) => finalChaserScore(client, message, this),
-    submitAnswer: (client: Client, message: any) => submitAnswer(client, message, this),
+  private checkRateLimit(client: Client): boolean {
+    const now = Date.now();
+    const cutoff = now - this.rateLimitWindowMs;
+    const timestamps = this.messageTimes.get(client.sessionId) ?? [];
+    while (timestamps.length > 0 && timestamps[0] < cutoff) {
+      timestamps.shift();
+    }
+    if (timestamps.length >= this.rateLimitMaxMessages) {
+      this.messageTimes.set(client.sessionId, timestamps);
+      client.send("error", { code: "RATE_LIMITED", message: "Too many messages" });
+      console.log(
+        `${client.sessionId} rate limited: ${timestamps.length} messages within ${this.rateLimitWindowMs}ms`
+      );
+      return false;
+    }
+    timestamps.push(now);
+    this.messageTimes.set(client.sessionId, timestamps);
+    return true;
+  }
+
+  messages: Record<string, (client: Client, message: any) => void> = {
+    startGame: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      startGame(client, message, this);
+    },
+    setChaserMode: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      setChaserMode(client, message, this);
+    },
+    chaserVote: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      chaserVote(client, message, this);
+    },
+    revealReady: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      revealReady(client, message, this);
+    },
+    offerChoice: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      offerChoice(client, message, this);
+    },
+    chaseResult: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      chaseResult(client, message, this);
+    },
+    finalChaserScore: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      finalChaserScore(client, message, this);
+    },
+    submitAnswer: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      submitAnswer(client, message, this);
+    },
   };
 
   onJoin (client: Client, options: any) {
@@ -156,6 +204,7 @@ export class TriviaRoom extends Room {
   }
 
   onLeave (client: Client, code: CloseCode) {
+    this.messageTimes.delete(client.sessionId);
     const player = this.state.players.get(client.sessionId);
     if(player?.isHost) {
       this.disconnect(6767)

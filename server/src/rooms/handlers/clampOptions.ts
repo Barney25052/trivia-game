@@ -4,6 +4,7 @@ import {
     CHASER_REVEAL,
     CHASER_SELECTION,
     FINAL_ROUND,
+    RATE_LIMIT,
     REVEAL_READY,
 } from "../../gameConfig.js";
 
@@ -51,6 +52,20 @@ export function clampRoomOptions(room: TriviaRoom, options: any): void {
             options.chaserFinalDurationMs,
             FINAL_ROUND.minMs,
             FINAL_ROUND.maxMs
+        );
+    }
+    if (typeof options?.rateLimitMaxMessages === "number") {
+        room.rateLimitMaxMessages = clamp(
+            options.rateLimitMaxMessages,
+            RATE_LIMIT.minMaxMessages,
+            RATE_LIMIT.maxMaxMessages
+        );
+    }
+    if (typeof options?.rateLimitWindowMs === "number") {
+        room.rateLimitWindowMs = clamp(
+            options.rateLimitWindowMs,
+            RATE_LIMIT.minWindowMs,
+            RATE_LIMIT.maxWindowMs
         );
     }
 }

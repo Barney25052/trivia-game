@@ -90,3 +90,12 @@ export const ANSWER_CHECK = {
     normaliseWhitespace: true,
     caseInsensitive: true
 } as const;
+
+export const RATE_LIMIT = {
+    maxMessages: 20,
+    windowMs: 10_000,
+    minMaxMessages: 1,
+    maxMaxMessages: 100,
+    minWindowMs: TIMER_CLAMP.minMs,
+    maxWindowMs: 60_000
+} as const;
