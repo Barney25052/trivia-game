@@ -1,0 +1,268 @@
+import assert from "assert";
+import { ColyseusTestServer } from "@colyseus/testing";
+import appConfig from "../src/app.config.js";
+import { GameState } from "../src/rooms/schema/GameState.js";
+import { GamePhase } from "../src/TriviaTypes.js";
+import { loadBank, BankQuestion } from "../src/questions/bank.js";
+import { CASH_BUILDER } from "../src/gameConfig.js";
+import { cleanup, getTestServer } from "./testServer.js";
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const waitForPhase = async (
+    room: { state: { currentPhase: GamePhase } },
+    phase: GamePhase,
+    timeoutMs = 2000
+): Promise<void> => {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        if (room.state.currentPhase === phase) {
+            return;
+        }
+        await sleep(20);
+    }
+    assert.fail(`timed out waiting for phase ${phase}; got ${room.state.currentPhase}`);
+};
+
+const bank = loadBank();
+
+/**
+ * Walk the flow into CashBuilder with a known active contestant.
+ */
+async function openCashBuilder(
+    colyseus: ColyseusTestServer<typeof appConfig>,
+    opts?: { bankOverride?: BankQuestion[]; cashBuilderDurationMs?: number }
+): Promise<{
+    room: any;
+    activeClient: any;
+    benchClient: any;
+    activeSessionId: string;
+}> {
+    const room = await colyseus.createRoom<GameState>("trivia", {
+        cashBuilderDurationMs: opts?.cashBuilderDurationMs ?? 8000,
+        chaserSelectionDurationMs: 80,
+        chaserRevealDurationMs: 80,
+        revealReadyCooldownMs: 80
+    });
+    if (opts?.bankOverride) {
+        room.questionBank = opts.bankOverride;
+    }
+    const alice = await colyseus.connectTo(room, { playerName: "Alice" });
+    const bob = await colyseus.connectTo(room, { playerName: "Bob" });
+    await sleep(100);
+
+    alice.send("startGame");
+    await waitForPhase(room, GamePhase.RolesReveal);
+    alice.send("revealReady", { characterId: "bezos" });
+    bob.send("revealReady", { characterId: "nami" });
+    await waitForPhase(room, GamePhase.CashBuilder);
+
+    const activeSessionId = room.state.activeContestantSessionId;
+    assert.ok(activeSessionId, "active contestant is set once cash builder starts");
+    const activeClient = alice.sessionId === activeSessionId ? alice : bob;
+    const benchClient = alice.sessionId === activeSessionId ? bob : alice;
+    return { room, activeClient, benchClient, activeSessionId };
+}
+
+describe("cashBuilderFlow (integration)", () => {
+    let colyseus: ColyseusTestServer<typeof appConfig>;
+
+    beforeEach(async () => {
+        colyseus = await getTestServer();
+        await cleanup();
+    });
+
+    it("full cash builder round: correct answer → pot++, wrong answer → pot unchanged, timer → Offer with correct pot", async () => {
+        const { room, activeClient, activeSessionId } = await openCashBuilder(colyseus, {
+            cashBuilderDurationMs: 80
+        });
+
+        const offerPromise = activeClient.waitForMessage("offer");
+
+        const q1 = await activeClient.waitForMessage("question");
+        assert.ok(q1, "first question is delivered after cooldown");
+        assert.strictEqual(q1.targetSessionId, activeSessionId);
+        assert.ok(!("answer" in q1), "question must not leak the answer");
+        assert.ok(typeof q1.questionId === "number");
+        assert.ok(typeof q1.prompt === "string");
+        assert.ok(typeof q1.category === "string");
+
+        const canonical1 = bank.find((q) => q.id === q1.questionId);
+        assert.ok(canonical1, "question id resolves in the bank");
+
+        const q2Promise = activeClient.waitForMessage("question");
+        activeClient.send("submitAnswer", {
+            answer: canonical1.answer,
+            questionId: q1.questionId
+        });
+        const q2 = await q2Promise;
+        assert.ok(q2, "a new question arrives after a correct answer");
+        assert.notStrictEqual(q2.questionId, q1.questionId, "questions are non-repeating");
+        assert.strictEqual(
+            room.state.players.get(activeSessionId).cashBuilderMoney,
+            CASH_BUILDER.rewardPerCorrect,
+            "correct answer adds $1000 to pot"
+        );
+        assert.strictEqual(
+            room.state.players.get(activeSessionId).cashBuilderQuestionsAsked,
+            1
+        );
+
+        const canonical2 = bank.find((q) => q.id === q2.questionId);
+        assert.ok(canonical2);
+
+        const q3Promise = activeClient.waitForMessage("question");
+        activeClient.send("submitAnswer", {
+            answer: "this is definitely not the answer",
+            questionId: q2.questionId
+        });
+        const q3 = await q3Promise;
+        assert.ok(q3, "a new question arrives after a wrong answer");
+        assert.strictEqual(
+            room.state.players.get(activeSessionId).cashBuilderMoney,
+            CASH_BUILDER.rewardPerCorrect,
+            "wrong answer does not change the pot"
+        );
+        assert.strictEqual(
+            room.state.players.get(activeSessionId).cashBuilderQuestionsAsked,
+            1,
+            "wrong answer does not increment questions asked"
+        );
+
+        const offer = await offerPromise;
+        assert.strictEqual(room.state.currentPhase, GamePhase.Offer);
+        assert.ok(
+            "low" in offer.offers && "middle" in offer.offers && "high" in offer.offers,
+            "offer message carries low/middle/high amounts"
+        );
+        assert.strictEqual(
+            offer.offers.middle,
+            CASH_BUILDER.rewardPerCorrect,
+            "middle offer equals the earned pot"
+        );
+        assert.strictEqual(
+            offer.offers.low,
+            Math.floor(CASH_BUILDER.rewardPerCorrect / 2),
+            "low offer is half the pot"
+        );
+        assert.strictEqual(
+            offer.offers.high,
+            CASH_BUILDER.rewardPerCorrect * 2,
+            "high offer is double the pot"
+        );
+    });
+
+    it("submitAnswer from a non-active player is rejected (no pot change, no question advance)", async () => {
+        const { room, benchClient, activeClient, activeSessionId } = await openCashBuilder(colyseus);
+
+        const q1 = await activeClient.waitForMessage("question");
+        const canonical = bank.find((q) => q.id === q1.questionId);
+        assert.ok(canonical);
+
+        benchClient.send("submitAnswer", {
+            answer: canonical.answer,
+            questionId: q1.questionId
+        });
+        await sleep(50);
+
+        const player = room.state.players.get(activeSessionId);
+        assert.strictEqual(player.cashBuilderMoney, 0, "bench answer does not affect pot");
+        assert.strictEqual(player.cashBuilderQuestionsAsked, 0);
+    });
+
+    it("submitAnswer in the Offer phase is rejected", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", {
+            cashBuilderDurationMs: 80,
+            chaserSelectionDurationMs: 80,
+            chaserRevealDurationMs: 80,
+            revealReadyCooldownMs: 80
+        });
+        const alice = await colyseus.connectTo(room, { playerName: "Alice" });
+        const bob = await colyseus.connectTo(room, { playerName: "Bob" });
+        await sleep(100);
+
+        alice.send("startGame");
+        await waitForPhase(room, GamePhase.RolesReveal);
+        alice.send("revealReady", { characterId: "bezos" });
+        bob.send("revealReady", { characterId: "nami" });
+        await waitForPhase(room, GamePhase.Offer);
+
+        const active = room.state.activeContestantSessionId;
+        const activeClient = alice.sessionId === active ? alice : bob;
+
+        activeClient.send("submitAnswer", { answer: "Mars", questionId: 1 });
+        await sleep(50);
+
+        assert.strictEqual(room.state.currentPhase, GamePhase.Offer, "phase does not change on a rejected answer");
+    });
+
+    it("submitAnswer with missing answer field is rejected", async () => {
+        const { room, activeClient } = await openCashBuilder(colyseus);
+
+        const q1 = await activeClient.waitForMessage("question");
+
+        activeClient.send("submitAnswer", { questionId: q1.questionId });
+        await sleep(30);
+
+        assert.strictEqual(room.state.players.get(room.state.activeContestantSessionId).cashBuilderMoney, 0);
+    });
+
+    it("submitAnswer with missing questionId field is rejected", async () => {
+        const { room, activeClient } = await openCashBuilder(colyseus);
+
+        await activeClient.waitForMessage("question");
+
+        activeClient.send("submitAnswer", { answer: "Mars" });
+        await sleep(30);
+
+        assert.strictEqual(room.state.players.get(room.state.activeContestantSessionId).cashBuilderMoney, 0);
+    });
+
+    it("submitAnswer with wrong questionId is rejected", async () => {
+        const { room, activeClient, activeSessionId } = await openCashBuilder(colyseus);
+
+        await activeClient.waitForMessage("question");
+
+        activeClient.send("submitAnswer", { answer: "Mars", questionId: 999999 });
+        await sleep(50);
+
+        assert.strictEqual(room.state.players.get(activeSessionId).cashBuilderMoney, 0);
+        assert.strictEqual(room.state.players.get(activeSessionId).cashBuilderQuestionsAsked, 0);
+    });
+
+    it("bank exhaustion: a tiny bank of 2 questions is drained, then null is broadcast and the timer still transitions to Offer", async () => {
+        const tinyBank: BankQuestion[] = [
+            { id: 1, category: "test", question: "What is 2+2?", answer: "4" },
+            { id: 2, category: "test", question: "Capital of France?", answer: "Paris" }
+        ];
+        const { room, activeClient, activeSessionId } = await openCashBuilder(colyseus, {
+            bankOverride: tinyBank,
+            cashBuilderDurationMs: 80
+        });
+
+        const offerPromise = activeClient.waitForMessage("offer");
+
+        const q1 = await activeClient.waitForMessage("question");
+        const c1 = tinyBank.find((q) => q.id === q1.questionId)!;
+        const q2Promise = activeClient.waitForMessage("question");
+        activeClient.send("submitAnswer", { answer: c1.answer, questionId: q1.questionId });
+        const q2 = await q2Promise;
+        assert.ok(q2, "second question delivered from the 2-question bank");
+
+        const c2 = tinyBank.find((q) => q.id === q2.questionId)!;
+        const exhaustedPromise = activeClient.waitForMessage("question");
+        activeClient.send("submitAnswer", { answer: c2.answer, questionId: q2.questionId });
+
+        const exhausted = await exhaustedPromise;
+        assert.strictEqual(exhausted, null, "null payload signals the bank is exhausted");
+        assert.strictEqual(
+            room.state.players.get(activeSessionId).cashBuilderMoney,
+            CASH_BUILDER.rewardPerCorrect * 2,
+            "both correct answers added to the pot"
+        );
+
+        const offer = await offerPromise;
+        assert.strictEqual(room.state.currentPhase, GamePhase.Offer);
+        assert.strictEqual(offer.offers.middle, CASH_BUILDER.rewardPerCorrect * 2);
+    });
+});
