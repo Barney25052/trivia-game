@@ -249,6 +249,67 @@ describe("gameFlow transition", () => {
         });
     });
 
+    describe("contestantForfeit", () => {
+        it("forfeit during cashBuilder eliminates and moves to the next contestant's cashBuilder", () => {
+            const ctx = context({ currentPhase: GamePhase.CashBuilder, activeContestantSessionId: "bob", activeRound: 2 });
+            const result = transition({ type: "contestantForfeit" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.CashBuilder);
+            assert.deepStrictEqual(result.effects, [
+                { type: "eliminateContestant", sessionId: "bob" },
+                { type: "startCashBuilder", sessionId: "carol", round: 3 }
+            ]);
+        });
+
+        it("forfeit during offer behaves the same as during chase: contestant eliminated, next contestant's cashBuilder", () => {
+            const ctx = context({ currentPhase: GamePhase.Offer, activeContestantSessionId: "bob", activeRound: 2 });
+            const result = transition({ type: "contestantForfeit" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.CashBuilder);
+            assert.deepStrictEqual(result.effects, [
+                { type: "eliminateContestant", sessionId: "bob" },
+                { type: "startCashBuilder", sessionId: "carol", round: 3 }
+            ]);
+        });
+
+        it("forfeit during chase behaves identically to chaseCaught (no pot paid)", () => {
+            const ctx = context({ currentPhase: GamePhase.Chase, activeContestantSessionId: "bob", activeRound: 2, currentOfferAmount: 5000 });
+            const result = transition({ type: "contestantForfeit" }, ctx);
+            assert.deepStrictEqual(result.effects, [
+                { type: "eliminateContestant", sessionId: "bob" },
+                { type: "startCashBuilder", sessionId: "carol", round: 3 }
+            ]);
+        });
+
+        it("forfeit by the last contestant -> finalTeam", () => {
+            const ctx = context({ currentPhase: GamePhase.Chase, contestantsOrder: ["carol"], activeContestantSessionId: "carol", activeRound: 3 });
+            const result = transition({ type: "contestantForfeit" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.TeamFinal);
+            assert.deepStrictEqual(result.effects, [
+                { type: "eliminateContestant", sessionId: "carol" },
+                { type: "startFinalTeam" }
+            ]);
+        });
+
+        it("forfeit never includes addToTeamPot: no offer is paid", () => {
+            const ctx = context({ currentPhase: GamePhase.Offer, activeContestantSessionId: "alice", activeRound: 1, currentOfferAmount: 10000 });
+            const result = transition({ type: "contestantForfeit" }, ctx);
+            assert.ok(
+                !result.effects.some((e) => e.type === "addToTeamPot"),
+                "forfeit must never pay the contestant's offer into the team pot"
+            );
+        });
+
+        it("throws if not in cashBuilder, offer, or chase", () => {
+            assert.throws(
+                () => transition({ type: "contestantForfeit" }, context({ currentPhase: GamePhase.Lobby })),
+                /contestantForfeit is not valid in phase lobby/
+            );
+            assert.throws(
+                () => transition({ type: "contestantForfeit" }, context({ currentPhase: GamePhase.TeamFinal })),
+                /contestantForfeit is not valid in phase finalTeam/
+            );
+        });
+    });
+
     describe("final round", () => {
         it("finalTeam + timeout -> finalChaser", () => {
             const ctx = context({ currentPhase: GamePhase.TeamFinal });

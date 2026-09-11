@@ -66,10 +66,10 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 039 | Server: question delivery, answer handler, pot tracking | done |
 | 040 | Client: cash builder screen — question display, submission, pot | done |
 | 041 | Phase 2 integration tests — full cash builder flow | done |
-| 042 | Recover the game flow when the active player leaves mid-round | backlog |
+| 042 | Recover the game flow when the active player leaves mid-round | done |
 | 043 | Rename `cashBuilderQuestionsAsked` to match what it counts (correct answers) | backlog |
 | 044 | Finish the seat-id rekey — players map keyed by `GamePlayer.seatId`, not `sessionId` | backlog |
-| 045 | Null-guard `onLeave` before dereferencing `player.seatId` | backlog |
+| 045 | Null-guard `onLeave` before dereferencing `player.seatId` | done (covered by 042) |
 | 046 | Remove dead CSS — `.rotate` rule and `pan-bg` keyframe | backlog |
 | 047 | Reconcile the answer checker with ticket 038's spec — then wire `ANSWER_CHECK` | backlog |
 | 048 | Cash builder — pot/score doesn't visibly increase during the round | backlog |

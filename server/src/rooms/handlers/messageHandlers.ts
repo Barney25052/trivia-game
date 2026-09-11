@@ -92,15 +92,8 @@ export function revealReady(client: any, message: any, room: any) {
         player.revealReady = true;
         console.log(`${client.sessionId} confirmed ready for the cash builder`);
     }
-    // Only check if Chaser is ready (non-Chasers are always "ready" once they connect)
-    const chaser = [...room.state.players.values()].find((p) => p.role === PlayerRole.Chaser);
-    if (!chaser || chaser.revealReady) {
-        const allReady = [...room.state.players.values()].every(
-            (p) => p.revealReady === true
-        );
-        if (allReady) {
-            room.dispatch({ type: "revealAllReady" });
-        }
+    if (allPlayersReady(room)) {
+        room.dispatch({ type: "revealAllReady" });
     }
 }
 

@@ -13,6 +13,7 @@ export type FlowEvent =
     | { type: "contestantChoice"; offer: OfferTier }
     | { type: "chaseEscape" }
     | { type: "chaseCaught" }
+    | { type: "contestantForfeit" }
     | { type: "finalTeamTimeout" }
     | { type: "finalChaserReachedScore" }
     | { type: "finalChaserTimeout" };
@@ -174,6 +175,34 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
                 return { nextPhase: GamePhase.CashBuilder, effects };
             }
 
+            effects.push({ type: "startFinalTeam" });
+            return { nextPhase: GamePhase.TeamFinal, effects };
+        }
+
+        /**
+         * The active contestant's connection dropped mid-round (reload = forfeit
+         * the seat, per AGENTS.md). Treat it as caught: eliminate the seat,
+         * pay nothing, and move to the next contestant — or the team final if
+         * this was the last one.
+         */
+        case "contestantForfeit": {
+            if (
+                context.currentPhase !== GamePhase.CashBuilder &&
+                context.currentPhase !== GamePhase.Offer &&
+                context.currentPhase !== GamePhase.Chase
+            ) {
+                throw new Error(
+                    `gameFlow: contestantForfeit is not valid in phase ${context.currentPhase}` +
+                    " (expected cashBuilder, offer, or chase)"
+                );
+            }
+            const sessionId = context.activeContestantSessionId;
+            const effects: FlowEffect[] = [{ type: "eliminateContestant", sessionId }];
+            const next = nextContestant(context, sessionId);
+            if (next !== undefined) {
+                effects.push({ type: "startCashBuilder", sessionId: next, round: context.activeRound + 1 });
+                return { nextPhase: GamePhase.CashBuilder, effects };
+            }
             effects.push({ type: "startFinalTeam" });
             return { nextPhase: GamePhase.TeamFinal, effects };
         }

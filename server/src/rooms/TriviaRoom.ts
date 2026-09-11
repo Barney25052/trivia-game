@@ -1,6 +1,6 @@
 import { Room, Client, CloseCode } from "colyseus";
 import { GamePlayer, GameState } from "./schema/GameState.js";
-import { GamePhase, PlayerRole } from "../TriviaTypes.js";
+import { GamePhase } from "../TriviaTypes.js";
 import {
   transition,
   FlowEffect,
@@ -203,19 +203,51 @@ export class TriviaRoom extends Room {
     console.log("Client joined room", this.roomId);
   }
 
+  private allPlayersReady(): boolean {
+    const players = [...this.state.players.values()];
+    return players.length > 0 && players.every((player) => player.revealReady);
+  }
+
   onLeave (client: Client, code: CloseCode) {
     this.messageTimes.delete(client.sessionId);
     const player = this.state.players.get(client.sessionId);
-    if(player?.isHost) {
-      this.disconnect(6767)
+    if (player?.isHost) {
+      console.log("Host left the room — disconnecting", this.roomId);
+      this.disconnect(6767);
+      return;
     }
+
+    const phase = this.state.currentPhase;
+    if (
+      this.state.activeContestantSessionId === client.sessionId &&
+      (phase === GamePhase.CashBuilder || phase === GamePhase.Offer || phase === GamePhase.Chase)
+    ) {
+      // The active contestant reloaded/left mid-round: forfeit the seat as caught
+      // (no pot paid) so the game moves on. Route through gameFlow, not here.
+      console.log(
+        `Active contestant ${client.sessionId} left mid-${phase} — forfeiting the round as caught`
+      );
+      this.dispatch({ type: "contestantForfeit" });
+    }
+
     this.state.players.delete(client.sessionId);
-    this.seatIdToSessionId.delete(player.seatId);
+    if (player) {
+      this.seatIdToSessionId.delete(player.seatId);
+    }
     const contestantIndex = this.state.contestantsOrder.indexOf(client.sessionId);
-    if(contestantIndex >= 0) {
+    if (contestantIndex >= 0) {
       this.state.contestantsOrder.splice(contestantIndex, 1);
     }
-    console.log("Client left room", this.roomId)
+    this.questionManager.clearContestant(client.sessionId);
+
+    // The roles-reveal gate must not wait forever on a departed seat: if everyone
+    // still connected has revealed, advance (mirrors the revealReady handler).
+    if (this.state.currentPhase === GamePhase.RolesReveal && this.allPlayersReady()) {
+      console.log("All remaining players are ready — advancing past the roles reveal");
+      this.dispatch({ type: "revealAllReady" });
+    }
+
+    console.log("Client left room", this.roomId);
   }
 
   onDispose() {
