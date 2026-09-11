@@ -6,6 +6,7 @@ import { GamePhase } from "../src/TriviaTypes.js";
 import { loadBank, BankQuestion } from "../src/questions/bank.js";
 import { CASH_BUILDER } from "../src/gameConfig.js";
 import { cleanup, getTestServer } from "./testServer.js";
+import { seatIdOf } from "./seatIdHelper.js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -36,7 +37,7 @@ async function openCashBuilder(
     room: any;
     activeClient: any;
     benchClient: any;
-    activeSessionId: string;
+    activeSeatId: string;
 }> {
     const room = await colyseus.createRoom<GameState>("trivia", {
         cashBuilderDurationMs: opts?.cashBuilderDurationMs ?? 8000,
@@ -57,11 +58,11 @@ async function openCashBuilder(
     bob.send("revealReady", { characterId: "nami" });
     await waitForPhase(room, GamePhase.CashBuilder);
 
-    const activeSessionId = room.state.activeContestantSessionId;
-    assert.ok(activeSessionId, "active contestant is set once cash builder starts");
-    const activeClient = alice.sessionId === activeSessionId ? alice : bob;
-    const benchClient = alice.sessionId === activeSessionId ? bob : alice;
-    return { room, activeClient, benchClient, activeSessionId };
+    const activeSeatId = room.state.activeContestantSeatId;
+    assert.ok(activeSeatId, "active contestant is set once cash builder starts");
+    const activeClient = seatIdOf(room, alice) === activeSeatId ? alice : bob;
+    const benchClient = seatIdOf(room, alice) === activeSeatId ? bob : alice;
+    return { room, activeClient, benchClient, activeSeatId };
 }
 
 describe("cashBuilderFlow (integration)", () => {
@@ -73,7 +74,7 @@ describe("cashBuilderFlow (integration)", () => {
     });
 
     it("full cash builder round: correct answer → pot++, wrong answer → pot unchanged, timer → Offer with correct pot", async () => {
-        const { room, activeClient, activeSessionId } = await openCashBuilder(colyseus, {
+        const { room, activeClient, activeSeatId } = await openCashBuilder(colyseus, {
             cashBuilderDurationMs: 80
         });
 
@@ -81,7 +82,7 @@ describe("cashBuilderFlow (integration)", () => {
 
         const q1 = await activeClient.waitForMessage("question");
         assert.ok(q1, "first question is delivered after cooldown");
-        assert.strictEqual(q1.targetSessionId, activeSessionId);
+        assert.strictEqual(q1.targetSeatId, activeSeatId);
         assert.ok(!("answer" in q1), "question must not leak the answer");
         assert.ok(typeof q1.questionId === "number");
         assert.ok(typeof q1.prompt === "string");
@@ -99,12 +100,12 @@ describe("cashBuilderFlow (integration)", () => {
         assert.ok(q2, "a new question arrives after a correct answer");
         assert.notStrictEqual(q2.questionId, q1.questionId, "questions are non-repeating");
         assert.strictEqual(
-            room.state.players.get(activeSessionId).cashBuilderMoney,
+            room.state.players.get(activeSeatId).cashBuilderMoney,
             CASH_BUILDER.rewardPerCorrect,
             "correct answer adds $1000 to pot"
         );
         assert.strictEqual(
-            room.state.players.get(activeSessionId).cashBuilderCorrectAnswers,
+            room.state.players.get(activeSeatId).cashBuilderCorrectAnswers,
             1
         );
 
@@ -119,12 +120,12 @@ describe("cashBuilderFlow (integration)", () => {
         const q3 = await q3Promise;
         assert.ok(q3, "a new question arrives after a wrong answer");
         assert.strictEqual(
-            room.state.players.get(activeSessionId).cashBuilderMoney,
+            room.state.players.get(activeSeatId).cashBuilderMoney,
             CASH_BUILDER.rewardPerCorrect,
             "wrong answer does not change the pot"
         );
         assert.strictEqual(
-            room.state.players.get(activeSessionId).cashBuilderCorrectAnswers,
+            room.state.players.get(activeSeatId).cashBuilderCorrectAnswers,
             1,
             "wrong answer does not increment questions asked"
         );
@@ -153,7 +154,7 @@ describe("cashBuilderFlow (integration)", () => {
     });
 
     it("submitAnswer from a non-active player is rejected (no pot change, no question advance)", async () => {
-        const { room, benchClient, activeClient, activeSessionId } = await openCashBuilder(colyseus);
+        const { room, benchClient, activeClient, activeSeatId } = await openCashBuilder(colyseus);
 
         const q1 = await activeClient.waitForMessage("question");
         const canonical = bank.find((q) => q.id === q1.questionId);
@@ -165,7 +166,7 @@ describe("cashBuilderFlow (integration)", () => {
         });
         await sleep(50);
 
-        const player = room.state.players.get(activeSessionId);
+        const player = room.state.players.get(activeSeatId);
         assert.strictEqual(player.cashBuilderMoney, 0, "bench answer does not affect pot");
         assert.strictEqual(player.cashBuilderCorrectAnswers, 0);
     });
@@ -187,8 +188,8 @@ describe("cashBuilderFlow (integration)", () => {
         bob.send("revealReady", { characterId: "nami" });
         await waitForPhase(room, GamePhase.Offer);
 
-        const active = room.state.activeContestantSessionId;
-        const activeClient = alice.sessionId === active ? alice : bob;
+        const active = room.state.activeContestantSeatId;
+        const activeClient = seatIdOf(room, alice) === active ? alice : bob;
 
         activeClient.send("submitAnswer", { answer: "Mars", questionId: 1 });
         await sleep(50);
@@ -204,7 +205,7 @@ describe("cashBuilderFlow (integration)", () => {
         activeClient.send("submitAnswer", { questionId: q1.questionId });
         await sleep(30);
 
-        assert.strictEqual(room.state.players.get(room.state.activeContestantSessionId).cashBuilderMoney, 0);
+        assert.strictEqual(room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney, 0);
     });
 
     it("submitAnswer with missing questionId field is rejected", async () => {
@@ -215,19 +216,19 @@ describe("cashBuilderFlow (integration)", () => {
         activeClient.send("submitAnswer", { answer: "Mars" });
         await sleep(30);
 
-        assert.strictEqual(room.state.players.get(room.state.activeContestantSessionId).cashBuilderMoney, 0);
+        assert.strictEqual(room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney, 0);
     });
 
     it("submitAnswer with wrong questionId is rejected", async () => {
-        const { room, activeClient, activeSessionId } = await openCashBuilder(colyseus);
+        const { room, activeClient, activeSeatId } = await openCashBuilder(colyseus);
 
         await activeClient.waitForMessage("question");
 
         activeClient.send("submitAnswer", { answer: "Mars", questionId: 999999 });
         await sleep(50);
 
-        assert.strictEqual(room.state.players.get(activeSessionId).cashBuilderMoney, 0);
-        assert.strictEqual(room.state.players.get(activeSessionId).cashBuilderCorrectAnswers, 0);
+        assert.strictEqual(room.state.players.get(activeSeatId).cashBuilderMoney, 0);
+        assert.strictEqual(room.state.players.get(activeSeatId).cashBuilderCorrectAnswers, 0);
     });
 
     it("bank exhaustion: a tiny bank of 2 questions is drained, then null is broadcast and the timer still transitions to Offer", async () => {
@@ -235,7 +236,7 @@ describe("cashBuilderFlow (integration)", () => {
             { id: 1, category: "test", question: "What is 2+2?", answer: "4" },
             { id: 2, category: "test", question: "Capital of France?", answer: "Paris" }
         ];
-        const { room, activeClient, activeSessionId } = await openCashBuilder(colyseus, {
+        const { room, activeClient, activeSeatId } = await openCashBuilder(colyseus, {
             bankOverride: tinyBank,
             cashBuilderDurationMs: 80
         });
@@ -256,7 +257,7 @@ describe("cashBuilderFlow (integration)", () => {
         const exhausted = await exhaustedPromise;
         assert.strictEqual(exhausted, null, "null payload signals the bank is exhausted");
         assert.strictEqual(
-            room.state.players.get(activeSessionId).cashBuilderMoney,
+            room.state.players.get(activeSeatId).cashBuilderMoney,
             CASH_BUILDER.rewardPerCorrect * 2,
             "both correct answers added to the pot"
         );

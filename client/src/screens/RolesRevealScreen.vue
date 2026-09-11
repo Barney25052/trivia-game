@@ -7,13 +7,13 @@ import namiIcon from "../assets/images/chasers/nami-icon.png";
 
 const selectedCharacterId = ref(null);
 
-const props = defineProps(["players", "mySessionId"]);
+const props = defineProps(["players", "mySeatId"]);
 const emit = defineEmits(["ready"]);
 
 const chaser = computed(() => props.players.find((p) => p.role === PlayerRole.Chaser));
 const contestants = computed(() => props.players.filter((p) => p.role === PlayerRole.Contestant));
 const myRevealReady = computed(
-    () => props.players.find((p) => p.sessionId === props.mySessionId)?.revealReady === true
+    () => props.players.find((p) => p.seatId === props.mySeatId)?.revealReady === true
 );
 const allReady = computed(
     () => props.players.length > 0 && props.players.every((p) => p.revealReady === true)
@@ -33,7 +33,7 @@ function handleCharacterSelect(characterId) {
 <template>
     <div class="revealScreen">
         <div class="revealTop">
-            <div v-if="chaser?.sessionId === mySessionId && !myRevealReady" class="characterPicker">
+            <div v-if="chaser?.seatId === mySeatId && !myRevealReady" class="characterPicker">
                 <h1 class="characterPickerLabel">Choose your Chaser character</h1>
                 <div class="characterOptions">
                     <button
@@ -68,7 +68,7 @@ function handleCharacterSelect(characterId) {
         <div class="revealBottom">
             <h3 class="revealContestantsTitle">The Contestants</h3>
             <ul class="revealContestants">
-                <li v-for="player in contestants" :key="player.sessionId" class="contestantCard">
+                <li v-for="player in contestants" :key="player.seatId" class="contestantCard">
                     <div class="contestantAvatar">{{ player.name.charAt(0).toUpperCase() }}</div>
                     <span class="contestantName">{{ player.name }}</span>
                     <span class="contestantReadyRow">
@@ -76,13 +76,13 @@ function handleCharacterSelect(characterId) {
                             class="revealReadyTick"
                             :class="{ 'revealReadyTick-empty': !player.revealReady }"
                         >✓</span>
-                        <span v-if="player.sessionId === mySessionId" class="contestantYou">(you)</span>
+                        <span v-if="player.seatId === mySeatId" class="contestantYou">(you)</span>
                     </span>
                 </li>
             </ul>
             <p class="playerName">{{ allReady ? "All ready!" : "Waiting for everyone to be ready…" }}</p>
             <button
-                v-if="chaser?.sessionId != mySessionId && !myRevealReady"
+                v-if="chaser?.seatId != mySeatId && !myRevealReady"
                 class="revealContinue"
                 @click="emit('ready')"
             >Ready</button>

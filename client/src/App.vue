@@ -21,8 +21,9 @@ const playersMap = ref(null);
 const players = ref([]);
 const currentPhase = ref(null);
 const chaserSelectionMode = ref("");
-const activeContestantSessionId = ref("");
-const chaserSessionId = ref("");
+const activeContestantSeatId = ref("");
+const chaserSeatId = ref("");
+const mySeatId = ref("");
 const teamScore = ref(0);
 const currentOffer = ref(null);
 const winner = ref(null);
@@ -46,12 +47,11 @@ const currentScreen = computed(() => {
   }
 });
 
-const myPlayer = computed(() => playersMap.value?.get(room.value?.sessionId));
-const mySessionId = computed(() => room.value?.sessionId);
+const myPlayer = computed(() => playersMap.value?.get(mySeatId.value));
 const isHost = computed(() => myPlayer.value?.isHost === true);
 
 const activeContestant = computed(
-    () => players.value.find((p) => p.sessionId === activeContestantSessionId.value)
+    () => players.value.find((p) => p.seatId === activeContestantSeatId.value)
 );
 const activeContestantName = computed(() => activeContestant.value?.name ?? "");
 const activeContestantMoney = computed(() => activeContestant.value?.cashBuilderMoney ?? 0);
@@ -59,11 +59,11 @@ const activeContestantCorrectAnswers = computed(
     () => activeContestant.value?.cashBuilderCorrectAnswers ?? 0
 );
 const isActiveContestant = computed(
-    () => activeContestantSessionId.value !== "" && mySessionId.value === activeContestantSessionId.value
+    () => activeContestantSeatId.value !== "" && mySeatId.value === activeContestantSeatId.value
 );
 const currentRoundQuestion = computed(() => {
     if (!currentQuestion.value) return null;
-    if (currentQuestion.value.targetSessionId !== activeContestantSessionId.value) return null;
+    if (currentQuestion.value.targetSeatId !== activeContestantSeatId.value) return null;
     return currentQuestion.value;
 });
 
@@ -91,9 +91,13 @@ async function joinLobby(playerName, roomCode) {
       playersMap.value = newState.players;
       players.value = Array.from(newState.players.values());
       chaserSelectionMode.value = newState.chaserSelectionMode;
-      activeContestantSessionId.value = newState.activeContestantSessionId;
-      chaserSessionId.value = newState.chaserSessionId;
+      activeContestantSeatId.value = newState.activeContestantSeatId;
+      chaserSeatId.value = newState.chaserSeatId;
       teamScore.value = newState.teamScore;
+    });
+
+    room.value.onMessage("seatId", (message) => {
+      mySeatId.value = message.seatId;
     });
 
     room.value.onMessage("phase", (message) => {
@@ -118,6 +122,8 @@ async function joinLobby(playerName, roomCode) {
     room.value.onMessage("endGame", (message) => {
       winner.value = message.winner;
     });
+
+    room.value.send("whoami", {});
 
     room.value.onLeave(() => {
       room.value = null;
@@ -146,9 +152,9 @@ function setChaserMode({ mode }) {
   }
 }
 
-function chaserVote({ targetSessionId }) {
+function chaserVote({ targetSeatId }) {
   try {
-    room.value?.send("chaserVote", { targetSessionId });
+    room.value?.send("chaserVote", { targetSeatId });
 
   } catch (e) {
     console.error("Failed to send chaser vote:", e);
@@ -225,19 +231,19 @@ function submitAnswer({ answer, questionId }) {
       :players="players"
       :isHost="isHost"
       :chaserSelectionMode="chaserSelectionMode"
-      :chaserSessionId="chaserSessionId"
-      :mySessionId="mySessionId"
+      :chaserSeatId="chaserSeatId"
+      :mySeatId="mySeatId"
       @chaserVote="chaserVote"
     />
     <ChaserWheelScreen
       v-else-if="currentScreen=='chaserReveal'"
       :players="players"
-      :chaserSessionId="chaserSessionId"
+      :chaserSeatId="chaserSeatId"
     />
     <RolesRevealScreen
       v-if="currentScreen=='rolesReveal'"
       :players="players"
-      :mySessionId="mySessionId"
+      :mySeatId="mySeatId"
       @ready="revealReady"
     />
     <CashBuilderScreen 
@@ -253,15 +259,15 @@ function submitAnswer({ answer, questionId }) {
     <OfferScreen
       v-if="currentScreen=='offer'"
       :offer="currentOffer"
-      :mySessionId="mySessionId"
+      :mySeatId="mySeatId"
       :players="players"
       @choose="chooseOffer"
     />
     <ChaseScreen
       v-if="currentScreen=='chase'"
       :players="players"
-      :activeContestantSessionId="activeContestantSessionId"
-      :chaserSessionId="chaserSessionId"
+      :activeContestantSeatId="activeContestantSeatId"
+      :chaserSeatId="chaserSeatId"
       @chaseResult="sendChaseResult"
     />
     <TeamFinalScreen

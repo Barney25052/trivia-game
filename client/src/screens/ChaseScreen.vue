@@ -1,15 +1,15 @@
 <script setup>
-const props = defineProps(["players", "activeContestantSessionId", "chaserSessionId"]);
+const props = defineProps(["players", "activeContestantSeatId", "chaserSeatId"]);
 const emit = defineEmits(["chaseResult"]);
 
 const boardSpaces = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 function playerPos() {
-  return props.players.find((p) => p.sessionId === props.activeContestantSessionId)?.boardPos;
+  return props.players.find((p) => p.seatId === props.activeContestantSeatId)?.boardPos;
 }
 
 function chaserPos() {
-  const chaser = props.players.find((p) => p.sessionId === props.chaserSessionId);
+  const chaser = props.players.find((p) => p.seatId === props.chaserSeatId);
   return chaser ? chaser.boardPos : 8;
 }
 

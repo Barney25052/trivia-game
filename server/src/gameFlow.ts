@@ -5,7 +5,7 @@ export type OfferTier = "low" | "middle" | "high";
 
 export type FlowEvent =
     | { type: "startGame" }
-    | { type: "chaserSelectionComplete"; chaserSessionId: string }
+    | { type: "chaserSelectionComplete"; chaserSeatId: string }
     | { type: "chaserRevealComplete" }
     | { type: "revealAllReady" }
     | { type: "readyCooldownDone" }
@@ -25,7 +25,7 @@ export type FlowEvent =
 export interface GameFlowContext {
     currentPhase: GamePhase;
     contestantsOrder: string[];
-    activeContestantSessionId: string;
+    activeContestantSeatId: string;
     activeRound: number;
     currentOfferAmount: number;
 }
@@ -36,15 +36,15 @@ export interface GameFlowContext {
  */
 export type FlowEffect =
     | { type: "startChaserSelection" }
-    | { type: "assignChaser"; sessionId: string }
+    | { type: "assignChaser"; seatId: string }
     | { type: "startChaserReveal" }
     | { type: "startRolesReveal" }
-    | { type: "startReadyCooldown"; sessionId: string; round: number }
-    | { type: "startCashBuilder"; sessionId: string; round: number }
-    | { type: "startOffer"; sessionId: string }
-    | { type: "startChase"; sessionId: string; contestantStartSpace: number; chaserStartSpace: number }
-    | { type: "eliminateContestant"; sessionId: string }
-    | { type: "addToTeamPot"; sessionId: string; amount: number }
+    | { type: "startReadyCooldown"; seatId: string; round: number }
+    | { type: "startCashBuilder"; seatId: string; round: number }
+    | { type: "startOffer"; seatId: string }
+    | { type: "startChase"; seatId: string; contestantStartSpace: number; chaserStartSpace: number }
+    | { type: "eliminateContestant"; seatId: string }
+    | { type: "addToTeamPot"; seatId: string; amount: number }
     | { type: "startFinalTeam" }
     | { type: "startFinalChaser" }
     | { type: "endGame"; winner: "chaser" | "team" };
@@ -70,8 +70,8 @@ function ensurePhase(event: FlowEvent, context: GameFlowContext, expected: GameP
     }
 }
 
-function nextContestant(context: GameFlowContext, sessionId: string): string | undefined {
-    const index = context.contestantsOrder.indexOf(sessionId);
+function nextContestant(context: GameFlowContext, seatId: string): string | undefined {
+    const index = context.contestantsOrder.indexOf(seatId);
     if (index < 0 || index === context.contestantsOrder.length - 1) {
         return undefined;
     }
@@ -95,7 +95,7 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
         case "chaserSelectionComplete": {
             ensurePhase(event, context, GamePhase.ChaserSelection);
             const first = context.contestantsOrder.find(
-                (sessionId) => sessionId !== event.chaserSessionId
+                (seatId) => seatId !== event.chaserSeatId
             );
             if (first === undefined) {
                 throw new Error("gameFlow: chaserSelectionComplete requires at least one contestant");
@@ -103,7 +103,7 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
             return {
                 nextPhase: GamePhase.ChaserReveal,
                 effects: [
-                    { type: "assignChaser", sessionId: event.chaserSessionId },
+                    { type: "assignChaser", seatId: event.chaserSeatId },
                     { type: "startChaserReveal" }
                 ]
             };
@@ -125,7 +125,7 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
             }
             return {
                 nextPhase: GamePhase.CashBuilder,
-                effects: [{ type: "startReadyCooldown", sessionId: first, round: context.activeRound + 1 }]
+                effects: [{ type: "startReadyCooldown", seatId: first, round: context.activeRound + 1 }]
             };
         }
 
@@ -133,7 +133,7 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
             ensurePhase(event, context, GamePhase.CashBuilder);
             return {
                 nextPhase: GamePhase.CashBuilder,
-                effects: [{ type: "startCashBuilder", sessionId: context.activeContestantSessionId, round: context.activeRound }]
+                effects: [{ type: "startCashBuilder", seatId: context.activeContestantSeatId, round: context.activeRound }]
             };
         }
 
@@ -141,7 +141,7 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
             ensurePhase(event, context, GamePhase.CashBuilder);
             return {
                 nextPhase: GamePhase.Offer,
-                effects: [{ type: "startOffer", sessionId: context.activeContestantSessionId }]
+                effects: [{ type: "startOffer", seatId: context.activeContestantSeatId }]
             };
         }
 
@@ -151,7 +151,7 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
                 nextPhase: GamePhase.Chase,
                 effects: [{
                     type: "startChase",
-                    sessionId: context.activeContestantSessionId,
+                    seatId: context.activeContestantSeatId,
                     contestantStartSpace: contestantStartSpace(event.offer),
                     chaserStartSpace: BOARD.chaserStartOffboard
                 }]
@@ -161,17 +161,17 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
         case "chaseEscape":
         case "chaseCaught": {
             ensurePhase(event, context, GamePhase.Chase);
-            const sessionId = context.activeContestantSessionId;
+            const seatId = context.activeContestantSeatId;
             const effects: FlowEffect[] = [];
             if (event.type === "chaseEscape") {
-                effects.push({ type: "addToTeamPot", sessionId, amount: context.currentOfferAmount });
+                effects.push({ type: "addToTeamPot", seatId, amount: context.currentOfferAmount });
             } else {
-                effects.push({ type: "eliminateContestant", sessionId });
+                effects.push({ type: "eliminateContestant", seatId });
             }
 
-            const next = nextContestant(context, sessionId);
+            const next = nextContestant(context, seatId);
             if (next !== undefined) {
-                effects.push({ type: "startCashBuilder", sessionId: next, round: context.activeRound + 1 });
+                effects.push({ type: "startCashBuilder", seatId: next, round: context.activeRound + 1 });
                 return { nextPhase: GamePhase.CashBuilder, effects };
             }
 
@@ -196,11 +196,11 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
                     " (expected cashBuilder, offer, or chase)"
                 );
             }
-            const sessionId = context.activeContestantSessionId;
-            const effects: FlowEffect[] = [{ type: "eliminateContestant", sessionId }];
-            const next = nextContestant(context, sessionId);
+            const seatId = context.activeContestantSeatId;
+            const effects: FlowEffect[] = [{ type: "eliminateContestant", seatId }];
+            const next = nextContestant(context, seatId);
             if (next !== undefined) {
-                effects.push({ type: "startCashBuilder", sessionId: next, round: context.activeRound + 1 });
+                effects.push({ type: "startCashBuilder", seatId: next, round: context.activeRound + 1 });
                 return { nextPhase: GamePhase.CashBuilder, effects };
             }
             effects.push({ type: "startFinalTeam" });

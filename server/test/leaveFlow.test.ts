@@ -4,6 +4,7 @@ import appConfig from "../src/app.config.js";
 import { GameState } from "../src/rooms/schema/GameState.js";
 import { GamePhase } from "../src/TriviaTypes.js";
 import { cleanup, getTestServer } from "./testServer.js";
+import { seatIdOf } from "./seatIdHelper.js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -24,18 +25,18 @@ const waitForPhase = async (
 
 const waitForActive = async (
     room: any,
-    sessionId: string,
+    seatId: string,
     timeoutMs = 2000
 ): Promise<void> => {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
-        if (room.state.activeContestantSessionId === sessionId) {
+        if (room.state.activeContestantSeatId === seatId) {
             return;
         }
         await sleep(20);
     }
     assert.fail(
-        `timed out waiting for active ${sessionId}; active is ${room.state.activeContestantSessionId}`
+        `timed out waiting for active ${seatId}; active is ${room.state.activeContestantSeatId}`
     );
 };
 
@@ -63,18 +64,18 @@ async function createForfeitRoom(
     await sleep(30);
     carol.send("startGame");
     await sleep(50);
-    alice.send("chaserVote", { targetSessionId: carol.sessionId });
+    alice.send("chaserVote", { targetSeatId: seatIdOf(room, carol) });
     await sleep(30);
-    bob.send("chaserVote", { targetSessionId: carol.sessionId });
+    bob.send("chaserVote", { targetSeatId: seatIdOf(room, carol) });
     await sleep(30);
-    carol.send("chaserVote", { targetSessionId: carol.sessionId });
+    carol.send("chaserVote", { targetSeatId: seatIdOf(room, carol) });
     await waitForPhase(room, GamePhase.RolesReveal);
 
-    assert.strictEqual(room.state.players.get(carol.sessionId).isHost, true);
-    assert.strictEqual(room.state.chaserSessionId, carol.sessionId);
+    assert.strictEqual(room.state.players.get(seatIdOf(room, carol)).isHost, true);
+    assert.strictEqual(room.state.chaserSeatId, seatIdOf(room, carol));
     assert.deepStrictEqual(
         [...room.state.contestantsOrder],
-        [alice.sessionId, bob.sessionId]
+        [seatIdOf(room, alice), seatIdOf(room, bob)]
     );
     return { room, alice, bob, carol };
 }
@@ -90,22 +91,23 @@ describe("leaveFlow (integration)", () => {
     it("active contestant leaves during cashBuilder: round forfeited as caught, next contestant's round runs, no timers for the departed seat", async () => {
         const { room, alice, bob, carol } = await createForfeitRoom(colyseus);
 
+        const aliceSeat = seatIdOf(room, alice);
         alice.send("revealReady");
         bob.send("revealReady");
         carol.send("revealReady", { characterId: "bezos" });
         await waitForPhase(room, GamePhase.CashBuilder);
-        await waitForActive(room, alice.sessionId);
+        await waitForActive(room, seatIdOf(room, alice));
         assert.strictEqual(room.state.activeRound, 1);
 
         alice.leave();
-        await waitForActive(room, bob.sessionId);
+        await waitForActive(room, seatIdOf(room, bob));
         assert.strictEqual(
             room.state.activeRound,
             2,
             "forfeit advances to the next contestant's round"
         );
         assert.strictEqual(
-            room.state.players.get(alice.sessionId),
+            room.state.players.get(aliceSeat),
             undefined,
             "the departed seat is removed from the players map"
         );
@@ -120,49 +122,51 @@ describe("leaveFlow (integration)", () => {
         const offerPromise = bob.waitForMessage("offer");
         await waitForPhase(room, GamePhase.Offer);
         const offer = await offerPromise;
-        assert.strictEqual(offer.sessionId, bob.sessionId);
+        assert.strictEqual(offer.seatId, seatIdOf(room, bob));
     });
 
     it("active contestant leaves during offer: same forfeit, next contestant's offer still comes", async () => {
         const { room, alice, bob, carol } = await createForfeitRoom(colyseus);
 
+        const aliceSeat = seatIdOf(room, alice);
         alice.send("revealReady");
         bob.send("revealReady");
         carol.send("revealReady", { characterId: "bezos" });
         await waitForPhase(room, GamePhase.Offer);
-        await waitForActive(room, alice.sessionId);
+        await waitForActive(room, seatIdOf(room, alice));
 
         alice.leave();
-        await waitForActive(room, bob.sessionId);
+        await waitForActive(room, seatIdOf(room, bob));
         assert.strictEqual(room.state.activeRound, 2);
-        assert.strictEqual(room.state.players.get(alice.sessionId), undefined);
+        assert.strictEqual(room.state.players.get(aliceSeat), undefined);
         assert.strictEqual(room.state.teamPot, 0, "a forfeited offer pays nothing");
 
         const offerPromise = bob.waitForMessage("offer");
         await waitForPhase(room, GamePhase.Offer);
         const offer = await offerPromise;
-        assert.strictEqual(offer.sessionId, bob.sessionId);
+        assert.strictEqual(offer.seatId, seatIdOf(room, bob));
     });
 
     it("questionManager and messageTimes hold no state for the departed seat", async () => {
         const { room, alice, bob, carol } = await createForfeitRoom(colyseus);
 
+        const aliceSeat = seatIdOf(room, alice);
         alice.send("revealReady");
         bob.send("revealReady");
         carol.send("revealReady", { characterId: "bezos" });
         await waitForPhase(room, GamePhase.CashBuilder);
-        await waitForActive(room, alice.sessionId);
+        await waitForActive(room, seatIdOf(room, alice));
 
         alice.leave();
-        await waitForActive(room, bob.sessionId);
+        await waitForActive(room, seatIdOf(room, bob));
 
         assert.strictEqual(
-            room.questionManager.getCurrentQuestion(alice.sessionId),
+            room.questionManager.getCurrentQuestion(aliceSeat),
             undefined,
             "no current question is retained for the departed seat"
         );
         assert.strictEqual(
-            (room.questionManager as any).usedIds.has(alice.sessionId),
+            (room.questionManager as any).usedIds.has(aliceSeat),
             false,
             "the departed seat's draw history is discarded"
         );
@@ -176,23 +180,24 @@ describe("leaveFlow (integration)", () => {
     it("a non-active contestant leaving mid-round does not disturb the active contestant", async () => {
         const { room, alice, bob, carol } = await createForfeitRoom(colyseus);
 
+        const bobSeat = seatIdOf(room, bob);
         alice.send("revealReady");
         bob.send("revealReady");
         carol.send("revealReady", { characterId: "bezos" });
         await waitForPhase(room, GamePhase.CashBuilder);
-        await waitForActive(room, alice.sessionId);
+        await waitForActive(room, seatIdOf(room, alice));
 
         const offerPromise = alice.waitForMessage("offer");
         bob.leave();
         await sleep(100);
 
         assert.strictEqual(
-            room.state.activeContestantSessionId,
-            alice.sessionId,
+            room.state.activeContestantSeatId,
+            seatIdOf(room, alice),
             "leaving a waiting contestant must not change the active contestant"
         );
         assert.strictEqual(
-            room.state.players.get(bob.sessionId),
+            room.state.players.get(bobSeat),
             undefined,
             "the departed waiting contestant is removed"
         );
@@ -201,7 +206,7 @@ describe("leaveFlow (integration)", () => {
         // Alice's round is unaffected and still completes.
         await waitForPhase(room, GamePhase.Offer);
         const offer = await offerPromise;
-        assert.strictEqual(offer.sessionId, alice.sessionId);
+        assert.strictEqual(offer.seatId, seatIdOf(room, alice));
     });
 
     it("roles reveal recovers when the last unready player leaves: remaining ready players advance", async () => {
@@ -213,8 +218,8 @@ describe("leaveFlow (integration)", () => {
         await waitForPhase(room, GamePhase.CashBuilder);
 
         assert.strictEqual(
-            room.state.activeContestantSessionId,
-            alice.sessionId,
+            room.state.activeContestantSeatId,
+            seatIdOf(room, alice),
             "the ready gate must not wait forever on a departed seat"
         );
         assert.strictEqual(room.state.activeRound, 1);
@@ -223,6 +228,7 @@ describe("leaveFlow (integration)", () => {
     it("roles reveal does not advance while a remaining player is still unready", async () => {
         const { room, alice, bob, carol } = await createForfeitRoom(colyseus);
 
+        const bobSeat = seatIdOf(room, bob);
         alice.send("revealReady");
         bob.leave();
         await sleep(100);
@@ -232,11 +238,11 @@ describe("leaveFlow (integration)", () => {
             GamePhase.RolesReveal,
             "a leave must not skip past players who are still unready"
         );
-        assert.strictEqual(room.state.players.get(bob.sessionId), undefined);
+        assert.strictEqual(room.state.players.get(bobSeat), undefined);
 
         carol.send("revealReady", { characterId: "bezos" });
         await waitForPhase(room, GamePhase.CashBuilder);
-        assert.strictEqual(room.state.activeContestantSessionId, alice.sessionId);
+        assert.strictEqual(room.state.activeContestantSeatId, seatIdOf(room, alice));
     });
 
     it("vote-mode chaser selection still resolves when a voter leaves before casting a vote", async () => {
@@ -250,24 +256,26 @@ describe("leaveFlow (integration)", () => {
         const carol = await colyseus.connectTo(room, { playerName: "Carol" });
         await sleep(100);
 
+        const carolSeat = seatIdOf(room, carol);
+        const aliceSeat = seatIdOf(room, alice);
         alice.send("setChaserMode", { mode: "vote" });
         await sleep(30);
         alice.send("startGame");
         await waitForPhase(room, GamePhase.ChaserSelection);
 
-        alice.send("chaserVote", { targetSessionId: bob.sessionId });
+        alice.send("chaserVote", { targetSeatId: seatIdOf(room, bob) });
         await sleep(30);
-        bob.send("chaserVote", { targetSessionId: alice.sessionId });
+        bob.send("chaserVote", { targetSeatId: aliceSeat });
         carol.leave();
         await sleep(100);
 
         assert.ok(
-            ![...room.state.players.keys()].includes(carol.sessionId),
+            ![...room.state.players.keys()].includes(carolSeat),
             "the departed voter is removed before the selection resolves"
         );
         await waitForPhase(room, GamePhase.RolesReveal);
         assert.ok(
-            room.state.chaserSessionId === alice.sessionId || room.state.chaserSessionId === bob.sessionId,
+            room.state.chaserSeatId === aliceSeat || room.state.chaserSeatId === seatIdOf(room, bob),
             "the chaser resolves among the remaining players once the selection timer fires"
         );
     });

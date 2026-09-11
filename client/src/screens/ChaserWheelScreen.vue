@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch, onBeforeUnmount } from "vue";
 
-const props = defineProps(["players", "chaserSessionId"]);
+const props = defineProps(["players", "chaserSeatId"]);
 
 const slotH = 60;
 const viewportCenter = 90;
@@ -17,10 +17,10 @@ let trackY = 0;
 let tickId = null;
 
 const rows = computed(() => {
-    const resolved = props.players.find((p) => p.sessionId === props.chaserSessionId);
+    const resolved = props.players.find((p) => p.seatId === props.chaserSeatId);
     const fill = [];
     for (let i = 0; i < 8; i++) {
-        fill.push(props.players[i % props.players.length] ?? { sessionId: `f${i}`, name: "" });
+        fill.push(props.players[i % props.players.length] ?? { seatId: `f${i}`, name: "" });
     }
     return [...fill, resolved ?? fill[0]];
 });
@@ -93,7 +93,7 @@ function stopAll() {
 }
 
 watch(
-    () => props.chaserSessionId,
+    () => props.chaserSeatId,
     (id) => {
         stopAll();
         if (id && id !== "") {

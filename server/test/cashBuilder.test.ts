@@ -7,6 +7,7 @@ import { QuestionManager } from "../src/questions/questionManager.js";
 import { loadBank, BankQuestion } from "../src/questions/bank.js";
 import { CASH_BUILDER } from "../src/gameConfig.js";
 import { cleanup, getTestServer } from "./testServer.js";
+import { seatIdOf } from "./seatIdHelper.js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -113,7 +114,7 @@ describe("cashBuilder", () => {
     room: any;
     activeClient: any;
     benchClient: any;
-    activeSessionId: string;
+    activeSeatId: string;
   }> {
     const room = await colyseus.createRoom<GameState>("trivia", {
       cashBuilderDurationMs: 8000,
@@ -134,19 +135,19 @@ describe("cashBuilder", () => {
     bob.send("revealReady", { characterId: "nami" });
     await waitForPhase(room, GamePhase.CashBuilder);
 
-    const activeSessionId = room.state.activeContestantSessionId;
-    assert.ok(activeSessionId, "active contestant is set once the get-ready cooldown begins");
-    const activeClient = alice.sessionId === activeSessionId ? alice : bob;
-    const benchClient = alice.sessionId === activeSessionId ? bob : alice;
-    return { room, activeClient, benchClient, activeSessionId };
+    const activeSeatId = room.state.activeContestantSeatId;
+    assert.ok(activeSeatId, "active contestant is set once the get-ready cooldown begins");
+    const activeClient = seatIdOf(room, alice) === activeSeatId ? alice : bob;
+    const benchClient = seatIdOf(room, alice) === activeSeatId ? bob : alice;
+    return { room, activeClient, benchClient, activeSeatId };
   }
 
   it("a correct submitAnswer increments cashBuilderMoney and delivers a new question", async () => {
-    const { room, activeClient, activeSessionId } = await openCashBuilder();
+    const { room, activeClient, activeSeatId } = await openCashBuilder();
 
     const firstQuestion = await activeClient.waitForMessage("question");
     assert.notStrictEqual(firstQuestion, null, "the first question is delivered after the cooldown");
-    assert.strictEqual(firstQuestion.targetSessionId, activeSessionId);
+    assert.strictEqual(firstQuestion.targetSeatId, activeSeatId);
     assert.ok(
       !("answer" in firstQuestion),
       "the question broadcast must never leak the answer"
@@ -163,7 +164,7 @@ describe("cashBuilder", () => {
     });
 
     const nextQuestion = await nextQuestionPromise;
-    const player = room.state.players.get(activeSessionId);
+    const player = room.state.players.get(activeSeatId);
     assert.strictEqual(player.cashBuilderMoney, CASH_BUILDER.rewardPerCorrect);
     assert.strictEqual(player.cashBuilderCorrectAnswers, 1);
     assert.notStrictEqual(nextQuestion, null, "a new question is delivered after a correct answer");
@@ -171,7 +172,7 @@ describe("cashBuilder", () => {
   });
 
   it("a wrong submitAnswer leaves the pot unchanged and still delivers a new question", async () => {
-    const { room, activeClient, activeSessionId } = await openCashBuilder();
+    const { room, activeClient, activeSeatId } = await openCashBuilder();
 
     const firstQuestion = await activeClient.waitForMessage("question");
     const canonical = bank.find((q) => q.id === firstQuestion.questionId);
@@ -184,14 +185,14 @@ describe("cashBuilder", () => {
     });
 
     const nextQuestion = await nextQuestionPromise;
-    const player = room.state.players.get(activeSessionId);
+    const player = room.state.players.get(activeSeatId);
     assert.strictEqual(player.cashBuilderMoney, 0, "wrong answer adds nothing to the pot");
     assert.strictEqual(player.cashBuilderCorrectAnswers, 0, "correct answers only counts correct answers");
     assert.notStrictEqual(nextQuestion, null, "a wrong answer still advances to the next question");
   });
 
   it("a submitAnswer from a non-active player is rejected", async () => {
-    const { room, benchClient, activeSessionId } = await openCashBuilder();
+    const { room, benchClient, activeSeatId } = await openCashBuilder();
 
     const firstQuestion = await benchClient.waitForMessage("question");
     const canonical = bank.find((q) => q.id === firstQuestion.questionId);
@@ -203,7 +204,7 @@ describe("cashBuilder", () => {
     });
     await sleep(50);
 
-    const player = room.state.players.get(activeSessionId);
+    const player = room.state.players.get(activeSeatId);
     assert.strictEqual(player.cashBuilderMoney, 0, "the bench can not answer for the active contestant");
     assert.strictEqual(player.cashBuilderCorrectAnswers, 0);
   });
@@ -220,31 +221,31 @@ describe("cashBuilder", () => {
   });
 
   it("a submitAnswer with missing fields is rejected", async () => {
-    const { room, activeClient, activeSessionId } = await openCashBuilder();
+    const { room, activeClient, activeSeatId } = await openCashBuilder();
 
     const firstQuestion = await activeClient.waitForMessage("question");
 
     activeClient.send("submitAnswer", { answer: "Mars" });
     await sleep(30);
-    let player = room.state.players.get(activeSessionId);
+    let player = room.state.players.get(activeSeatId);
     assert.strictEqual(player.cashBuilderMoney, 0, "a payload without questionId is rejected");
 
     activeClient.send("submitAnswer", { questionId: firstQuestion.questionId });
     await sleep(30);
-    player = room.state.players.get(activeSessionId);
+    player = room.state.players.get(activeSeatId);
     assert.strictEqual(player.cashBuilderMoney, 0, "a payload without answer is rejected");
     assert.strictEqual(player.cashBuilderCorrectAnswers, 0);
   });
 
   it("a submitAnswer that does not match the current questionId is rejected", async () => {
-    const { room, activeClient, activeSessionId } = await openCashBuilder();
+    const { room, activeClient, activeSeatId } = await openCashBuilder();
 
     await activeClient.waitForMessage("question");
 
     activeClient.send("submitAnswer", { answer: "Mars", questionId: 999999 });
     await sleep(50);
 
-    const player = room.state.players.get(activeSessionId);
+    const player = room.state.players.get(activeSeatId);
     assert.strictEqual(player.cashBuilderMoney, 0);
     assert.strictEqual(player.cashBuilderCorrectAnswers, 0);
   });
@@ -253,7 +254,7 @@ describe("cashBuilder", () => {
     const bank = [
       { id: 1, category: "test", question: "Which planet is known as the Red Planet?", answer: "Mars", alternatives: ["Red planet", "Sol"] }
     ] as BankQuestion[];
-    const { room, activeClient, activeSessionId } = await openCashBuilder(bank);
+    const { room, activeClient, activeSeatId } = await openCashBuilder(bank);
 
     const firstQuestion = await activeClient.waitForMessage("question");
     assert.strictEqual(firstQuestion.questionId, 1, "the overridden bank feeds the first question");
@@ -265,7 +266,7 @@ describe("cashBuilder", () => {
     });
     const nextQuestion = await nextQuestionPromise;
 
-    const player = room.state.players.get(activeSessionId);
+    const player = room.state.players.get(activeSeatId);
     assert.strictEqual(player.cashBuilderMoney, CASH_BUILDER.rewardPerCorrect, "an alternative answer earns the reward");
     assert.strictEqual(player.cashBuilderCorrectAnswers, 1);
     assert.strictEqual(nextQuestion, null, "the one-question bank is exhausted after the answer");

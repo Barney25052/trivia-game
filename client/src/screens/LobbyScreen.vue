@@ -12,7 +12,7 @@ const settingsOpen = ref(false);
         <h1 class = "lobbyTitle">Host's Lobby</h1>
         <h3 class = "roomCode">Room Code: {{room.roomId}}</h3>
         <ul>
-          <li v-for="player in players" :key="player.sessionId" class = "playerName lobbyPlayer">
+          <li v-for="player in players" :key="player.seatId" class = "playerName lobbyPlayer">
             {{ player.name }}
           </li>
         </ul>

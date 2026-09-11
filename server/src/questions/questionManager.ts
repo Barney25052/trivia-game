@@ -1,35 +1,35 @@
 import { BankQuestion, pickRandom } from "./bank.js";
 
-// Keyed by sessionId until ticket 034 (seat IDs) lands; rekey to seatId
-// as part of that migration.
+// Keyed by seatId — the stable per-round identity (ticket 044), never the
+// ephemeral Colyseus sessionId.
 export class QuestionManager {
     private usedIds = new Map<string, Set<number>>();
     private currentQuestions = new Map<string, BankQuestion>();
 
-    initContestant(sessionId: string): void {
-        this.usedIds.set(sessionId, new Set());
-        this.currentQuestions.delete(sessionId);
+    initContestant(seatId: string): void {
+        this.usedIds.set(seatId, new Set());
+        this.currentQuestions.delete(seatId);
     }
 
-    drawNext(bank: BankQuestion[], sessionId: string): BankQuestion | null {
-        const excludeIds = this.usedIds.get(sessionId) ?? new Set<number>();
+    drawNext(bank: BankQuestion[], seatId: string): BankQuestion | null {
+        const excludeIds = this.usedIds.get(seatId) ?? new Set<number>();
         try {
             const [drawn] = pickRandom(bank, 1, excludeIds);
             excludeIds.add(drawn.id);
-            this.usedIds.set(sessionId, excludeIds);
-            this.currentQuestions.set(sessionId, drawn);
+            this.usedIds.set(seatId, excludeIds);
+            this.currentQuestions.set(seatId, drawn);
             return drawn;
         } catch {
             return null;
         }
     }
 
-    getCurrentQuestion(sessionId: string): BankQuestion | undefined {
-        return this.currentQuestions.get(sessionId);
+    getCurrentQuestion(seatId: string): BankQuestion | undefined {
+        return this.currentQuestions.get(seatId);
     }
 
-    clearContestant(sessionId: string): void {
-        this.usedIds.delete(sessionId);
-        this.currentQuestions.delete(sessionId);
+    clearContestant(seatId: string): void {
+        this.usedIds.delete(seatId);
+        this.currentQuestions.delete(seatId);
     }
 }

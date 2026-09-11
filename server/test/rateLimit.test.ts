@@ -5,6 +5,7 @@ import { GameState } from "../src/rooms/schema/GameState.js";
 import { GamePhase } from "../src/TriviaTypes.js";
 import { RATE_LIMIT } from "../src/gameConfig.js";
 import { cleanup, getTestServer } from "./testServer.js";
+import { seatIdOf } from "./seatIdHelper.js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -83,7 +84,7 @@ describe("rate limiting", () => {
     await sleep(50);
 
     assert.strictEqual(
-      room.state.players.get(bob.sessionId).revealReady,
+      room.state.players.get(seatIdOf(room, bob)).revealReady,
       true,
       "bob is not blocked by alice hitting the cap"
     );

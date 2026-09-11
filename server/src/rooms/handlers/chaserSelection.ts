@@ -1,6 +1,6 @@
 export function pickRandomChaser(room: any): string {
-    const sessionIds = [...room.state.players.keys()];
-    return sessionIds[Math.floor(Math.random() * sessionIds.length)];
+    const seatIds = [...room.state.players.keys()];
+    return seatIds[Math.floor(Math.random() * seatIds.length)];
 }
 
 export function tallyChaserVotes(room: any): string {
@@ -15,7 +15,7 @@ export function tallyChaserVotes(room: any): string {
       return pickRandomChaser(room);
     }
     const most = Math.max(...counted.map(([, count]) => count));
-    const leaders = counted.filter(([, count]) => count === most).map(([sessionId]) => sessionId);
+    const leaders = counted.filter(([, count]) => count === most).map(([seatId]) => seatId);
     return leaders[Math.floor(Math.random() * leaders.length)];
 }
 

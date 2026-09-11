@@ -8,7 +8,7 @@ const emit = defineEmits(["leave"]);
         <h2 class = "lobbyTitle">Game Over</h2>
         <h3 class = "lobbyTitle">{{ winner === "chaser" ? "The Chaser wins!" : "The Team wins!" }}</h3>
         <ul>
-          <li v-for="player in players" :key="player.sessionId">
+          <li v-for="player in players" :key="player.seatId">
               <div class = "playerResult">
                   <p class ="playerName">{{ player.name }} — {{ player.score }}</p>
               </div>

@@ -3,6 +3,7 @@ import { ColyseusTestServer } from "@colyseus/testing";
 import appConfig from "../src/app.config.js";
 import { GameState } from "../src/rooms/schema/GameState.js";
 import { cleanup, getTestServer } from "./testServer.js";
+import { seatIdOf } from "./seatIdHelper.js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -48,11 +49,11 @@ describe("nameValidation", () => {
     await room.waitForNextPatch();
 
     assert.strictEqual(room.state.players.size, 1);
-    const player = room.state.players.get(client.sessionId);
-    assert.ok(player, "player should be registered under their sessionId");
+    const player = room.state.players.get(seatIdOf(room, client));
+    assert.ok(player, "player should be registered under their seat id");
     assert.strictEqual(player.name, "Alice");
     assert.strictEqual(player.isHost, true);
-    assert.deepStrictEqual([...room.state.contestantsOrder], [client.sessionId]);
+    assert.deepStrictEqual([...room.state.contestantsOrder], [seatIdOf(room, client)]);
   });
 
   it("a name of exactly 24 characters is accepted", async () => {
@@ -61,6 +62,6 @@ describe("nameValidation", () => {
     await room.waitForNextPatch();
 
     assert.strictEqual(room.state.players.size, 1);
-    assert.strictEqual(room.state.players.get(client.sessionId).name, "x".repeat(24));
+    assert.strictEqual(room.state.players.get(seatIdOf(room, client)).name, "x".repeat(24));
   });
 });

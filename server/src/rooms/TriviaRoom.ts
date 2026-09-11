@@ -44,7 +44,9 @@ interface OfferAmounts {
 export class TriviaRoom extends Room {
   maxClients = ROOM_SETTINGS.max_clients;
   state = new GameState();
-  seatIdToSessionId = new Map<string, string>();
+  /** Translation layer: Colyseus sessionId (per-connection, ephemeral) → seatId. */
+  sessionIdToSeatId = new Map<string, string>();
+  private seatCounter = 0;
 
   cashBuilderDurationMs: number = CASH_BUILDER.durationMs;
   chaserSelectionDurationMs: number | null = null;
@@ -82,20 +84,35 @@ export class TriviaRoom extends Room {
     this.broadcast("phase", { phase });
   }
 
+  private generateSeatId(): string {
+    this.seatCounter += 1;
+    return `seat-${this.seatCounter}`;
+  }
+
+  /** Resolve the seat id for a connected client (undefined if not seated). */
+  seatIdForClient(client: Client): string | undefined {
+    return this.sessionIdToSeatId.get(client.sessionId);
+  }
+
+  /** Resolve the seat id for a raw Colyseus sessionId (test/debug helper). */
+  seatIdForSessionId(sessionId: string): string | undefined {
+    return this.sessionIdToSeatId.get(sessionId);
+  }
+
   private flowContext(): GameFlowContext {
     return {
       currentPhase: this.state.currentPhase,
       contestantsOrder: [...this.state.contestantsOrder],
-      activeContestantSessionId: this.state.activeContestantSessionId,
+      activeContestantSeatId: this.state.activeContestantSeatId,
       activeRound: this.state.activeRound,
       currentOfferAmount: this.currentOfferAmount,
     };
   }
 
-  private broadcastQuestion(round: number, targetSessionId: string, kind: "open" | "mc", questionId: number, prompt: string, category: string, options?: string[]) {
-    const payload: { round: number; targetSessionId: string; kind: "open" | "mc"; prompt: string; category: string; options?: string[]; questionId: number } = {
+  private broadcastQuestion(round: number, targetSeatId: string, kind: "open" | "mc", questionId: number, prompt: string, category: string, options?: string[]) {
+    const payload: { round: number; targetSeatId: string; kind: "open" | "mc"; prompt: string; category: string; options?: string[]; questionId: number } = {
       round,
-      targetSessionId,
+      targetSeatId,
       kind,
       prompt,
       category,
@@ -106,7 +123,8 @@ export class TriviaRoom extends Room {
   }
 
   private isHost (client: Client): boolean {
-    return this.state.players.get(client.sessionId)?.isHost === true;
+    const seatId = this.seatIdForClient(client);
+    return this.state.players.get(seatId ?? "")?.isHost === true;
   }
 
   public dispatch(event: FlowEvent) {
@@ -178,6 +196,15 @@ export class TriviaRoom extends Room {
       if (!this.checkRateLimit(client)) return;
       submitAnswer(client, message, this);
     },
+    whoami: (client: Client) => {
+      if (!this.checkRateLimit(client)) return;
+      const seatId = this.seatIdForClient(client);
+      if (!seatId) {
+        console.log(client.sessionId, "Whoami for an unseated client — ignored");
+        return;
+      }
+      client.send("seatId", { seatId });
+    },
   };
 
   onJoin (client: Client, options: any) {
@@ -190,17 +217,17 @@ export class TriviaRoom extends Room {
         `Invalid playerName: must be 1-${PLAYER_NAME.maxLength} characters after trimming`
       );
     }
+    const seatId = this.generateSeatId();
     const newPlayer = new GamePlayer();
     newPlayer.name = name;
-    newPlayer.sessionId = client.sessionId;
-    newPlayer.seatId = client.sessionId.slice(0, 8);
+    newPlayer.seatId = seatId;
     if (this.state.players.size === 0) {
       newPlayer.isHost = true;
     }
-    this.state.players.set(client.sessionId, newPlayer);
-    this.seatIdToSessionId.set(newPlayer.seatId, client.sessionId);
-    this.state.contestantsOrder.push(client.sessionId);
-    console.log("Client joined room", this.roomId);
+    this.state.players.set(seatId, newPlayer);
+    this.sessionIdToSeatId.set(client.sessionId, seatId);
+    this.state.contestantsOrder.push(seatId);
+    console.log(`Client joined room ${this.roomId} as seat ${seatId}`);
   }
 
   private allPlayersReady(): boolean {
@@ -210,7 +237,8 @@ export class TriviaRoom extends Room {
 
   onLeave (client: Client, code: CloseCode) {
     this.messageTimes.delete(client.sessionId);
-    const player = this.state.players.get(client.sessionId);
+    const seatId = this.seatIdForClient(client);
+    const player = seatId ? this.state.players.get(seatId) : undefined;
     if (player?.isHost) {
       console.log("Host left the room — disconnecting", this.roomId);
       this.disconnect(6767);
@@ -219,26 +247,27 @@ export class TriviaRoom extends Room {
 
     const phase = this.state.currentPhase;
     if (
-      this.state.activeContestantSessionId === client.sessionId &&
+      seatId &&
+      this.state.activeContestantSeatId === seatId &&
       (phase === GamePhase.CashBuilder || phase === GamePhase.Offer || phase === GamePhase.Chase)
     ) {
       // The active contestant reloaded/left mid-round: forfeit the seat as caught
       // (no pot paid) so the game moves on. Route through gameFlow, not here.
       console.log(
-        `Active contestant ${client.sessionId} left mid-${phase} — forfeiting the round as caught`
+        `Active contestant ${seatId} left mid-${phase} — forfeiting the round as caught`
       );
       this.dispatch({ type: "contestantForfeit" });
     }
 
-    this.state.players.delete(client.sessionId);
-    if (player) {
-      this.seatIdToSessionId.delete(player.seatId);
+    if (seatId) {
+      this.state.players.delete(seatId);
+      this.sessionIdToSeatId.delete(client.sessionId);
+      const contestantIndex = this.state.contestantsOrder.indexOf(seatId);
+      if (contestantIndex >= 0) {
+        this.state.contestantsOrder.splice(contestantIndex, 1);
+      }
+      this.questionManager.clearContestant(seatId);
     }
-    const contestantIndex = this.state.contestantsOrder.indexOf(client.sessionId);
-    if (contestantIndex >= 0) {
-      this.state.contestantsOrder.splice(contestantIndex, 1);
-    }
-    this.questionManager.clearContestant(client.sessionId);
 
     // The roles-reveal gate must not wait forever on a departed seat: if everyone
     // still connected has revealed, advance (mirrors the revealReady handler).
@@ -247,7 +276,7 @@ export class TriviaRoom extends Room {
       this.dispatch({ type: "revealAllReady" });
     }
 
-    console.log("Client left room", this.roomId);
+    console.log(`Client left room ${this.roomId} (seat ${seatId ?? "unseated"})`);
   }
 
   onDispose() {

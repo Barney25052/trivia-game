@@ -1,12 +1,12 @@
 <script setup>
 import { computed } from "vue";
 
-const props = defineProps(["players", "isHost", "chaserSelectionMode", "chaserSessionId", "mySessionId"]);
+const props = defineProps(["players", "isHost", "chaserSelectionMode", "chaserSeatId", "mySeatId"]);
 const emit = defineEmits(["chaserVote"]);
 
 const voteMode = computed(() => props.chaserSelectionMode === "vote");
-const myPlayer = computed(() => props.players.find((p) => p.sessionId === props.mySessionId));
-const voteTargetSessionId = computed(() => myPlayer.value?.chaserVote ?? "");
+const myPlayer = computed(() => props.players.find((p) => p.seatId === props.mySeatId));
+const voteTargetSeatId = computed(() => myPlayer.value?.chaserVote ?? "");
 const haveVoted = computed(() => {
     const vote = myPlayer.value?.chaserVote;
     return vote !== "" && vote != null;
@@ -19,22 +19,22 @@ const haveVoted = computed(() => {
       <ul>
         <li
           v-for="player in players"
-          :key="player.sessionId"
+          :key="player.seatId"
           class = "voteRow"
-          :class = "{ voteTarget: player.sessionId === voteTargetSessionId }"
+          :class = "{ voteTarget: player.seatId === voteTargetSeatId }"
         >
           <span class = "voteName">
             {{ player.name }}
-            <span v-if="player.sessionId === mySessionId"> (you)</span>
+            <span v-if="player.seatId === mySeatId"> (you)</span>
           </span>
           <span v-if="voteMode">
             <span v-if="player.chaserVote !== ''" class = "voteStatus">
-              {{ player.sessionId === voteTargetSessionId ? "your pick" : "voted" }}
+              {{ player.seatId === voteTargetSeatId ? "your pick" : "voted" }}
             </span>
             <button
               v-if="!haveVoted"
               class="voteButton"
-              @click="emit('chaserVote', { targetSessionId: player.sessionId })"
+              @click="emit('chaserVote', { targetSeatId: player.seatId })"
             >
               Vote
             </button>

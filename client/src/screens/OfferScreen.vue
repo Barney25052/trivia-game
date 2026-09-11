@@ -2,17 +2,16 @@
 import { computed } from "vue";
 import { PlayerRole } from "../TriviaTypes.ts";
 
-const props = defineProps(["offer", "mySessionId", "players"]);
+const props = defineProps(["offer", "mySeatId", "players"]);
 const emit = defineEmits(["choose"]);
 
 const tiers = ["low", "middle", "high"];
 
 function contestantName() {
-  const player = props.players.find((p) => p.sessionId === props.offer?.sessionId);
+  const player = props.players.find((p) => p.seatId === props.offer?.seatId);
   return player?.name;
 }
 
-const mySession = computed(() => props.mySessionId);
 const chaserCharacterName = computed(
     () => props.offer?.chaserCharacterName ?? ""
 );
@@ -27,7 +26,7 @@ const chaserCharacterAbility = computed(
       <p class = "playerName">{{ contestantName() }} faces the Chaser</p>
       <p v-if="chaserCharacterName" class = "playerName">Chaser: {{ chaserCharacterName }}</p>
       <p v-if="chaserCharacterAbility" class = "playerName">{{ chaserCharacterAbility }}</p>
-      <div v-if="offer && offer.sessionId === mySessionId">
+      <div v-if="offer && offer.seatId === mySeatId">
         <button
           v-for="tier in tiers"
           :key="tier"

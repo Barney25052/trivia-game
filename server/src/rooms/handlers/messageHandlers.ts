@@ -39,24 +39,25 @@ export function chaserVote(client: any, message: any, room: any) {
         console.log(client.sessionId, "Can not vote outside ChaserSelection!");
         return;
     }
-    const voter = room.state.players.get(client.sessionId);
+    const voterSeatId = room.seatIdForClient(client);
+    const voter = room.state.players.get(voterSeatId ?? "");
     if (!voter) {
         return;
     }
     if (voter.chaserVote !== "") {
-        console.log(client.sessionId, "Already voted for the chaser!");
+        console.log(voterSeatId, "Already voted for the chaser!");
         return;
     }
-    const target = message?.targetSessionId;
+    const target = message?.targetSeatId;
     if (typeof target !== "string" || !room.state.players.has(target)) {
-        console.log(client.sessionId, "Ignoring vote for unknown player:", target);
+        console.log(voterSeatId, "Ignoring vote for unknown player:", target);
         return;
     }
     voter.chaserVote = target;
     if (room.state.chaserSelectionMode === "vote" && allPlayersVoted(room)) {
         room.dispatch({
             type: "chaserSelectionComplete",
-            chaserSessionId: tallyChaserVotes(room)
+            chaserSeatId: tallyChaserVotes(room)
         });
     }
 }
@@ -66,31 +67,32 @@ export function revealReady(client: any, message: any, room: any) {
         console.log(client.sessionId, "Can not confirm ready outside RolesReveal!");
         return;
     }
-    const player = room.state.players.get(client.sessionId);
+    const seatId = room.seatIdForClient(client);
+    const player = room.state.players.get(seatId ?? "");
     if (!player) {
         return;
     }
     if (player.revealReady) {
-        console.log(client.sessionId, "Already confirmed ready for the roles reveal!");
+        console.log(seatId, "Already confirmed ready for the roles reveal!");
         return;
     }
     if (player.role === PlayerRole.Chaser) {
         const characterId = message?.characterId;
         if (!characterId) {
-            console.log(client.sessionId, "Chaser must select a character before ready!");
+            console.log(seatId, "Chaser must select a character before ready!");
             return;
         }
         const valid = CHASER_CHARACTERS.some((c) => c.id === characterId);
         if (!valid) {
-            console.log(client.sessionId, "Invalid chaser character ID:", characterId);
+            console.log(seatId, "Invalid chaser character ID:", characterId);
             return;
         }
         player.revealReady = true;
         player.chaserCharacterId = characterId;
-        console.log(`${client.sessionId} confirmed ready with character ${characterId} for the roles reveal`);
+        console.log(`${seatId} confirmed ready with character ${characterId} for the roles reveal`);
     } else {
         player.revealReady = true;
-        console.log(`${client.sessionId} confirmed ready for the cash builder`);
+        console.log(`${seatId} confirmed ready for the cash builder`);
     }
     if (allPlayersReady(room)) {
         room.dispatch({ type: "revealAllReady" });
@@ -98,7 +100,8 @@ export function revealReady(client: any, message: any, room: any) {
 }
 
 export function offerChoice(client: any, message: any, room: any) {
-    if (client.sessionId !== room.state.activeContestantSessionId) {
+    const seatId = room.seatIdForClient(client);
+    if (seatId !== room.state.activeContestantSeatId) {
         console.log(client.sessionId, "Can not choose an offer — not the active contestant!");
         return;
     }
@@ -122,7 +125,8 @@ export function chaseResult(client: any, message: any, room: any) {
         console.log(client.sessionId, "Can not send a chase result outside Chase!");
         return;
     }
-    if (client.sessionId !== room.state.activeContestantSessionId) {
+    const seatId = room.seatIdForClient(client);
+    if (seatId !== room.state.activeContestantSeatId) {
         console.log(client.sessionId, "Can not send a chase result — not the active contestant!");
         return;
     }
@@ -134,7 +138,8 @@ export function chaseResult(client: any, message: any, room: any) {
 }
 
 export function finalChaserScore(client: any, message: any, room: any) {
-    if (client.sessionId !== room.state.chaserSessionId) {
+    const seatId = room.seatIdForClient(client);
+    if (seatId !== room.state.chaserSeatId) {
         console.log(client.sessionId, "Can not finish the final — only the Chaser can!");
         return;
     }
@@ -150,7 +155,8 @@ export function submitAnswer(client: any, message: any, room: any) {
         console.log(client.sessionId, "Can not submit an answer outside CashBuilder!");
         return;
     }
-    if (client.sessionId !== room.state.activeContestantSessionId) {
+    const seatId = room.seatIdForClient(client);
+    if (seatId !== room.state.activeContestantSeatId) {
         console.log(client.sessionId, "Can not submit an answer — not the active contestant!");
         return;
     }
@@ -158,13 +164,13 @@ export function submitAnswer(client: any, message: any, room: any) {
         console.log(client.sessionId, "Ignoring malformed submitAnswer payload:", message);
         return;
     }
-    const currentQuestion = room.questionManager.getCurrentQuestion(client.sessionId);
+    const currentQuestion = room.questionManager.getCurrentQuestion(seatId);
     if (!currentQuestion || currentQuestion.id !== message.questionId) {
         console.log(client.sessionId, "Answer does not match the current question");
         return;
     }
 
-    const player = room.state.players.get(client.sessionId);
+    const player = room.state.players.get(seatId);
     if (!player) {
         return;
     }
@@ -174,11 +180,11 @@ export function submitAnswer(client: any, message: any, room: any) {
         player.cashBuilderCorrectAnswers += 1;
     }
 
-    const nextQuestion = room.questionManager.drawNext(room.questionBank, client.sessionId);
+    const nextQuestion = room.questionManager.drawNext(room.questionBank, seatId);
     if (nextQuestion) {
         room.broadcastQuestion(
             room.state.activeRound,
-            client.sessionId,
+            seatId,
             "open",
             nextQuestion.id,
             nextQuestion.question,
