@@ -17,3 +17,11 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: full `npm test` green and stable.
 - Repro steps: 1. `cd server && npm test`. 2. Re-run; observe a different 1–3 of the above tests failing each time, always stuck at `rolesReveal`.
 - Status: resolved — fixed in-ticket 2026-09-11 as part of ticket 038's green gate (all `revealReady` sends in `server/test/roomFlow.test.ts` now pass `{ characterId: "blight" }`)
+
+## `bug-003` — `roomFlow` test "chaser reveal is its own phase" fails: `phases` array missing `RolesReveal` broadcast
+- Found: 2026-09-11 · ticket 043 · `server/test/roomFlow.test.ts:149`
+- What you saw: `waitForPhase(room, GamePhase.RolesReveal)` returns (server state is RolesReveal), but `phases` (populated by `alice.onMessage("phase", ...)`) does not include `RolesReveal` — the assertion `phases.includes(GamePhase.RolesReveal)` fails. Fails consistently on `dev` HEAD.
+- Expected: `phases` always contains every phase the server transitioned through, since `phase` broadcast messages are delivered before state settles.
+- Root cause (suspected): `waitForPhase` polls server state directly and returns as soon as state matches; the Colyseus `phase` broadcast message is delivered asynchronously, so alice's `onMessage` handler may not have run yet when the assert fires. Classic client-delivery-vs-server-state race.
+- Repro: `cd server && npm test` on clean `dev` HEAD — "chaser reveal is its own phase" fails; re-runs also fail.
+- Status: open

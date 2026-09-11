@@ -8,7 +8,7 @@ export class GamePlayer extends Schema {
     @type("string") seatId: string = "";
     @type("string") role: PlayerRole = PlayerRole.Contestant;
     @type("number") cashBuilderMoney: number = 0;
-    @type("uint16") cashBuilderQuestionsAsked: number = 0;
+    @type("uint16") cashBuilderCorrectAnswers: number = 0;
     @type("number") boardPos: number = BOARD.escapeSpace;
     @type("boolean") isEliminated: boolean = false;
     @type("boolean") madeItBack: boolean = false;

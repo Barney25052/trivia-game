@@ -104,7 +104,7 @@ describe("cashBuilderFlow (integration)", () => {
             "correct answer adds $1000 to pot"
         );
         assert.strictEqual(
-            room.state.players.get(activeSessionId).cashBuilderQuestionsAsked,
+            room.state.players.get(activeSessionId).cashBuilderCorrectAnswers,
             1
         );
 
@@ -124,7 +124,7 @@ describe("cashBuilderFlow (integration)", () => {
             "wrong answer does not change the pot"
         );
         assert.strictEqual(
-            room.state.players.get(activeSessionId).cashBuilderQuestionsAsked,
+            room.state.players.get(activeSessionId).cashBuilderCorrectAnswers,
             1,
             "wrong answer does not increment questions asked"
         );
@@ -167,7 +167,7 @@ describe("cashBuilderFlow (integration)", () => {
 
         const player = room.state.players.get(activeSessionId);
         assert.strictEqual(player.cashBuilderMoney, 0, "bench answer does not affect pot");
-        assert.strictEqual(player.cashBuilderQuestionsAsked, 0);
+        assert.strictEqual(player.cashBuilderCorrectAnswers, 0);
     });
 
     it("submitAnswer in the Offer phase is rejected", async () => {
@@ -227,7 +227,7 @@ describe("cashBuilderFlow (integration)", () => {
         await sleep(50);
 
         assert.strictEqual(room.state.players.get(activeSessionId).cashBuilderMoney, 0);
-        assert.strictEqual(room.state.players.get(activeSessionId).cashBuilderQuestionsAsked, 0);
+        assert.strictEqual(room.state.players.get(activeSessionId).cashBuilderCorrectAnswers, 0);
     });
 
     it("bank exhaustion: a tiny bank of 2 questions is drained, then null is broadcast and the timer still transitions to Offer", async () => {

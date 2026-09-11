@@ -165,7 +165,7 @@ describe("cashBuilder", () => {
     const nextQuestion = await nextQuestionPromise;
     const player = room.state.players.get(activeSessionId);
     assert.strictEqual(player.cashBuilderMoney, CASH_BUILDER.rewardPerCorrect);
-    assert.strictEqual(player.cashBuilderQuestionsAsked, 1);
+    assert.strictEqual(player.cashBuilderCorrectAnswers, 1);
     assert.notStrictEqual(nextQuestion, null, "a new question is delivered after a correct answer");
     assert.notStrictEqual(nextQuestion.questionId, firstQuestion.questionId);
   });
@@ -186,7 +186,7 @@ describe("cashBuilder", () => {
     const nextQuestion = await nextQuestionPromise;
     const player = room.state.players.get(activeSessionId);
     assert.strictEqual(player.cashBuilderMoney, 0, "wrong answer adds nothing to the pot");
-    assert.strictEqual(player.cashBuilderQuestionsAsked, 0, "questions asked only counts correct answers");
+    assert.strictEqual(player.cashBuilderCorrectAnswers, 0, "correct answers only counts correct answers");
     assert.notStrictEqual(nextQuestion, null, "a wrong answer still advances to the next question");
   });
 
@@ -205,7 +205,7 @@ describe("cashBuilder", () => {
 
     const player = room.state.players.get(activeSessionId);
     assert.strictEqual(player.cashBuilderMoney, 0, "the bench can not answer for the active contestant");
-    assert.strictEqual(player.cashBuilderQuestionsAsked, 0);
+    assert.strictEqual(player.cashBuilderCorrectAnswers, 0);
   });
 
   it("a submitAnswer outside the CashBuilder phase is rejected", async () => {
@@ -233,7 +233,7 @@ describe("cashBuilder", () => {
     await sleep(30);
     player = room.state.players.get(activeSessionId);
     assert.strictEqual(player.cashBuilderMoney, 0, "a payload without answer is rejected");
-    assert.strictEqual(player.cashBuilderQuestionsAsked, 0);
+    assert.strictEqual(player.cashBuilderCorrectAnswers, 0);
   });
 
   it("a submitAnswer that does not match the current questionId is rejected", async () => {
@@ -246,7 +246,7 @@ describe("cashBuilder", () => {
 
     const player = room.state.players.get(activeSessionId);
     assert.strictEqual(player.cashBuilderMoney, 0);
-    assert.strictEqual(player.cashBuilderQuestionsAsked, 0);
+    assert.strictEqual(player.cashBuilderCorrectAnswers, 0);
   });
 
   it("an alternative answer counts as correct", async () => {
@@ -267,7 +267,7 @@ describe("cashBuilder", () => {
 
     const player = room.state.players.get(activeSessionId);
     assert.strictEqual(player.cashBuilderMoney, CASH_BUILDER.rewardPerCorrect, "an alternative answer earns the reward");
-    assert.strictEqual(player.cashBuilderQuestionsAsked, 1);
+    assert.strictEqual(player.cashBuilderCorrectAnswers, 1);
     assert.strictEqual(nextQuestion, null, "the one-question bank is exhausted after the answer");
   });
 });

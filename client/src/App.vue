@@ -55,8 +55,8 @@ const activeContestant = computed(
 );
 const activeContestantName = computed(() => activeContestant.value?.name ?? "");
 const activeContestantMoney = computed(() => activeContestant.value?.cashBuilderMoney ?? 0);
-const activeContestantQuestionsAsked = computed(
-    () => activeContestant.value?.cashBuilderQuestionsAsked ?? 0
+const activeContestantCorrectAnswers = computed(
+    () => activeContestant.value?.cashBuilderCorrectAnswers ?? 0
 );
 const isActiveContestant = computed(
     () => activeContestantSessionId.value !== "" && mySessionId.value === activeContestantSessionId.value
@@ -247,7 +247,7 @@ function submitAnswer({ answer, questionId }) {
       :isActiveContestant="isActiveContestant"
       :activeContestantName="activeContestantName"
       :cashBuilderMoney="activeContestantMoney"
-      :cashBuilderQuestionsAsked="activeContestantQuestionsAsked"
+      :cashBuilderCorrectAnswers="activeContestantCorrectAnswers"
       @submit-answer="submitAnswer"
     />
     <OfferScreen

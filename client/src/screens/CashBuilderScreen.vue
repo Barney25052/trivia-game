@@ -7,7 +7,7 @@ const props = defineProps({
     isActiveContestant: { type: Boolean, default: false },
     activeContestantName: { type: String, default: "" },
     cashBuilderMoney: { type: Number, default: 0 },
-    cashBuilderQuestionsAsked: { type: Number, default: 0 }
+    cashBuilderCorrectAnswers: { type: Number, default: 0 }
 });
 const emit = defineEmits(["submit-answer"]);
 
@@ -32,7 +32,7 @@ const roundFinished = computed(() => {
 });
 const potText = computed(() => "$" + props.cashBuilderMoney.toLocaleString("en-US"));
 const questionsLabel = computed(() =>
-    `${props.cashBuilderQuestionsAsked} question${props.cashBuilderQuestionsAsked === 1 ? "" : "s"} answered`
+    `${props.cashBuilderCorrectAnswers} correct answer${props.cashBuilderCorrectAnswers === 1 ? "" : "s"}`
 );
 const inputDisabled = computed(() =>
     cooldownActive.value || !props.currentQuestion || roundFinished.value || awaitingNext.value

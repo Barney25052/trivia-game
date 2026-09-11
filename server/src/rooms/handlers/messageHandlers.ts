@@ -171,7 +171,7 @@ export function submitAnswer(client: any, message: any, room: any) {
 
     if (checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])])) {
         player.cashBuilderMoney += CASH_BUILDER.rewardPerCorrect;
-        player.cashBuilderQuestionsAsked += 1;
+        player.cashBuilderCorrectAnswers += 1;
     }
 
     const nextQuestion = room.questionManager.drawNext(room.questionBank, client.sessionId);
