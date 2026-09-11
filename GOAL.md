@@ -71,11 +71,12 @@ Deliberate differences we keep: the Chaser is a **player** (not a pro/host), so 
 ## Current state
 
 - The room is mid-refactor from a *simpler* trivia game to the asymmetric rules above (tickets 001–025 across Phase 0/1 + follow-up). The foundation and phase wiring are in place; the game is not yet playable end-to-end.
-- Working today (server): create/join `trivia` room; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers (`src/timer.ts`); open-ended question bank (45 free-text questions) with loader + non-repeating random picker; a **pure `gameFlow` state machine** whose `FlowEffect`s the room applies. `npm test` is green (**69** tests).
+- Working today (server): create/join `trivia` room; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers (`src/timer.ts`); open-ended question bank (45 free-text questions) with loader + non-repeating random picker; a **pure `gameFlow` state machine** whose `FlowEffect`s the room applies. `npm test` is green (**98** tests).
 - The room (tickets 007–008, 013) dispatches real `gameFlow` transitions: `startGame` → authoritative **chaser selection** (random or vote, host-driven) → cash builder → offer → chase, repeating per non-chaser contestant, then team final → chaser final → game end, with server-authoritative timers wired. Client has screens for the new phases (ticket 009) and `SERVER_URL` is configurable via `VITE_SERVER_URL` (ticket 010).
 - **Phase 1 (lobby & chaser selection) is done**: authoritative **chaser selection** in **random** and **vote** modes (013) plus the client screens — mode pick + vote buttons (014); role badges, a static rules panel, and a chaser-identity reveal when selection resolves (015); server-side player-name validation on join (016). Tickets 017 (deterministic `roomFlow` e2e) and 018 (TriviaTypes parity) also landed.
 - **Phase 1 follow-up (tickets 019–025) is done**: random chaser wheel animation (019), lobby polish with settings rail (020), roles-reveal as a gated phase with ready vote + get-ready cooldown (021 + 022), authority/phase guards on offer/chase/final handlers (023), room-option clamping (024), and explicit random default (025). Reviewed and verified (see `REVIEWERS.md` review). Three follow-up tickets created: 026 (drop the synced `GamePlayer.sessionId` field), 027 (remove template cruft + dead CSS), 028 (clear the chaser-wheel overlay on leave).
-- NOT done yet (Phase 2+): no real question gameplay — the cash-builder screen is a **placeholder** (no questions, no answer checking; Phase 2), offers already flow end-to-end (client picks low/middle/high, the server transitions) but the cash-builder total that feeds the offer math is never actually earned, and the MC board-chase isn't implemented (Phase 4 — comes from our own bank, opentdb dropped by decision). The chase/final screens are placeholders; pot/score fields exist but nothing plays through them yet.
+- **Phase 2 (part 1: server) is underway**: ticket 038 (answer-validation utility with lenient fuzzy matching) landed. Ticket 039 (done) wired the real **cash-builder gameplay loop server-side**: a room-local `QuestionManager` draws non-repeating questions from the bank per contestant, the `startCashBuilder` effect broadcasts the first `"question"` (`{ questionId, prompt, category }` — never the answer), and an authoritative `submitAnswer` handler (phase + role + shape-guarded) checks answers, adds **$1000** per correct answer to `cashBuilderMoney` (synced), increments `cashBuilderQuestionsAsked`, and delivers the next question until the timer expires. The earned pot now feeds the existing offer math. Client work (040) and e2e integration tests (041) are next: the cash-builder **screen is still a placeholder** — the client doesn't yet render questions or send `submitAnswer` (Phase 2, tickets 040–041).
+- NOT done yet (Phase 2+): the client cash-builder screen is a **placeholder** (ticket 040), the MC board-chase isn't implemented (Phase 4 — comes from our own bank, opentdb dropped by decision), and the chase/final screens are placeholders; pot/score fields exist but nothing plays through them yet.
 - Ticket 012 (done) removed template/legacy cruft: `MyRoom` → `TriviaRoom`, dropped the dead `Question`/`Answer` game phases and `Question`/`QuestionInstance` schema classes, and renamed the server package to `trivia-server`.
 
 ## Plan
@@ -105,9 +106,10 @@ Found on the first playthrough + security review; tracked as tickets and verifie
 - [x] Make "random" the explicit default chaser mode (state stores `"random"`, not the silent `""` that broke 019's wheel) — 025 (server + client)
 
 ### Phase 2 — Cash builder
-- [ ] 60-second open-ended question round (typed answers from the question bank)
-- [ ] Server-side answer checking, $1000 per correct answer
-- [ ] Pot display + transition to offer
+- [x] Server-side question delivery + answer checking, $1000 per correct answer (039)
+- [x] Earned pot feeds the offer math automatically (startOffer reads `cashBuilderMoney`)
+- [ ] Client cash-builder screen: question display, answer submission, pot display (040)
+- [ ] Phase 2 e2e integration tests — full cash builder flow (041)
 
 ### Phase 3 — The offer
 - [ ] Chaser get to pick the high and low offers based on the medium offer (what the current player earned). Low offer must be lower, high offer must be higher. Low offers can be negative as long as the player pot does not go below $0. The chaser can only offer as much as is in their pot.

@@ -1,5 +1,7 @@
 import { GamePhase, PlayerRole } from "../../TriviaTypes.js";
 import { allPlayersReady, allPlayersVoted, tallyChaserVotes } from "./chaserSelection.js";
+import { checkAnswer } from "../../questions/answerChecker.js";
+import { CASH_BUILDER } from "../../gameConfig.js";
 
 export function startGame(client: any, message: any, room: any) {
     if (!room.isHost(client)) {
@@ -148,4 +150,48 @@ export function finalChaserScore(client: any, message: any, room: any) {
         return;
     }
     room.dispatch({ type: "finalChaserReachedScore" });
+}
+
+export function submitAnswer(client: any, message: any, room: any) {
+    if (room.state.currentPhase !== GamePhase.CashBuilder) {
+        console.log(client.sessionId, "Can not submit an answer outside CashBuilder!");
+        return;
+    }
+    if (client.sessionId !== room.state.activeContestantSessionId) {
+        console.log(client.sessionId, "Can not submit an answer — not the active contestant!");
+        return;
+    }
+    if (typeof message?.answer !== "string" || typeof message?.questionId !== "number") {
+        console.log(client.sessionId, "Ignoring malformed submitAnswer payload:", message);
+        return;
+    }
+    const currentQuestion = room.questionManager.getCurrentQuestion(client.sessionId);
+    if (!currentQuestion || currentQuestion.id !== message.questionId) {
+        console.log(client.sessionId, "Answer does not match the current question");
+        return;
+    }
+
+    const player = room.state.players.get(client.sessionId);
+    if (!player) {
+        return;
+    }
+
+    if (checkAnswer(message.answer, currentQuestion.answer)) {
+        player.cashBuilderMoney += CASH_BUILDER.rewardPerCorrect;
+        player.cashBuilderQuestionsAsked += 1;
+    }
+
+    const nextQuestion = room.questionManager.drawNext(room.questionBank, client.sessionId);
+    if (nextQuestion) {
+        room.broadcastQuestion(
+            room.state.activeRound,
+            client.sessionId,
+            "open",
+            nextQuestion.id,
+            nextQuestion.question,
+            nextQuestion.category
+        );
+    } else {
+        room.broadcast("question", null);
+    }
 }

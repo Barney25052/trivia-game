@@ -74,6 +74,20 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
         case "startCashBuilder": {
           room.state.activeContestantSessionId = effect.sessionId;
           room.state.activeRound = effect.round;
+          room.questionManager.initContestant(effect.sessionId);
+          const firstQuestion = room.questionManager.drawNext(room.questionBank, effect.sessionId);
+          if (firstQuestion) {
+            room.broadcastQuestion(
+              effect.round,
+              effect.sessionId,
+              "open",
+              firstQuestion.id,
+              firstQuestion.question,
+              firstQuestion.category
+            );
+          } else {
+            room.broadcast("question", null);
+          }
           console.log(
             `Cash builder for ${effect.sessionId} (round ${effect.round}, ${room.cashBuilderDurationMs}ms)`
           );
@@ -84,6 +98,7 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
         }
 
         case "startOffer": {
+          room.questionManager.clearContestant(effect.sessionId);
           const player = room.state.players.get(effect.sessionId);
           const take = player?.cashBuilderMoney ?? 0;
           room.currentOffer = {

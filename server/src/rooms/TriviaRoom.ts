@@ -9,6 +9,8 @@ import {
   OfferTier,
 } from "../gameFlow.js";
 import { scheduleTimer, TimerHandle } from "../timer.js";
+import { QuestionManager } from "../questions/questionManager.js";
+import { loadBank, BankQuestion } from "../questions/bank.js";
 import {
   CASH_BUILDER,
   CHASER_REVEAL,
@@ -25,6 +27,7 @@ import {
   offerChoice,
   chaseResult,
   finalChaserScore,
+  submitAnswer,
 } from "./handlers/messageHandlers.js";
 import { applyEffects } from "./handlers/effects.js";
 import { clampRoomOptions } from "./handlers/clampOptions.js";
@@ -52,9 +55,12 @@ export class TriviaRoom extends Room {
   activeTimer: TimerHandle | null = null;
   currentOffer: OfferAmounts | null = null;
   currentOfferAmount = 0;
+  questionManager = new QuestionManager();
+  questionBank: BankQuestion[] = [];
 
   onCreate (options: any) {
     clampRoomOptions(this, options);
+    this.questionBank = loadBank();
   }
 
   private clearTimer() {
@@ -82,12 +88,13 @@ export class TriviaRoom extends Room {
     };
   }
 
-  private broadcastQuestion(round: number, targetSessionId: string, kind: "open" | "mc", questionId: number, prompt: string, options?: string[]) {
-    const payload: { round: number; targetSessionId: string; kind: "open" | "mc"; prompt: string; options?: string[]; questionId: number } = {
+  private broadcastQuestion(round: number, targetSessionId: string, kind: "open" | "mc", questionId: number, prompt: string, category: string, options?: string[]) {
+    const payload: { round: number; targetSessionId: string; kind: "open" | "mc"; prompt: string; category: string; options?: string[]; questionId: number } = {
       round,
       targetSessionId,
       kind,
       prompt,
+      category,
       options,
       questionId,
     };
@@ -122,6 +129,7 @@ export class TriviaRoom extends Room {
     offerChoice: (client: Client, message: any) => offerChoice(client, message, this),
     chaseResult: (client: Client, message: any) => chaseResult(client, message, this),
     finalChaserScore: (client: Client, message: any) => finalChaserScore(client, message, this),
+    submitAnswer: (client: Client, message: any) => submitAnswer(client, message, this),
   };
 
   onJoin (client: Client, options: any) {
