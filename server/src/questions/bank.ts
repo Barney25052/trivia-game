@@ -8,6 +8,7 @@ export interface BankQuestion {
     category: string;
     question: string;
     answer: string;
+    alternatives?: string[];
 }
 
 interface QuestionBankFile {

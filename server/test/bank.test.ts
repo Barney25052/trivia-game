@@ -10,6 +10,15 @@ describe("question bank", () => {
     assert.strictEqual(ids.size, bank.length, "question ids must be unique");
   });
 
+  it("every question carries an alternatives array of strings", () => {
+    for (const question of bank) {
+      assert.ok(Array.isArray(question.alternatives), `question ${question.id} lacks an alternatives array`);
+      for (const alternative of question.alternatives ?? []) {
+        assert.strictEqual(typeof alternative, "string", `question ${question.id} has a non-string alternative`);
+      }
+    }
+  });
+
   it("pickRandom returns the requested number of distinct questions", () => {
     const picked = pickRandom(bank, 5);
     assert.strictEqual(picked.length, 5);

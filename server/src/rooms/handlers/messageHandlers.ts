@@ -176,7 +176,7 @@ export function submitAnswer(client: any, message: any, room: any) {
         return;
     }
 
-    if (checkAnswer(message.answer, currentQuestion.answer)) {
+    if (checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])])) {
         player.cashBuilderMoney += CASH_BUILDER.rewardPerCorrect;
         player.cashBuilderQuestionsAsked += 1;
     }

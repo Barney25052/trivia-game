@@ -58,4 +58,29 @@ describe("answer checker", () => {
       true
     );
   });
+
+  it("accepts an alternative answer alongside the canonical one", () => {
+    assert.strictEqual(checkAnswer("Fyodor Dostoevsky", ["Dostoevsky", "Fyodor Dostoevsky"]), true);
+  });
+
+  it("accepts the canonical answer when alternatives are present", () => {
+    assert.strictEqual(checkAnswer("Dostoevsky", ["Dostoevsky", "Fyodor Dostoevsky"]), true);
+  });
+
+  it("rejects an answer that matches no alternative", () => {
+    assert.strictEqual(checkAnswer("Tolstoy", ["Dostoevsky", "Fyodor Dostoevsky"]), false);
+  });
+
+  it("an empty alternatives list still accepts the canonical answer", () => {
+    assert.strictEqual(checkAnswer("Mars", ["Mars"]), true);
+    assert.strictEqual(checkAnswer("Earth", ["Mars"]), false);
+  });
+
+  it("alternative matching is still lenient on case and whitespace", () => {
+    assert.strictEqual(checkAnswer(" fyodor dostoevsky ", ["Dostoevsky", "Fyodor Dostoevsky"]), true);
+  });
+
+  it("a misspelled alternative passes if it is close enough", () => {
+    assert.strictEqual(checkAnswer("Dostoevsyk", ["Dostoevsky", "Fyodor Dostoevsky"]), true);
+  });
 });

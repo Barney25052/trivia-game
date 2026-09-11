@@ -109,7 +109,7 @@ describe("cashBuilder", () => {
 
   const bank = loadBank();
 
-  async function openCashBuilder(): Promise<{
+  async function openCashBuilder(bankOverride?: BankQuestion[]): Promise<{
     room: any;
     activeClient: any;
     benchClient: any;
@@ -121,6 +121,9 @@ describe("cashBuilder", () => {
       chaserRevealDurationMs: 80,
       revealReadyCooldownMs: 80
     });
+    if (bankOverride) {
+      room.questionBank = bankOverride;
+    }
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
     await sleep(100);
@@ -244,5 +247,27 @@ describe("cashBuilder", () => {
     const player = room.state.players.get(activeSessionId);
     assert.strictEqual(player.cashBuilderMoney, 0);
     assert.strictEqual(player.cashBuilderQuestionsAsked, 0);
+  });
+
+  it("an alternative answer counts as correct", async () => {
+    const bank = [
+      { id: 1, category: "test", question: "Which planet is known as the Red Planet?", answer: "Mars", alternatives: ["Red planet", "Sol"] }
+    ] as BankQuestion[];
+    const { room, activeClient, activeSessionId } = await openCashBuilder(bank);
+
+    const firstQuestion = await activeClient.waitForMessage("question");
+    assert.strictEqual(firstQuestion.questionId, 1, "the overridden bank feeds the first question");
+
+    const nextQuestionPromise = activeClient.waitForMessage("question");
+    activeClient.send("submitAnswer", {
+      answer: "red planet",
+      questionId: firstQuestion.questionId
+    });
+    const nextQuestion = await nextQuestionPromise;
+
+    const player = room.state.players.get(activeSessionId);
+    assert.strictEqual(player.cashBuilderMoney, CASH_BUILDER.rewardPerCorrect, "an alternative answer earns the reward");
+    assert.strictEqual(player.cashBuilderQuestionsAsked, 1);
+    assert.strictEqual(nextQuestion, null, "the one-question bank is exhausted after the answer");
   });
 });

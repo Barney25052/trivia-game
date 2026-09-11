@@ -55,7 +55,7 @@ function countPositionalDiffs(a: string, b: string): number {
     return diffs + Math.abs(a.length - b.length);
 }
 
-export function checkAnswer(playerAnswer: string, canonicalAnswer: string): boolean {
+function matchesSingle(playerAnswer: string, canonicalAnswer: string): boolean {
     const p = normalize(playerAnswer);
     const c = normalize(canonicalAnswer);
     if (p === c) return true;
@@ -72,4 +72,15 @@ export function checkAnswer(playerAnswer: string, canonicalAnswer: string): bool
     if (distance <= 1) return hasAdjacentTransposition(p, c);
     if (countPositionalDiffs(p, c) <= 1) return false;
     return true;
+}
+
+/**
+ * Check a typed answer against the canonical answer or any of its
+ * alternatives. Accepts either a single string (back-compat with the
+ * original contract) or an array of accepted answers, in which case a
+ * match against ANY of them passes.
+ */
+export function checkAnswer(playerAnswer: string, acceptedAnswers: string | string[]): boolean {
+    const answers = Array.isArray(acceptedAnswers) ? acceptedAnswers : [acceptedAnswers];
+    return answers.some((accepted) => matchesSingle(playerAnswer, accepted));
 }
