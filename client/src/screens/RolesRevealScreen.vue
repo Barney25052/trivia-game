@@ -6,7 +6,7 @@ import { ref } from "vue";
 const selectedCharacterId = ref(null);
 
 const props = defineProps(["players", "mySessionId"]);
-const emit = defineEmits(["ready", "selectCharacter"]);
+const emit = defineEmits(["ready"]);
 
 const chaser = computed(() => props.players.find((p) => p.role === PlayerRole.Chaser));
 const contestants = computed(() => props.players.filter((p) => p.role === PlayerRole.Contestant));
@@ -16,19 +16,6 @@ const myRevealReady = computed(
 const allReady = computed(
     () => props.players.length > 0 && props.players.every((p) => p.revealReady === true)
 );
-const myCharacter = computed(
-    () => props.players.find((p) => p.sessionId === props.mySessionId)?.chaserCharacterId
-);
-const myCharacterInfo = computed(() => {
-    if (!myCharacter.value) return null;
-    const character = Object.values(ChaserCharacter).find(
-        (c) => ChaserCharacter[c] === myCharacter.value
-    );
-    return character ? { name: character, ability: character } : null;
-});
-const myCharacterId = computed(
-    () => props.players.find((p) => p.sessionId === props.mySessionId)?.chaserCharacterId
-);
 const availableCharacters = computed(() => [
     { id: ChaserCharacter.Bezos, name: "Bezos" },
     { id: ChaserCharacter.BigStan, name: "Big Stan" },
@@ -37,8 +24,7 @@ const availableCharacters = computed(() => [
 
 function handleCharacterSelect(characterId) {
     selectedCharacterId.value = characterId;
-    emit('selectCharacter', characterId);
-    emit('ready');
+    emit('ready', { characterId });
 }
 </script>
 

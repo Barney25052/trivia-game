@@ -177,9 +177,9 @@ function handleLeave() {
   room.value  = null
 }
 
-function revealReady() {
+function revealReady({ characterId } = {}) {
   try {
-    room.value?.send("revealReady", {});
+    room.value?.send("revealReady", { characterId });
 
   } catch (e) {
     console.error("Failed to send reveal ready:", e);

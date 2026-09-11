@@ -86,7 +86,7 @@ describe("roomFlow", () => {
     assert.strictEqual(room.state.players.get(bob.sessionId).revealReady, false);
 
     // Everyone ready -> getReady broadcast -> cooldown -> cash builder -> offer.
-    bob.send("revealReady", { characterId: "blight" });
+    bob.send("revealReady", { characterId: "nami" });
     await waitForPhase(room, GamePhase.CashBuilder);
     const getReady = await getReadyMessage;
     assert.strictEqual(getReady.cooldownMs, 100);
@@ -222,7 +222,7 @@ alice.send("startGame");
     alice.send("startGame");
     await waitForPhase(room, GamePhase.RolesReveal);
     alice.send("revealReady", { characterId: "bezos" });
-    bob.send("revealReady");
+    bob.send("revealReady", { characterId: "nami" });
     await waitForPhase(room, GamePhase.Offer);
 
     const chaser = room.state.chaserSessionId;
@@ -257,7 +257,7 @@ alice.send("startGame");
     alice.send("startGame");
     await waitForPhase(room, GamePhase.RolesReveal);
     alice.send("revealReady", { characterId: "bezos" });
-    bob.send("revealReady");
+    bob.send("revealReady", { characterId: "nami" });
     await waitForPhase(room, GamePhase.Offer);
 
     const chaser = room.state.chaserSessionId;
@@ -294,7 +294,7 @@ alice.send("startGame");
     alice.send("startGame");
     await waitForPhase(room, GamePhase.RolesReveal);
     alice.send("revealReady", { characterId: "bezos" });
-    bob.send("revealReady");
+    bob.send("revealReady", { characterId: "nami" });
     await waitForPhase(room, GamePhase.Offer);
 
     const chaser = room.state.chaserSessionId;
