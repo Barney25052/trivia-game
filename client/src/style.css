@@ -389,7 +389,8 @@ ul {
 .chaserSilhouette {
   width: 120px;
   height: 170px;
-  margin: 10px 0;
+  margin: auto;
+  display: block;
 }
 .characterOptions {
   padding-top: 50px;
@@ -433,7 +434,11 @@ ul {
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-items: center;
+  justify-content: center;
   gap: 10px;
+  padding: 0px;
+  margin: 0px;
 }
 
 .revealChaserYou {

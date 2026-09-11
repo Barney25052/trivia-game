@@ -49,7 +49,7 @@ function handleCharacterSelect(characterId) {
                 </div>
             </div>
             <div v-else>
-                <h2 class="revealLabel">The Chaser is</h2>
+                <h2 class="revealLabel">The Chaser</h2>
                 <svg class="chaserSilhouette" viewBox="0 0 120 170" aria-label="chaser silhouette">
                     <circle class="sil" cx="60" cy="50" r="35" />
                     <path class="sil" d="M60 95 C 25 95, 8 120, 8 170 L 112 170 C 112 120, 95 95, 60 95 z" />

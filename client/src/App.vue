@@ -223,8 +223,6 @@ function submitAnswer({ answer, questionId }) {
 
 <template>
   <div class="app">
-    <p>{{ currentScreen }}</p>
-
     <HomeScreen v-if="currentScreen=='home'" @join="handleJoin" @create="handleJoin"/>
     <LobbyScreen 
       v-if="currentScreen=='lobby'" 
