@@ -101,6 +101,17 @@ describe("roomFlow", () => {
       "low" in offer.offers && "middle" in offer.offers && "high" in offer.offers,
       "offer message should carry low/middle/high amounts"
     );
+    const chaserCharId = room.state.players.get(room.state.chaserSessionId).chaserCharacterId;
+    assert.ok(
+      ["bezos", "big stan", "nami"].includes(chaserCharId),
+      "the chaser picks a roster character during roles reveal"
+    );
+    assert.strictEqual(offer.chaserCharacterId, chaserCharId);
+    assert.ok(
+      typeof offer.chaserCharacterName === "string" && offer.chaserCharacterName.length > 0,
+      "offer message should carry the chaser character name"
+    );
+    assert.strictEqual(offer.chaserCharacterAbility, "", "placeholder abilities are empty for now");
     assert.ok(phases.includes(GamePhase.RolesReveal), "should have broadcast rolesReveal phase");
     assert.ok(phases.includes(GamePhase.CashBuilder), "should have broadcast cashBuilder phase");
     assert.ok(phases.includes(GamePhase.Offer), "should have broadcast offer phase");

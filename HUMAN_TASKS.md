@@ -6,3 +6,6 @@ Status values: `todo`, `done`.
 
 | File | What it is | Where it's used | Status |
 |------|------------|-----------------|--------|
+| bezos-icon.png | Bezos chaser character portrait | RolesRevealScreen (character picker) | done |
+| bigstan-icon.png | Big Stan chaser character portrait | RolesRevealScreen (character picker) | done |
+| nami-icon.png | Nami chaser character portrait | RolesRevealScreen (character picker) | done |

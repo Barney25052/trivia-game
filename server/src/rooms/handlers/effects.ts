@@ -1,7 +1,7 @@
 import { FlowEffect } from "../../gameFlow.js";
 import { PlayerRole } from "../../TriviaTypes.js";
 import * as chaserSelection from "./chaserSelection.js";
-import { CHASER_REVEAL, CHASER_SELECTION } from "../../gameConfig.js";
+import { CHASER_CHARACTERS, CHASER_REVEAL, CHASER_SELECTION } from "../../gameConfig.js";
 
 export function applyEffects(effects: FlowEffect[], room: any, context: any): void {
     for (const effect of effects) {
@@ -112,10 +112,14 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
             `middle ${room.currentOffer.middle} / high ${room.currentOffer.high}`
           );
           const chaser = room.state.players.get(room.state.chaserSessionId);
+          const chaserCharId = chaser?.chaserCharacterId ?? "";
+          const chaserChar = CHASER_CHARACTERS.find((c) => c.id === chaserCharId);
           room.broadcast("offer", {
             sessionId: effect.sessionId,
             offers: room.currentOffer,
-            chaserCharacterId: chaser?.chaserCharacterId ?? ""
+            chaserCharacterId: chaserCharId,
+            chaserCharacterName: chaserChar?.name ?? "",
+            chaserCharacterAbility: chaserChar?.ability ?? ""
           });
           break;
         }

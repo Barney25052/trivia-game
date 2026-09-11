@@ -1,6 +1,6 @@
 import assert from "assert";
-import { CASH_BUILDER, CHASER_POT, BOARD, CHASE_QUESTION, FINAL_ROUND } from "../src/gameConfig.js";
-import { PlayerRole } from "../src/TriviaTypes.js";
+import { CASH_BUILDER, CHASER_POT, BOARD, CHASE_QUESTION, FINAL_ROUND, CHASER_CHARACTERS } from "../src/gameConfig.js";
+import { PlayerRole, ChaserCharacter } from "../src/TriviaTypes.js";
 
 describe("gameConfig", () => {
   it("cash builder: 60s, $1000 per correct answer", () => {
@@ -36,5 +36,15 @@ describe("gameConfig", () => {
   it("PlayerRole has both roles", () => {
     assert.strictEqual(PlayerRole.Contestant, "contestant");
     assert.strictEqual(PlayerRole.Chaser, "chaser");
+  });
+
+  it("chaser roster: every character matches the enum and carries an ability field", () => {
+    const enumIds = Object.values(ChaserCharacter);
+    assert.strictEqual(CHASER_CHARACTERS.length, enumIds.length);
+    for (const character of CHASER_CHARACTERS) {
+      assert.ok(enumIds.includes(character.id), `${character.id} is a ChaserCharacter enum value`);
+      assert.ok(character.name.length > 0, `${character.id} has a name`);
+      assert.strictEqual(typeof character.ability, "string", `${character.id} has an ability string`);
+    }
   });
 });

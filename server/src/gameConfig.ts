@@ -38,9 +38,9 @@ export const CHASER_POT = {
 } as const;
 
 export const CHASER_CHARACTERS = [
-    { id: "bezos", name: "Bezos" },
-    { id: "big stan", name: "Big Stan" },
-    { id: "nami", name: "Nami"}
+    { id: "bezos", name: "Bezos", ability: "" },
+    { id: "big stan", name: "Big Stan", ability: "" },
+    { id: "nami", name: "Nami", ability: "" }
 ] as const;
 
 export const BOARD = {

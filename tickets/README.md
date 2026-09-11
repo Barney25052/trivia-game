@@ -59,7 +59,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 033 | Move chaser wheel overlay into its own screen in the phase flow | done |
 | 034 | Rekey players map with seat ID — stop leaking sessionIds to clients (absorbs 026) | done |
 | 035 | Shared type definitions for server→client message payloads | done |
-| 036 | Chaser character picker during roles-reveal, identity revealed at offer stage | backlog |
+| 036 | Chaser character picker during roles-reveal, identity revealed at offer stage | done |
 | 037 | Per-player message rate limiting | backlog |
 | **Phase 2 — Cash Builder** | | |
 | 038 | Answer validation utility for open-ended questions | done |

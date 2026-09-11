@@ -1,7 +1,7 @@
 import { GamePhase, PlayerRole } from "../../TriviaTypes.js";
 import { allPlayersReady, allPlayersVoted, tallyChaserVotes } from "./chaserSelection.js";
 import { checkAnswer } from "../../questions/answerChecker.js";
-import { CASH_BUILDER } from "../../gameConfig.js";
+import { CASH_BUILDER, CHASER_CHARACTERS } from "../../gameConfig.js";
 
 export function startGame(client: any, message: any, room: any) {
     if (!room.isHost(client)) {
@@ -80,7 +80,7 @@ export function revealReady(client: any, message: any, room: any) {
             console.log(client.sessionId, "Chaser must select a character before ready!");
             return;
         }
-        const valid = ["bezos", "big stan", "nami"].includes(characterId);
+        const valid = CHASER_CHARACTERS.some((c) => c.id === characterId);
         if (!valid) {
             console.log(client.sessionId, "Invalid chaser character ID:", characterId);
             return;
