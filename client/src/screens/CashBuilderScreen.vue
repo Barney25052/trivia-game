@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 
 const props = defineProps({
     getReadyCooldownMs: { type: Number, default: 0 },
@@ -20,6 +20,7 @@ const awaitingNext = ref(false);
 const potFlash = ref(false);
 const timerStarted = ref(false);
 const seenQuestion = ref(false);
+const inputBox = ref(null);
 
 let cooldownInterval = null;
 let questionInterval = null;
@@ -66,7 +67,7 @@ function startQuestionTimer() {
 
 function submit() {
     const trimmed = answerInput.value.trim();
-    if (inputDisabled.value || !props.currentQuestion || trimmed.length === 0) return;
+    if (inputDisabled.value || !props.currentQuestion) return; //Let empty inputs count as it lets the player pass the question
     emit("submit-answer", { answer: trimmed, questionId: props.currentQuestion.questionId });
     answerInput.value = "";
     awaitingNext.value = true;
@@ -99,13 +100,23 @@ watch(() => props.cashBuilderMoney, (current, previous) => {
 onMounted(() => {
     if (props.getReadyCooldownMs > 0 && !props.currentQuestion) {
         startReadyCountdown(props.getReadyCooldownMs);
-    }
+    }   
+
+    document.addEventListener('keydown', handleGlobalKeydown);
 });
+
+function handleGlobalKeydown(e) {
+    if (inputDisabled.value) return;
+    if (document.activeElement === inputBox.value) return; // already focused, let it type normally
+    inputBox.value?.focus();
+    console.log(e)
+}
 
 onUnmounted(() => {
     if (cooldownInterval) clearInterval(cooldownInterval);
     if (questionInterval) clearInterval(questionInterval);
     if (potFlashTimeout) clearTimeout(potFlashTimeout);
+    document.removeEventListener('keydown', handleGlobalKeydown);
 });
 </script>
 
@@ -136,14 +147,9 @@ onUnmounted(() => {
                 placeholder="Type your answer..."
                 :disabled="inputDisabled"
                 @keyup.enter="submit"
+                ref="inputBox"
+                @blur="inputBox.focus()"
             />
-            <button
-                class="startButton cashBuilderSubmit"
-                :disabled="inputDisabled"
-                @click="submit"
-            >
-                {{ awaitingNext ? "Checking…" : "Submit" }}
-            </button>
 
             <p v-if="roundFinished" class="playerName cashBuilderStatus">Time's up!</p>
             <p v-else-if="awaitingNext" class="playerName cashBuilderStatus">Next question…</p>
