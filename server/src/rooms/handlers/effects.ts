@@ -1,6 +1,6 @@
-import { FlowEffect } from "../gameFlow.js";
+import { FlowEffect } from "../../gameFlow.js";
 import { PlayerRole } from "../../TriviaTypes.js";
-import * as chaserSelection from "./chaserSelection";
+import * as chaserSelection from "./chaserSelection.js";
 import { CHASER_SELECTION } from "../../gameConfig.js";
 
 export function applyEffects(effects: FlowEffect[], room: any, context: any): void {

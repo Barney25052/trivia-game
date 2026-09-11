@@ -1,100 +1,75 @@
 const FILLER_WORDS = new Set(["the", "of", "and", "a", "an", "to", "in", "for", "on", "with"]);
 
-const normalize = (ans: string): string => {
-    const lowered = ans.trim().toLowerCase();
-    const words = lowered.split(/\s+/).filter((word) => !FILLER_WORDS.has(word));
-    return words.join("");
-};
+/** Maximum edit distance as a share of the longer normalised answer. */
+const MAX_DISTANCE_RATIO = 0.3;
 
-const _charDiffCount = (a: string, b: string): number => {
-    let diffs = 0;
-    const len = Math.min(a.length, b.length);
-    for (let i = 0; i < len; i++) {
-        if (a[i] !== b[i]) diffs++;
-    }
-    diffs += Math.abs(a.length - b.length);
-    return diffs;
-};
+function normalize(value: string): string {
+    const words = value.trim().toLowerCase().split(/\s+/);
+    return words.filter((word) => word.length > 0 && !FILLER_WORDS.has(word)).join("");
+}
 
-const _hasTransposition = (a: string, b: string): boolean => {
-    const n = a.length;
-    const m = b.length;
-    if (Math.abs(n - m) > 1) return false;
-    let diffIdx = -1;
-    let secondDiff = -1;
-    for (let i = 0; i < Math.max(n, m); i++) {
-        if (a[i] !== b[i]) {
-            if (diffIdx === -1) diffIdx = i;
-            else secondDiff = i;
-        }
-    }
-    if (diffIdx === -1 || secondDiff === -1) return false;
-    if (secondDiff - diffIdx !== 1) return false;
-    if (a[diffIdx] !== b[secondDiff]) return false;
-    if (a[secondDiff] !== b[diffIdx]) return false;
-    return true;
-};
+/**
+ * Optimal string alignment distance (Levenshtein with a single adjacent
+ * transposition costing 1). Answers are short, so a full matrix is fine.
+ */
+function editDistance(a: string, b: string): number {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
 
-const damerauLevenshtein = (a: string, b: string): number => {
-    const n = a.length;
-    const m = b.length;
-    if (n === 0) return m;
-    if (m === 0) return n;
-
-    const last: Record<string, number> = {};
     const d: number[][] = [];
-
-    for (let i = 0; i <= n; i++) {
+    for (let i = 0; i <= a.length; i++) {
         d[i] = [i];
     }
-    for (let j = 0; j <= m; j++) {
+    for (let j = 0; j <= b.length; j++) {
         d[0][j] = j;
     }
 
-    let _i = 0;
-    for (let i = 1; i <= n; i++) {
-        const aI = a[i - 1];
-        d[i][0] = i;
-        let _j = 0;
-        for (let j = 1; j <= m; j++) {
-            const bJ = b[j - 1];
-            const cost = aI === bJ ? 0 : 1;
-            d[i][j] = Math.min(
-                d[i - 1][j] + 1,
-                d[i][j - 1] + 1,
-                d[i - 1][j - 1] + cost
-            );
-
-            const km = last[aI];
-            if (km !== undefined && km <= i - 1) {
-                const tmp = d[km - 1][j - 1] + (i - 1 - km) + (j - 1 - _j);
-                if (tmp < d[i][j]) {
-                    d[i][j] = tmp;
-                }
+    for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+            d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+            if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+                d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost);
             }
-            last[bJ] = j;
-            _j = j;
         }
-        _i = i;
     }
 
-    return d[n][m];
-};
+    return d[a.length][b.length];
+}
+
+function hasAdjacentTransposition(a: string, b: string): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length - 1; i++) {
+        const swapped = a.slice(0, i) + a[i + 1] + a[i] + a.slice(i + 2);
+        if (swapped === b) return true;
+    }
+    return false;
+}
+
+function countPositionalDiffs(a: string, b: string): number {
+    let diffs = 0;
+    const shared = Math.min(a.length, b.length);
+    for (let i = 0; i < shared; i++) {
+        if (a[i] !== b[i]) diffs++;
+    }
+    return diffs + Math.abs(a.length - b.length);
+}
 
 export function checkAnswer(playerAnswer: string, canonicalAnswer: string): boolean {
     const p = normalize(playerAnswer);
     const c = normalize(canonicalAnswer);
     if (p === c) return true;
 
-    const distance = damerauLevenshtein(p, c);
-    const maxLen = Math.max(p.length, c.length);
+    const longest = Math.max(p.length, c.length);
+    if (longest === 0) return false;
 
-    if (maxLen === 0) return false;
-    if (distance / maxLen > 0.3) return false;
+    const distance = editDistance(p, c);
+    if (distance / longest > MAX_DISTANCE_RATIO) return false;
 
-    if (distance <= 1 && _hasTransposition(p, c)) return true;
-
-    if (_charDiffCount(p, c) <= 1) return false;
-
-    return distance / maxLen <= 0.3;
+    // A single edit only passes for an adjacent transposition ("Masr" vs
+    // "Mars"); a plain substitution/insertion/deletion stays strict
+    // ("Xars" vs "Mars" fails).
+    if (distance <= 1) return hasAdjacentTransposition(p, c);
+    if (countPositionalDiffs(p, c) <= 1) return false;
+    return true;
 }

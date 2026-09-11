@@ -41,6 +41,7 @@ describe("answer checker", () => {
 
   it("empty string returns false", () => {
     assert.strictEqual(checkAnswer("", "Mars"), false);
+    assert.strictEqual(checkAnswer("   ", "Mars"), false);
   });
 
   it("partial match too far returns false", () => {

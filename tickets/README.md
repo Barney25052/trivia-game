@@ -62,7 +62,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 036 | Chaser character picker during roles-reveal, identity revealed at offer stage | backlog |
 | 037 | Per-player message rate limiting | backlog |
 | **Phase 2 — Cash Builder** | | |
-| 038 | Answer validation utility for open-ended questions | partial |
+| 038 | Answer validation utility for open-ended questions | done |
 | 039 | Server: question delivery, answer handler, pot tracking | backlog |
 | 040 | Client: cash builder screen — question display, submission, pot | backlog |
 | 041 | Phase 2 integration tests — full cash builder flow | backlog |
