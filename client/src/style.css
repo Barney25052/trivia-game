@@ -552,6 +552,104 @@ ul {
   animation: press-me 1s ease-in-out infinite;
 }
 
+.cashBuilder {
+  max-width: 640px;
+}
+
+.cashBuilderCategory {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 15px;
+  padding: 6px 16px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  color: #ffffff;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 18px;
+  text-align: center;
+}
+
+.cashBuilderQuestion {
+  color: #ffffff;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 28px;
+  text-align: center;
+  padding: 10px 20px;
+}
+
+.cashBuilderMeta {
+  font-size: 18px;
+  padding: 5px;
+}
+
+.cashBuilderInput {
+  width: 90%;
+  max-width: 500px;
+}
+
+.cashBuilderInput:disabled {
+  background-color: #dedede;
+  cursor: not-allowed;
+}
+
+.cashBuilderSubmit {
+  width: 220px;
+}
+
+.cashBuilderSubmit:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: default;
+}
+
+.cashBuilderPot {
+  color: #ffffff;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 48px;
+  text-align: center;
+  padding: 10px;
+  margin: 5px auto;
+}
+
+.cashBuilderPot-flash {
+  animation: pot-flash 0.5s ease-in-out;
+}
+
+.cashBuilderTimer {
+  color: #ffffff;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 24px;
+  text-align: center;
+  margin: 5px auto 20px;
+}
+
+.cashBuilderSpectator {
+  max-width: 500px;
+  margin: 20px auto;
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  opacity: 0.85;
+}
+
+.cashBuilderStatus {
+  font-size: 20px;
+}
+
+@keyframes pot-flash {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.15); color: #ffe27a; }
+  100% { transform: scale(1); }
+}
+
 @keyframes pan-bg {
   from { transform: rotate(15deg) translate(0, 0); }
   to   { transform: rotate(15deg) translate(250px, 250px); }

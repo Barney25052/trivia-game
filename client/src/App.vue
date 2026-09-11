@@ -27,6 +27,7 @@ const teamScore = ref(0);
 const currentOffer = ref(null);
 const winner = ref(null);
 const getReadyCooldownMs = ref(0);
+const currentQuestion = ref(null);
 
 const currentScreen = computed(() => {
   if (!room.value) return "home";
@@ -48,6 +49,23 @@ const currentScreen = computed(() => {
 const myPlayer = computed(() => playersMap.value?.get(room.value?.sessionId));
 const mySessionId = computed(() => room.value?.sessionId);
 const isHost = computed(() => myPlayer.value?.isHost === true);
+
+const activeContestant = computed(
+    () => players.value.find((p) => p.sessionId === activeContestantSessionId.value)
+);
+const activeContestantName = computed(() => activeContestant.value?.name ?? "");
+const activeContestantMoney = computed(() => activeContestant.value?.cashBuilderMoney ?? 0);
+const activeContestantQuestionsAsked = computed(
+    () => activeContestant.value?.cashBuilderQuestionsAsked ?? 0
+);
+const isActiveContestant = computed(
+    () => activeContestantSessionId.value !== "" && mySessionId.value === activeContestantSessionId.value
+);
+const currentRoundQuestion = computed(() => {
+    if (!currentQuestion.value) return null;
+    if (currentQuestion.value.targetSessionId !== activeContestantSessionId.value) return null;
+    return currentQuestion.value;
+});
 
 async function handleJoin({ playerName, roomCode }) {
   await joinLobby(playerName, roomCode);
@@ -80,6 +98,13 @@ async function joinLobby(playerName, roomCode) {
 
     room.value.onMessage("phase", (message) => {
       currentPhase.value = message.phase;
+      if (message.phase !== GamePhase.CashBuilder) {
+        getReadyCooldownMs.value = 0;
+      }
+    });
+
+    room.value.onMessage("question", (message) => {
+      currentQuestion.value = message;
     });
 
     room.value.onMessage("offer", (message) => {
@@ -170,6 +195,15 @@ function revealReady({ characterId } = {}) {
     console.error("Failed to send reveal ready:", e);
   }
 }
+
+function submitAnswer({ answer, questionId }) {
+  try {
+    room.value?.send("submitAnswer", { answer, questionId });
+
+  } catch (e) {
+    console.error("Failed to submit answer:", e);
+  }
+}
 </script>
 
 <template>
@@ -209,6 +243,12 @@ function revealReady({ characterId } = {}) {
     <CashBuilderScreen 
       v-if="currentScreen=='cashBuilder'"
       :getReadyCooldownMs="getReadyCooldownMs"
+      :currentQuestion="currentRoundQuestion"
+      :isActiveContestant="isActiveContestant"
+      :activeContestantName="activeContestantName"
+      :cashBuilderMoney="activeContestantMoney"
+      :cashBuilderQuestionsAsked="activeContestantQuestionsAsked"
+      @submit-answer="submitAnswer"
     />
     <OfferScreen
       v-if="currentScreen=='offer'"

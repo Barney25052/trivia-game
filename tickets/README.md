@@ -64,7 +64,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | **Phase 2 — Cash Builder** | | |
 | 038 | Answer validation utility for open-ended questions | done |
 | 039 | Server: question delivery, answer handler, pot tracking | done |
-| 040 | Client: cash builder screen — question display, submission, pot | backlog |
+| 040 | Client: cash builder screen — question display, submission, pot | done |
 | 041 | Phase 2 integration tests — full cash builder flow | backlog |
 
 Status values: `backlog`, `in-progress`, `done`.
