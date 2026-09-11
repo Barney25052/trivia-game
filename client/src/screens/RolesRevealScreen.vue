@@ -1,7 +1,9 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { PlayerRole, ChaserCharacter } from "../TriviaTypes.ts";
-import { ref } from "vue";
+import bezosIcon from "../assets/images/chasers/bezos-icon.png";
+import bigStanIcon from "../assets/images/chasers/bigstan-icon.png";
+import namiIcon from "../assets/images/chasers/nami-icon.png";
 
 const selectedCharacterId = ref(null);
 
@@ -17,9 +19,9 @@ const allReady = computed(
     () => props.players.length > 0 && props.players.every((p) => p.revealReady === true)
 );
 const availableCharacters = computed(() => [
-    { id: ChaserCharacter.Bezos, name: "Bezos", img: bezosIcon, },
-    { id: ChaserCharacter.BigStan, name: "Big Stan", img: bigStanIcon, },
-    { id: ChaserCharacter.Nami, name: "Nami", img: namiIcon, }
+    { id: ChaserCharacter.Bezos, name: "Bezos", img: bezosIcon },
+    { id: ChaserCharacter.BigStan, name: "Big Stan", img: bigStanIcon },
+    { id: ChaserCharacter.Nami, name: "Nami", img: namiIcon }
 ]);
 
 function handleCharacterSelect(characterId) {
@@ -43,7 +45,7 @@ function handleCharacterSelect(characterId) {
                         :disabled="selectedCharacterId !== null"
                         @click="handleCharacterSelect(character.id)"
                     >
-                        <img :src="character.img" class="chaserImage"></img>
+                        <img :src="character.img" class="chaserImage" />
                         <strong>{{ character.name }}</strong>
                     </button>
                 </div>
