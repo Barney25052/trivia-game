@@ -54,7 +54,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 028 | Clear the chaser-wheel overlay on leave/disconnect | done |
 | 029 | Move maxClients into gameConfig; remove raw join-options log | done |
 | 030 | Add per-round question event schema + first-class seat/spectator axis | done |
-| 031 | Extract TriviaRoom handler dispatch into a handlers module | backlog |
+| 031 | Extract TriviaRoom handler dispatch into a handlers module | done |
 | 032 | Normalise GamePhase.GameEnd value to camelCase | done |
 | 033 | Move chaser wheel overlay into its own screen in the phase flow | done |
 | 034 | Rekey players map with seat ID — stop leaking sessionIds to clients (absorbs 026) | done |

@@ -19,3 +19,11 @@
 
 ## Dependencies
 - None. Can be done at any point; recommended before Phase 2 lands new handlers.
+
+## Review notes
+- Previous agent completed most of the extraction: `messageHandlers.ts`, `effects.ts`, `chaserSelection.ts` already existed in `handlers/`.
+- This session finished the ticket:
+  - Extracted `onCreate` option-clamping into `handlers/clampOptions.ts` (`clampRoomOptions(room, options)`), dropping TriviaRoom.ts from 211 → 166 lines.
+  - Removed dead `messages` barrel export from `messageHandlers.ts`.
+  - Removed unused `handlers/index.ts` barrel (nothing imported it).
+- `npm test` (85 passing) and `npm run build` both green.

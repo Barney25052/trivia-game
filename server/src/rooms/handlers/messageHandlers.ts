@@ -149,13 +149,3 @@ export function finalChaserScore(client: any, message: any, room: any) {
     }
     room.dispatch({ type: "finalChaserReachedScore" });
 }
-
-export const messages = {
-    startGame,
-    setChaserMode,
-    chaserVote,
-    revealReady,
-    offerChoice,
-    chaseResult,
-    finalChaserScore
-};

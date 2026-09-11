@@ -12,7 +12,6 @@ import { scheduleTimer, TimerHandle } from "../timer.js";
 import {
   CASH_BUILDER,
   CHASER_REVEAL,
-  CHASER_SELECTION,
   FINAL_ROUND,
   PLAYER_NAME,
   REVEAL_READY,
@@ -28,11 +27,9 @@ import {
   finalChaserScore,
 } from "./handlers/messageHandlers.js";
 import { applyEffects } from "./handlers/effects.js";
+import { clampRoomOptions } from "./handlers/clampOptions.js";
 
 const OFFER_TIERS: OfferTier[] = ["low", "middle", "high"];
-
-const clampDuration = (value: number, minMs: number, maxMs: number): number =>
-    Math.min(Math.max(value, minMs), maxMs);
 
 interface OfferAmounts {
   low: number;
@@ -57,48 +54,7 @@ export class TriviaRoom extends Room {
   currentOfferAmount = 0;
 
   onCreate (options: any) {
-    if (typeof options?.cashBuilderDurationMs === "number") {
-      this.cashBuilderDurationMs = clampDuration(
-        options.cashBuilderDurationMs,
-        CASH_BUILDER.minMs,
-        CASH_BUILDER.maxMs
-      );
-    }
-    if (typeof options?.chaserSelectionDurationMs === "number") {
-      this.chaserSelectionDurationMs = clampDuration(
-        options.chaserSelectionDurationMs,
-        CHASER_SELECTION.minMs,
-        CHASER_SELECTION.maxMs
-      );
-    }
-    if (typeof options?.chaserRevealDurationMs === "number") {
-      this.chaserRevealDurationMs = clampDuration(
-        options.chaserRevealDurationMs,
-        CHASER_REVEAL.minMs,
-        CHASER_REVEAL.maxMs
-      );
-    }
-    if (typeof options?.revealReadyCooldownMs === "number") {
-      this.revealReadyCooldownMs = clampDuration(
-        options.revealReadyCooldownMs,
-        REVEAL_READY.minMs,
-        REVEAL_READY.maxMs
-      );
-    }
-    if (typeof options?.teamFinalDurationMs === "number") {
-      this.teamFinalDurationMs = clampDuration(
-        options.teamFinalDurationMs,
-        FINAL_ROUND.minMs,
-        FINAL_ROUND.maxMs
-      );
-    }
-    if (typeof options?.chaserFinalDurationMs === "number") {
-      this.chaserFinalDurationMs = clampDuration(
-        options.chaserFinalDurationMs,
-        FINAL_ROUND.minMs,
-        FINAL_ROUND.maxMs
-      );
-    }
+    clampRoomOptions(this, options);
   }
 
   private clearTimer() {
