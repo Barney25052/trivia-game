@@ -7,25 +7,15 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
     for (const effect of effects) {
       switch (effect.type) {
         case "startChaserSelection": {
-          const mode = room.state.chaserSelectionMode;
-          const duration =
-            room.chaserSelectionDurationMs ??
-            (mode === "vote" ? CHASER_SELECTION.voteDurationMs : CHASER_SELECTION.randomDurationMs);
-          console.log(
-            `Chaser selection in ${mode} mode — ${duration}ms to decide`
-          );
+          // Only reached in vote mode — random mode resolves the Chaser directly
+          // in gameFlow's startGame and skips this hold entirely (ticket 054).
+          const duration = room.chaserSelectionDurationMs ?? CHASER_SELECTION.voteDurationMs;
+          console.log(`Chaser selection in vote mode — ${duration}ms to decide`);
           room.activeTimer = room.scheduleTimer(duration, () => {
-            if (mode === "vote") {
-              room.dispatch({
-                type: "chaserSelectionComplete",
-                chaserSeatId: chaserSelection.tallyChaserVotes(room)
-              });
-            } else {
-              room.dispatch({
-                type: "chaserSelectionComplete",
-                chaserSeatId: chaserSelection.pickRandomChaser(room)
-              });
-            }
+            room.dispatch({
+              type: "chaserSelectionComplete",
+              chaserSeatId: chaserSelection.tallyChaserVotes(room)
+            });
           });
           break;
         }

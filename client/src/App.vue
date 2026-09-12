@@ -300,7 +300,6 @@ function submitAnswer({ answer, questionId }) {
       v-if="currentScreen=='chaserSelection'"
       :players="players"
       :isHost="isHost"
-      :chaserSelectionMode="chaserSelectionMode"
       :chaserSeatId="chaserSeatId"
       :mySeatId="mySeatId"
       @chaserVote="chaserVote"

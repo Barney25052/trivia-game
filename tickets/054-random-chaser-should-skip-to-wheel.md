@@ -1,7 +1,7 @@
 # 054: Random chaser mode should go straight to the wheel — skip the ChaserSelection player-list hold
 
 ## Goal
-In random mode (the default, ticket 025), starting the game drops everyone onto the `ChaserSelection` screen — the full player list with "Picking the chaser…" — and holds there for the full `CHASER_SELECTION.randomDurationMs` (**8s**) before `pickRandomChaser` fires; only then does the `ChaserReveal` wheel appear. User report: "clicking random chaser goes to a weird intermediate screen that lists all the players, then the spinner — it should just go straight to the spinner." Random mode takes no player input, so the hold is redundant: the wheel IS the reveal (tickets 019/033).
+In random mode (the default, ticket 025), starting the game drops everyone onto the `ChaserSelection` screen — the full player list with "Picking the chaser…" — and holds there for the full `CHASER_SELECTION.randomDurationMs` (**8s**) before `pickRandomChaser` fires; only then does the `ChaserReveal` wheel appear. User report: "clicking random chaser goes to a weird intermediate screen that lists all the players, then the spinner — it should just go straight to the spinner." Random mode takes no player input, so the hold is redundant: the wheel IS the reveal (tickets 019/033). Also when voting, it should NOT show the wheel after voting.
 
 ## Scope
 - Make the random-mode pick resolve **immediately** so clients go straight to `ChaserReveal` (the wheel).

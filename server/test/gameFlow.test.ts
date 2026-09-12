@@ -10,6 +10,7 @@ function context(overrides: Partial<GameFlowContext> = {}): GameFlowContext {
         activeContestantSeatId: "alice",
         activeRound: 1,
         currentOfferAmount: 2000,
+        chaserSelectionMode: "vote",
         ...overrides
     };
 }
@@ -31,23 +32,45 @@ describe("gameFlow transition", () => {
             const ctx = context({ currentPhase: GamePhase.Offer });
             assert.throws(() => transition({ type: "startGame" }, ctx), /startGame is not valid in phase offer/);
         });
+
+        it("random mode -> chaserReveal directly, chaser already assigned (ticket 054: no ChaserSelection hold)", () => {
+            const ctx = context({ chaserSelectionMode: "random" });
+            const result = transition({ type: "startGame" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.ChaserReveal);
+            assert.strictEqual(result.effects.length, 2);
+            assert.strictEqual(result.effects[1].type, "startChaserReveal");
+            const assign = result.effects[0];
+            assert.strictEqual(assign.type, "assignChaser");
+            assert.ok(
+                ctx.contestantsOrder.includes((assign as { seatId: string }).seatId),
+                "the randomly-picked chaser is one of the contestants"
+            );
+        });
+
+        it("random mode throws if fewer than two contestants are in the room", () => {
+            const ctx = context({ chaserSelectionMode: "random", contestantsOrder: ["alice"] });
+            assert.throws(
+                () => transition({ type: "startGame" }, ctx),
+                /at least one contestant besides the Chaser/
+            );
+        });
     });
 
     describe("chaserSelectionComplete", () => {
-        it("chaserSelection + complete -> chaserReveal for the wheel, chaser assigned first", () => {
+        it("chaserSelection + complete -> rolesReveal directly (vote mode skips the wheel, ticket 054), chaser assigned first", () => {
             const ctx = context({ currentPhase: GamePhase.ChaserSelection });
             const result = transition(
                 { type: "chaserSelectionComplete", chaserSeatId: "carol" },
                 ctx
             );
-            assert.strictEqual(result.nextPhase, GamePhase.ChaserReveal);
+            assert.strictEqual(result.nextPhase, GamePhase.RolesReveal);
             assert.deepStrictEqual(result.effects, [
                 { type: "assignChaser", seatId: "carol" },
-                { type: "startChaserReveal" }
+                { type: "startRolesReveal" }
             ]);
             assert.ok(
                 !result.effects.some((effect) => effect.type === "startCashBuilder"),
-                "no cash-builder timer is scheduled during the chaser reveal"
+                "no cash-builder timer is scheduled during the roles reveal"
             );
         });
 
@@ -59,7 +82,7 @@ describe("gameFlow transition", () => {
             );
             assert.deepStrictEqual(result.effects, [
                 { type: "assignChaser", seatId: "alice" },
-                { type: "startChaserReveal" }
+                { type: "startRolesReveal" }
             ]);
         });
 
@@ -400,7 +423,6 @@ describe("gameFlow transition", () => {
             const events: FlowEvent[] = [
                 { type: "startGame" },
                 { type: "chaserSelectionComplete", chaserSeatId: "bob" },
-                { type: "chaserRevealComplete" },
                 { type: "revealAllReady" },
                 { type: "lineupComplete" },
                 { type: "readyCooldownDone" },
@@ -441,7 +463,6 @@ describe("gameFlow transition", () => {
 
             assert.deepStrictEqual(phases, [
                 GamePhase.ChaserSelection,
-                GamePhase.ChaserReveal,
                 GamePhase.RolesReveal,
                 GamePhase.Lineup,       // the turn-order interstitial
                 GamePhase.CashBuilder,   // ready cooldown, then...

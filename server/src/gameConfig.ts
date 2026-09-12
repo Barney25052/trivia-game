@@ -1,6 +1,5 @@
 const CASH_BUILDER_DURATION_MS = 60_000;
 const CASH_BUILDER_WRONG_REVEAL_MS = 1_000;
-const CHASER_SELECTION_RANDOM_MS = 8_000;
 const CHASER_SELECTION_VOTE_MS = 30_000;
 const CHASER_REVEAL_DURATION_MS = 5_000;
 const TEAM_FINAL_DURATION_MS = 120_000;
@@ -26,7 +25,7 @@ export const CASH_BUILDER = {
 
 export const CHASER_SELECTION = {
     defaultMode: "random",
-    randomDurationMs: CHASER_SELECTION_RANDOM_MS,
+    /** Vote mode only — random mode resolves immediately with no hold (ticket 054). */
     voteDurationMs: CHASER_SELECTION_VOTE_MS,
     minMs: TIMER_CLAMP.minMs,
     maxMs: CHASER_SELECTION_VOTE_MS * TIMER_CLAMP.maxFactor

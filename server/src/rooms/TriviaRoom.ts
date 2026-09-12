@@ -111,6 +111,7 @@ export class TriviaRoom extends Room {
       activeContestantSeatId: this.state.activeContestantSeatId,
       activeRound: this.state.activeRound,
       currentOfferAmount: this.currentOfferAmount,
+      chaserSelectionMode: this.state.chaserSelectionMode,
     };
   }
 

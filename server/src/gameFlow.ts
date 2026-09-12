@@ -30,6 +30,7 @@ export interface GameFlowContext {
     activeContestantSeatId: string;
     activeRound: number;
     currentOfferAmount: number;
+    chaserSelectionMode: string;
 }
 
 /**
@@ -86,9 +87,26 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
     switch (event.type) {
         case "startGame": {
             ensurePhase(event, context, GamePhase.Lobby);
-            const first = context.contestantsOrder[0];
-            if (first === undefined) {
+            if (context.contestantsOrder.length === 0) {
                 throw new Error("gameFlow: startGame requires at least one contestant");
+            }
+            if (context.chaserSelectionMode === "random") {
+                // Random mode takes no player input, so there is nothing to show on a
+                // ChaserSelection hold — pick the chaser now and go straight to the
+                // wheel (the wheel IS the reveal; see ticket 054).
+                const chaserSeatId =
+                    context.contestantsOrder[Math.floor(Math.random() * context.contestantsOrder.length)];
+                const remaining = context.contestantsOrder.find((seatId) => seatId !== chaserSeatId);
+                if (remaining === undefined) {
+                    throw new Error("gameFlow: startGame requires at least one contestant besides the Chaser");
+                }
+                return {
+                    nextPhase: GamePhase.ChaserReveal,
+                    effects: [
+                        { type: "assignChaser", seatId: chaserSeatId },
+                        { type: "startChaserReveal" }
+                    ]
+                };
             }
             return {
                 nextPhase: GamePhase.ChaserSelection,
@@ -97,6 +115,9 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
         }
 
         case "chaserSelectionComplete": {
+            // Only reached by vote mode (random mode resolves in startGame above).
+            // A vote already tells everyone who the Chaser is, so skip the wheel
+            // and go straight to the roles reveal (ticket 054).
             ensurePhase(event, context, GamePhase.ChaserSelection);
             const first = context.contestantsOrder.find(
                 (seatId) => seatId !== event.chaserSeatId
@@ -105,10 +126,10 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
                 throw new Error("gameFlow: chaserSelectionComplete requires at least one contestant");
             }
             return {
-                nextPhase: GamePhase.ChaserReveal,
+                nextPhase: GamePhase.RolesReveal,
                 effects: [
                     { type: "assignChaser", seatId: event.chaserSeatId },
-                    { type: "startChaserReveal" }
+                    { type: "startRolesReveal" }
                 ]
             };
         }

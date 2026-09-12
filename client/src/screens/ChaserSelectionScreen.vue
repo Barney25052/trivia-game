@@ -1,10 +1,11 @@
 <script setup>
 import { computed } from "vue";
 
-const props = defineProps(["players", "isHost", "chaserSelectionMode", "chaserSeatId", "mySeatId"]);
+// Random mode resolves the Chaser immediately and never shows this screen
+// (server goes straight to the ChaserReveal wheel) — this screen is vote-mode-only.
+const props = defineProps(["players", "isHost", "chaserSeatId", "mySeatId"]);
 const emit = defineEmits(["chaserVote"]);
 
-const voteMode = computed(() => props.chaserSelectionMode === "vote");
 const myPlayer = computed(() => props.players.find((p) => p.seatId === props.mySeatId));
 const voteTargetSeatId = computed(() => myPlayer.value?.chaserVote ?? "");
 const haveVoted = computed(() => {
@@ -27,7 +28,7 @@ const haveVoted = computed(() => {
             {{ player.name }}
             <span v-if="player.seatId === mySeatId"> (you)</span>
           </span>
-          <span v-if="voteMode">
+          <span>
             <span v-if="player.chaserVote !== ''" class = "voteStatus">
               {{ player.seatId === voteTargetSeatId ? "your pick" : "voted" }}
             </span>
@@ -41,8 +42,7 @@ const haveVoted = computed(() => {
           </span>
         </li>
       </ul>
-      <p v-if="!voteMode" class = "waitingText">Picking the chaser…</p>
-      <p v-else class = "waitingText">
+      <p class = "waitingText">
         {{ haveVoted ? "Waiting for votes…" : "Vote for who should be the Chaser!" }}
       </p>
     </div>

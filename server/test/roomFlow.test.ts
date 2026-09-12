@@ -318,7 +318,7 @@ alice.send("startGame");
     assert.strictEqual(room.state.currentPhase, GamePhase.GameEnd);
     assert.strictEqual(endGame.winner, "chaser");
 
-    assert.ok(phases.includes(GamePhase.ChaserSelection), "should have broadcast chaserSelection phase");
+    assert.ok(phases.includes(GamePhase.ChaserReveal), "should have broadcast chaserReveal phase (random mode skips ChaserSelection, ticket 054)");
     assert.ok(phases.includes(GamePhase.Chase), "should have broadcast chase phase");
     assert.ok(phases.includes(GamePhase.TeamFinal), "should have broadcast finalTeam phase");
     assert.ok(phases.includes(GamePhase.GameEnd), "should have broadcast gameEnd phase");
