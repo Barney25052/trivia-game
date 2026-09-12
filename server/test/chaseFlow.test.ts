@@ -102,6 +102,75 @@ async function reachChase(
     return { room, contestantClient, chaserClient, contestantSeatId, chaserSeatId, firstQuestion };
 }
 
+/** Three players reach Chase with a deterministic chaser (vote-mode, host voted
+ * in): Alice is the active contestant, Carol is the Chaser, and Bob sits out
+ * as a waiting contestant — the non-participant this ticket's guard test needs. */
+async function reachChaseWithBystander(
+    colyseus: ColyseusTestServer<typeof appConfig>
+): Promise<{
+    room: any;
+    contestantClient: any;
+    chaserClient: any;
+    bystanderClient: any;
+    contestantSeatId: string;
+    firstQuestion: any;
+}> {
+    const room = await colyseus.createRoom<GameState>("trivia", {
+        cashBuilderDurationMs: 80,
+        chaserSelectionDurationMs: 10000,
+        chaserRevealDurationMs: 80,
+        chaserCharacterRevealDurationMs: 80,
+        revealReadyCooldownMs: 80,
+        lineupDurationMs: 80,
+        chaseAnswerWindowMs: CHASE_QUESTION.answerWindowMs
+    });
+    room.mcQuestionSource = stubChaseSource();
+
+    const carol = await colyseus.connectTo(room, { playerName: "Carol" });
+    const alice = await colyseus.connectTo(room, { playerName: "Alice" });
+    const bob = await colyseus.connectTo(room, { playerName: "Bob" });
+    await sleep(100);
+
+    carol.send("setChaserMode", { mode: "vote" });
+    await sleep(30);
+    carol.send("startGame");
+    await sleep(50);
+    alice.send("chaserVote", { targetSeatId: seatIdOf(room, carol) });
+    await sleep(30);
+    bob.send("chaserVote", { targetSeatId: seatIdOf(room, carol) });
+    await sleep(30);
+    carol.send("chaserVote", { targetSeatId: seatIdOf(room, carol) });
+    await waitForPhase(room, GamePhase.RolesReveal);
+
+    alice.send("revealReady");
+    bob.send("revealReady");
+    carol.send("revealReady", { characterId: "bezos" });
+    await waitForPhase(room, GamePhase.CashBuilder);
+    room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney = 1000;
+    await waitForPhase(room, GamePhase.Offer);
+
+    const contestantSeatId = room.state.activeContestantSeatId;
+    assert.strictEqual(contestantSeatId, seatIdOf(room, alice), "Alice is the first active contestant");
+
+    carol.send("setChaserLowOffer", { amount: 0 });
+    await sleep(30);
+    carol.send("setChaserHighOffer", { amount: 2000 });
+    await sleep(30);
+
+    const questionMessage = alice.waitForMessage("question");
+    alice.send("offerChoice", { offer: "high" });
+    const firstQuestion = await questionMessage;
+
+    return {
+        room,
+        contestantClient: alice,
+        chaserClient: carol,
+        bystanderClient: bob,
+        contestantSeatId,
+        firstQuestion
+    };
+}
+
 describe("chase flow (ticket 064)", () => {
     let colyseus: ColyseusTestServer<typeof appConfig>;
 
@@ -326,5 +395,31 @@ describe("chase flow (ticket 064)", () => {
         assert.strictEqual(room.state.currentPhase, GamePhase.TeamFinal);
         assert.strictEqual(room.state.players.get(contestantSeatId).madeItBack, true);
         assert.strictEqual(room.state.teamPot, 0, "the low-tier offer for this round was $0");
+    });
+
+    it("a non-participant (a waiting contestant) cannot submit a chase answer (ticket 076)", async () => {
+        const { room, bystanderClient, contestantSeatId, firstQuestion } =
+            await reachChaseWithBystander(colyseus);
+
+        const correctIndex = firstQuestion.options.indexOf("Correct Answer");
+        const NO_LOCKOUT = Symbol("no lockout broadcast");
+        const lockoutOrTimeout = Promise.race([
+            bystanderClient.waitForMessage("chaseLockoutStarted"),
+            sleep(150).then(() => NO_LOCKOUT)
+        ]);
+        bystanderClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+        const outcome = await lockoutOrTimeout;
+
+        assert.strictEqual(
+            outcome,
+            NO_LOCKOUT,
+            "a rejected non-participant answer must not start the lockout window"
+        );
+        assert.strictEqual(
+            room.state.players.get(contestantSeatId).boardPos,
+            BOARD.startHigh,
+            "a stray answer from a non-participant must not move the board"
+        );
+        assert.strictEqual(room.state.currentPhase, GamePhase.Chase, "the round must still be answerable");
     });
 });
