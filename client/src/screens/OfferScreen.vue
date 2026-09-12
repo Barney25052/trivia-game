@@ -29,7 +29,7 @@ const props = defineProps({
     chaserPot: { type: Number, default: 0 },
     teamPot: { type: Number, default: 0 }
 });
-const emit = defineEmits(["setLow", "setHigh", "choose", "auto-quip", "send-quip"]);
+const emit = defineEmits(["setLow", "setHigh", "choose", "send-quip"]);
 
 // Mirrors server/src/gameConfig.ts OFFER + BOARD — duplicated client-side the
 // same way GamePhase is (see AGENTS.md gotchas): no shared module between the
@@ -46,24 +46,6 @@ const HIGH_SPACE = 6;
 const faceImages = [face1, face2, face3];
 const hairImages = [hair1, hair2, hair3, hair4, hair5, hair6];
 const neutralEyesImages = [eyesNeutral1, eyesNeutral2];
-
-const QUIPS = {
-    start: [
-        "Let's see what we're working with.",
-        "This should be fun.",
-        "Time to make an offer."
-    ],
-    low: [
-        "How does that feel?",
-        "Not so friendly, is it?",
-        "Let's keep this tight."
-    ],
-    high: [
-        "Now we're talking numbers.",
-        "That's a real temptation.",
-        "Don't get greedy now."
-    ]
-};
 
 const lowInput = ref("");
 const highInput = ref("");
@@ -131,20 +113,15 @@ function amountFor(space) {
     return null;
 }
 
-function pickQuip(stage) {
-    const pool = QUIPS[stage];
-    emit("auto-quip", pool[Math.floor(Math.random() * pool.length)]);
-}
-
-watch(() => props.offer?.seatId, (seatId) => {
-    if (seatId) pickQuip("start");
+// The Chaser's auto-quips are no longer picked here — the server sends the line
+// inside the offerStart/offerLowSet/offer broadcasts (ticket 057) so every
+// client shows the same text. This watch only resets the local input state.
+watch(() => props.offer?.seatId, () => {
     lowInput.value = "";
     highInput.value = "";
     lowError.value = "";
     highError.value = "";
 }, { immediate: true });
-watch(hasLow, (revealed) => { if (revealed) pickQuip("low"); });
-watch(hasHigh, (revealed) => { if (revealed) pickQuip("high"); });
 
 function validateLow(amount) {
     if (!Number.isFinite(amount) || !Number.isInteger(amount)) return "Enter a whole number.";

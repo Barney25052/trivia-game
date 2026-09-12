@@ -52,7 +52,7 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - What you saw: the Chaser speech-bubble quip is picked with `Math.random()` independently on every client whenever `offer.seatId`/low/high changes, so two players watching the same offer round can see different quip text at the same moment — there's no single source of truth for what the bubble says.
 - Expected: every client shows the same quip text at the same stage of the same offer round.
 - Repro steps: open two browser clients on the same room, reach the Offer phase, and compare the chaser's speech-bubble text on both screens as the low/high offers are set — they're picked independently and can diverge.
-- Status: triaged — ticket 057
+- Status: resolved — fixed in-ticket 2026-09-12 as part of ticket 057 (the server now picks the line and ships it inside the `offerStart`/`offerLowSet`/`offer` broadcasts, so every client renders the same text; client-side `pickQuip`/`QUIPS` removed from `OfferScreen.vue`)
 
 ## `bug-008` — Cash builder answer input silently swallows the submission (uncaught `focus()` on null)
 - Found: 2026-09-12 · ticket 056 · `client/src/screens/CashBuilderScreen.vue` (the answer `<input>`, `@blur="inputBox.focus()"`, `submit()`)

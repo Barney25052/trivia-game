@@ -181,11 +181,13 @@ async function joinLobby(playerName, roomCode) {
         chaserCharacterName: message.chaserCharacterName,
         chaserCharacterAbility: message.chaserCharacterAbility
       };
+      showChaserQuip(message.quip);
     });
 
     room.value.onMessage("offerLowSet", (message) => {
       if (currentOffer.value?.seatId !== message.seatId) return;
       currentOffer.value = { ...currentOffer.value, low: message.low };
+      showChaserQuip(message.quip);
     });
 
     room.value.onMessage("offer", (message) => {
@@ -198,6 +200,7 @@ async function joinLobby(playerName, roomCode) {
         chaserCharacterName: message.chaserCharacterName,
         chaserCharacterAbility: message.chaserCharacterAbility
       };
+      showChaserQuip(message.quip);
     });
 
     room.value.onMessage("getReady", (message) => {

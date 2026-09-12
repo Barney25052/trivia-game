@@ -124,7 +124,7 @@ Found on the first playthrough + security review; tracked as tickets and verifie
 - [x] Persistent Chaser panel (box, portrait, quip bubble) across Offer/Chase/ChaserFinal (055–056)
 - [ ] Fix the impossible low offer when middle is $0 and the team pot is $0 (058, blocker found in Phase 3 review)
 - [ ] Chaser character reveal — new phase after the first cash builder, before the first offer (059)
-- [ ] Sync the Offer screen's auto-quips across clients (057, `bug-007`)
+- [x] Sync the Offer screen's auto-quips across clients (057, `bug-007`)
 - [ ] High/low multiplier strategy visible to the Chaser (pot remaining)
 
 ### Phase 4 — The board chase

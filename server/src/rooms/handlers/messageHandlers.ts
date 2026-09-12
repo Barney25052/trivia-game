@@ -1,6 +1,7 @@
 import { GamePhase, PlayerRole } from "../../TriviaTypes.js";
 import { allPlayersReady, allPlayersVoted, tallyChaserVotes } from "./chaserSelection.js";
 import { checkAnswer } from "../../questions/answerChecker.js";
+import { pickOfferQuip } from "../../offerQuips.js";
 import { CASH_BUILDER, CHASER_CHARACTERS, CHASER_QUIP, OFFER } from "../../gameConfig.js";
 
 export function startGame(client: any, message: any, room: any) {
@@ -136,7 +137,11 @@ export function setChaserLowOffer(client: any, message: any, room: any) {
     }
     room.currentOffer.low = amount;
     console.log(`${seatId} set the low offer to ${amount}`);
-    room.broadcast("offerLowSet", { seatId: room.state.activeContestantSeatId, low: amount });
+    room.broadcast("offerLowSet", {
+      seatId: room.state.activeContestantSeatId,
+      low: amount,
+      quip: pickOfferQuip("low")
+    });
 }
 
 export function setChaserHighOffer(client: any, message: any, room: any) {

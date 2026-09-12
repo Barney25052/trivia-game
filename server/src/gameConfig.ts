@@ -56,6 +56,27 @@ export const OFFER = {
     highStep: 1_000
 } as const;
 
+/** Auto-quips the Chaser's bubble shows while an offer round plays out. The
+ * server picks the line and sends it inside the offer broadcasts (ticket 057) so
+ * every client sees the same text at the same stage. */
+export const OFFER_QUIPS = {
+    start: [
+        "Let's see what we're working with.",
+        "This should be fun.",
+        "Time to make an offer."
+    ],
+    low: [
+        "How does that feel?",
+        "Not so friendly, is it?",
+        "Let's keep this tight."
+    ],
+    high: [
+        "Now we're talking numbers.",
+        "That's a real temptation.",
+        "Don't get greedy now."
+    ]
+} as const;
+
 export const CHASER_CHARACTERS = [
     { id: "bezos", name: "Bezos", ability: "" },
     { id: "big stan", name: "Big Stan", ability: "" },

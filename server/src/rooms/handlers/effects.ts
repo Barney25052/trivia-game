@@ -1,5 +1,6 @@
 import { FlowEffect } from "../../gameFlow.js";
 import { PlayerRole } from "../../TriviaTypes.js";
+import { pickOfferQuip } from "../../offerQuips.js";
 import * as chaserSelection from "./chaserSelection.js";
 import {
   CHASER_CHARACTERS,
@@ -138,7 +139,8 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
             middle: take,
             chaserCharacterId: chaserCharId,
             chaserCharacterName: chaserChar?.name ?? "",
-            chaserCharacterAbility: chaserChar?.ability ?? ""
+            chaserCharacterAbility: chaserChar?.ability ?? "",
+            quip: pickOfferQuip("start")
           });
           break;
         }
@@ -158,7 +160,8 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
             offers: room.currentOffer,
             chaserCharacterId: chaserCharId,
             chaserCharacterName: chaserChar?.name ?? "",
-            chaserCharacterAbility: chaserChar?.ability ?? ""
+            chaserCharacterAbility: chaserChar?.ability ?? "",
+            quip: pickOfferQuip("high")
           });
           break;
         }
