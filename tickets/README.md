@@ -89,9 +89,10 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 053 | Cash builder — on-screen pot/count still don't increase (`bug-005`) | done\*\* |
 | 054 | Random chaser — skip the ChaserSelection player-list hold, go straight to the wheel (`bug-006`) | done |
 | 058 | Fix the impossible low offer when a contestant banks $0 and the team pot is $0 | backlog |
-| 060 | Fix `roomFlow` test race — `phases` array misses `RolesReveal` broadcast (`bug-003`) | backlog |
+| 060 | Fix `roomFlow` test race — `phases` array misses `RolesReveal` broadcast (`bug-003`) | done |
 | 061 | Recover the game when the last contestant leaves during the `Lineup` hold (`bug-004`) | backlog |
 | 062 | Fix cash-builder answer input silently swallowing submissions (`bug-008`) | backlog |
+| 068 | Fix `offerQuips` test flake — `waitForMessage("offerStart")` registered after the broadcast (`bug-009`) | backlog |
 
 ### Phase 3 follow-up — new feature
 | 059 | Chaser character reveal — new phase after the first cash builder, before the first offer | done |

@@ -35,6 +35,30 @@ const waitForPhase = async (
   assert.fail(`timed out waiting for phase ${phase}; got ${room.state.currentPhase}`);
 };
 
+/**
+ * Resolve once the client's `phase` onMessage handler has actually received
+ * `phase`. `waitForPhase` polls server-side state, which advances the instant
+ * the room transitions, but the `phase` broadcast message is delivered to
+ * clients asynchronously — an immediate `phases.includes` assert can race that
+ * delivery (bug-003, ticket 060). Polling the client's own `phases` array
+ * closes the gap; a timeout here fails the test just like the old assert.
+ */
+const waitForPhaseBroadcast = async (
+  phases: string[],
+  phase: GamePhase,
+  what: string,
+  timeoutMs = 2000
+): Promise<void> => {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (phases.includes(phase)) {
+      return;
+    }
+    await sleep(20);
+  }
+  assert.fail(`timed out waiting for ${what}; phase broadcasts seen: ${JSON.stringify(phases)}`);
+};
+
 describe("roomFlow", () => {
   let colyseus: ColyseusTestServer<typeof appConfig>;
 
@@ -140,9 +164,9 @@ describe("roomFlow", () => {
       "offer message should carry the chaser character name"
     );
     assert.strictEqual(offer.chaserCharacterAbility, "", "placeholder abilities are empty for now");
-    assert.ok(phases.includes(GamePhase.RolesReveal), "should have broadcast rolesReveal phase");
-    assert.ok(phases.includes(GamePhase.CashBuilder), "should have broadcast cashBuilder phase");
-    assert.ok(phases.includes(GamePhase.Offer), "should have broadcast offer phase");
+    await waitForPhaseBroadcast(phases, GamePhase.RolesReveal, "rolesReveal phase broadcast to reach alice");
+    await waitForPhaseBroadcast(phases, GamePhase.CashBuilder, "cashBuilder phase broadcast to reach alice");
+    await waitForPhaseBroadcast(phases, GamePhase.Offer, "offer phase broadcast to reach alice");
   });
 
   it("chaser reveal is its own phase: the wheel holds in ChaserReveal with the chaser already assigned, then advances to RolesReveal", async () => {
@@ -173,8 +197,8 @@ describe("roomFlow", () => {
     assert.strictEqual(room.state.currentPhase, GamePhase.ChaserReveal);
 
     await waitForPhase(room, GamePhase.RolesReveal);
-    assert.ok(phases.includes(GamePhase.ChaserReveal), "should have broadcast chaserReveal phase");
-    assert.ok(phases.includes(GamePhase.RolesReveal), "should have broadcast rolesReveal phase");
+    await waitForPhaseBroadcast(phases, GamePhase.ChaserReveal, "chaserReveal phase broadcast to reach alice");
+    await waitForPhaseBroadcast(phases, GamePhase.RolesReveal, "rolesReveal phase broadcast to reach alice");
   });
 
   it("chaser character reveal is a one-time phase after the first contestant's cash builder: broadcasts the chosen character, holds, then advances to Offer; later rounds skip it (ticket 059)", async () => {
@@ -270,7 +294,7 @@ describe("roomFlow", () => {
     assert.strictEqual(room.state.currentPhase, GamePhase.Lineup);
 
     await waitForPhase(room, GamePhase.CashBuilder);
-    assert.ok(phases.includes(GamePhase.Lineup), "should have broadcast lineup phase");
+    await waitForPhaseBroadcast(phases, GamePhase.Lineup, "lineup phase broadcast to reach alice");
     assert.strictEqual(room.state.activeRound, 1);
     assert.ok(room.state.activeContestantSeatId, "first contestant is active once the cash builder starts");
   });
@@ -385,10 +409,10 @@ alice.send("startGame");
     assert.strictEqual(room.state.currentPhase, GamePhase.GameEnd);
     assert.strictEqual(endGame.winner, "chaser");
 
-    assert.ok(phases.includes(GamePhase.ChaserReveal), "should have broadcast chaserReveal phase (random mode skips ChaserSelection, ticket 054)");
-    assert.ok(phases.includes(GamePhase.Chase), "should have broadcast chase phase");
-    assert.ok(phases.includes(GamePhase.TeamFinal), "should have broadcast finalTeam phase");
-    assert.ok(phases.includes(GamePhase.GameEnd), "should have broadcast gameEnd phase");
+    await waitForPhaseBroadcast(phases, GamePhase.ChaserReveal, "chaserReveal phase broadcast to reach alice");
+    await waitForPhaseBroadcast(phases, GamePhase.Chase, "chase phase broadcast to reach alice");
+    await waitForPhaseBroadcast(phases, GamePhase.TeamFinal, "finalTeam phase broadcast to reach alice");
+    await waitForPhaseBroadcast(phases, GamePhase.GameEnd, "gameEnd phase broadcast to reach alice");
   });
 
   it("offerChoice is guarded: rejected in the lobby and by a non-active player; the active contestant's choice still transitions", async () => {
