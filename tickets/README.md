@@ -102,6 +102,9 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 064 | Server — authoritative board-chase engine | backlog |
 | 065 | Client — real board-chase screen | backlog |
 | 066 | Phase 4 integration tests — full board-chase flow | backlog |
+| 069 | Highlight the contestant's and Chaser's *current* board space | done |
+| 070 | Lay out chase answer buttons side-by-side instead of stacked | done |
+| 071 | Chase question prompt is using the wrong font | done |
 
 ### Whole-app polish
 | 067 | Full layout/design pass across all screens once every phase is implemented (discussion, not a solo build) | backlog |

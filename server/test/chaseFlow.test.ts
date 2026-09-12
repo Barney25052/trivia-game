@@ -122,6 +122,12 @@ describe("chase flow (ticket 064)", () => {
         assert.strictEqual(room.state.players.get(chaserSeatId).boardPos, BOARD.chaserStartOffboard);
     });
 
+    it("syncs the chosen offer amount into state.chaseWagerAmount so every client can display it (ticket 065)", async () => {
+        const { room } = await reachChase(colyseus, { offer: "high" });
+
+        assert.strictEqual(room.state.chaseWagerAmount, 2000, "the high offer set for this round was $2000");
+    });
+
     it("both sides can advance on the same question: a correct contestant moves toward escape and a correct Chaser boards at chaserFirstCorrectSpace", async () => {
         const { room, contestantClient, chaserClient, contestantSeatId, chaserSeatId, firstQuestion } =
             await reachChase(colyseus, { offer: "high" });

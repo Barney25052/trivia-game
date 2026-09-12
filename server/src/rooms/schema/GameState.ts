@@ -29,5 +29,9 @@ export class GameState extends Schema {
     @type("string") activeContestantSeatId: string = "";
     @type("number") activeRound: number = 0;
     @type("number") teamScore: number = 0;
+    /** The dollar amount the active contestant is playing for in the current
+     * Chase — set from the chosen offer tier (ticket 065) so every client
+     * (not just the one who picked it) can display it on the board. */
+    @type("number") chaseWagerAmount: number = 0;
     @type(["string"]) contestantsOrder = new ArraySchema<string>();
 }

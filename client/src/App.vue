@@ -44,6 +44,22 @@ const chaserQuipText = ref("");
 const chaserQuipKey = ref(0);
 let chaserQuipClearTimeout = null;
 const CHASER_QUIP_DISPLAY_MS = 6000;
+const chaseWagerAmount = ref(0);
+const chaseQuestionResult = ref(null);
+const chaseOutcome = ref(null);
+// A frozen {activeContestantSeatId, chaserSeatId, players} snapshot shown on
+// the Chase screen during the result hold below — server state moves on to
+// the next contestant (or clears) in the same dispatch as chaseEscape/
+// chaseCaught, so the live refs can't be trusted for the duration of the hold.
+const chaseFreeze = ref(null);
+// The server sends chaseQuestionResult then, in the same tick, the phase
+// change that would otherwise rip the Chase screen away before a catch/escape
+// banner can show — so a terminal result holds the phase change for a beat.
+// currentPhase is driven both by the synced state (onStateChange) and by the
+// "phase" message, so both paths route through setPhaseFromServer to honor the hold.
+const CHASE_RESULT_HOLD_MS = 2500;
+let chaseResultHoldTimeout = null;
+let pendingPhase = null;
 
 const currentScreen = computed(() => {
   if (!room.value) return "home";
@@ -88,6 +104,12 @@ const isActiveContestant = computed(
 );
 const currentRoundQuestion = computed(() => {
     if (!currentQuestion.value) return null;
+    // Cash-builder open questions are targeted at one seat and stay hidden from
+    // everyone else. Chase MC questions are answered by both the active
+    // contestant and the Chaser (and are safe to show spectators too) — the
+    // server never includes correctIndex before resolution either way — so
+    // they aren't filtered by targetSeatId (ticket 065, TO_REVIEW.md item 13).
+    if (currentQuestion.value.kind === "mc") return currentQuestion.value;
     if (currentQuestion.value.targetSeatId !== activeContestantSeatId.value) return null;
     return currentQuestion.value;
 });
@@ -96,6 +118,27 @@ const lineupContestants = computed(() =>
         .map((seatId) => players.value.find((p) => p.seatId === seatId))
         .filter(Boolean)
 );
+
+function applyPhase(phase) {
+  currentPhase.value = phase;
+  if (phase !== GamePhase.CashBuilder) {
+    getReadyCooldownMs.value = 0;
+    answerResult.value = null;
+  }
+  if (phase !== GamePhase.Offer) {
+    currentOffer.value = null;
+  }
+}
+
+function setPhaseFromServer(phase) {
+  if (chaseResultHoldTimeout) {
+    // A catch/escape banner is still showing — apply this phase change once
+    // the hold clears instead of cutting the banner off.
+    pendingPhase = phase;
+    return;
+  }
+  applyPhase(phase);
+}
 
 function showChaserQuip(text) {
   if (!text) return;
@@ -127,7 +170,7 @@ async function joinLobby(playerName, roomCode) {
     })
 
     room.value.onStateChange((newState) => {
-      currentPhase.value = newState.currentPhase;
+      setPhaseFromServer(newState.currentPhase);
       playersMap.value = newState.players;
       players.value = Array.from(newState.players.values());
       chaserSelectionMode.value = newState.chaserSelectionMode;
@@ -137,6 +180,7 @@ async function joinLobby(playerName, roomCode) {
       chaserPot.value = newState.chaserPot;
       teamPot.value = newState.teamPot;
       contestantsOrder.value = Array.from(newState.contestantsOrder);
+      chaseWagerAmount.value = newState.chaseWagerAmount;
     });
 
     room.value.onMessage("seatId", (message) => {
@@ -144,22 +188,48 @@ async function joinLobby(playerName, roomCode) {
     });
 
     room.value.onMessage("phase", (message) => {
-      currentPhase.value = message.phase;
-      if (message.phase !== GamePhase.CashBuilder) {
-        getReadyCooldownMs.value = 0;
-        answerResult.value = null;
-      }
-      if (message.phase !== GamePhase.Offer) {
-        currentOffer.value = null;
-      }
+      setPhaseFromServer(message.phase);
     });
 
     room.value.onMessage("question", (message) => {
       currentQuestion.value = message;
+      chaseQuestionResult.value = null;
     });
 
     room.value.onMessage("answerResult", (message) => {
       answerResult.value = message;
+    });
+
+    room.value.onMessage("chaseQuestionResult", (message) => {
+      chaseQuestionResult.value = message;
+      const escaped = message.contestantBoardPos !== null && message.contestantBoardPos <= 0;
+      const caught = !escaped
+          && message.chaserBoardPos !== null
+          && message.contestantBoardPos !== null
+          && message.chaserBoardPos <= message.contestantBoardPos;
+      if (!escaped && !caught) return;
+
+      // Freeze the board as it looked at the moment of the result — state may
+      // already have moved on to the next contestant by the time the hold
+      // below clears (startCashBuilder for the next contestant fires in the
+      // same server-side dispatch as chaseEscape/chaseCaught).
+      chaseFreeze.value = {
+        activeContestantSeatId: activeContestantSeatId.value,
+        chaserSeatId: chaserSeatId.value,
+        players: players.value.map((p) => ({ seatId: p.seatId, name: p.name, boardPos: p.boardPos }))
+      };
+      chaseOutcome.value = escaped ? "escaped" : "caught";
+      if (chaseResultHoldTimeout) clearTimeout(chaseResultHoldTimeout);
+      chaseResultHoldTimeout = setTimeout(() => {
+        chaseResultHoldTimeout = null;
+        chaseOutcome.value = null;
+        chaseQuestionResult.value = null;
+        chaseFreeze.value = null;
+        if (pendingPhase !== null) {
+          applyPhase(pendingPhase);
+          pendingPhase = null;
+        }
+      }, CHASE_RESULT_HOLD_MS);
     });
 
     room.value.onMessage("chaserQuip", (message) => {
@@ -276,12 +346,12 @@ function setChaserHighOffer(amount) {
   }
 }
 
-function sendChaseResult(escaped) {
+function sendChaseAnswer({ answerIndex, questionId }) {
   try {
-    room.value?.send("chaseResult", { escaped });
+    room.value?.send("submitChaseAnswer", { answerIndex, questionId });
 
   } catch (e) {
-    console.error("Failed to send chase result:", e);
+    console.error("Failed to submit chase answer:", e);
   }
 }
 
@@ -297,6 +367,13 @@ function chaserReachedScore() {
 function handleLeave() {
   room.value?.leave()
   room.value  = null
+  if (chaseResultHoldTimeout) {
+    clearTimeout(chaseResultHoldTimeout);
+    chaseResultHoldTimeout = null;
+  }
+  pendingPhase = null;
+  chaseOutcome.value = null;
+  chaseFreeze.value = null;
 }
 
 function revealReady({ characterId } = {}) {
@@ -398,14 +475,18 @@ function sendChaserQuip(text) {
     />
     <ChaseScreen
       v-if="currentScreen=='chase'"
-      :players="players"
-      :activeContestantSeatId="activeContestantSeatId"
-      :chaserSeatId="chaserSeatId"
+      :players="chaseFreeze ? chaseFreeze.players : players"
+      :activeContestantSeatId="chaseFreeze ? chaseFreeze.activeContestantSeatId : activeContestantSeatId"
+      :chaserSeatId="chaseFreeze ? chaseFreeze.chaserSeatId : chaserSeatId"
       :mySeatId="mySeatId"
       :chaserCharacterId="chaserCharacterId"
       :chaserQuipText="chaserQuipText"
       :chaserQuipKey="chaserQuipKey"
-      @chaseResult="sendChaseResult"
+      :currentQuestion="currentRoundQuestion"
+      :chaseQuestionResult="chaseQuestionResult"
+      :chaseOutcome="chaseOutcome"
+      :chaseWagerAmount="chaseWagerAmount"
+      @submit-chase-answer="sendChaseAnswer"
       @auto-quip="showChaserQuip"
       @send-quip="sendChaserQuip"
     />

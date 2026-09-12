@@ -208,6 +208,7 @@ export function offerChoice(client: any, message: any, room: any) {
         return;
     }
     room.currentOfferAmount = room.currentOffer[offer as "low" | "middle" | "high"];
+    room.state.chaseWagerAmount = room.currentOfferAmount;
     room.dispatch({ type: "contestantChoice", offer });
 }
 

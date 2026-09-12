@@ -1,6 +1,7 @@
 :root {
   --chaser-red-dark: #b31212;
   --chaser-red-glow: #ff4b4b;
+  --chaser-red-bright: #ff8585;
   --contestant-blue-glow: #1f9fe0;
   --chaser-silhouette: #3a0d0d;
 }
@@ -1241,4 +1242,183 @@ ul {
   0%   { opacity: 0; transform: translateY(20px) scale(0.8); }
   60%  { opacity: 1; transform: translateY(-4px) scale(1.05); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.chaseScreen {
+  width: 100%;
+  max-width: 380px;
+}
+
+.chaseOffboardNote {
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 260px;
+  margin: 10px auto;
+}
+
+.boardSpace {
+  position: relative;
+  box-sizing: border-box;
+  height: 48px;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.4s ease-in-out;
+}
+
+.boardSpaceNumber {
+  position: absolute;
+  left: 10px;
+  color: #ffffff;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 16px;
+  opacity: 0.6;
+}
+
+.playerSpace {
+  background-color: var(--contestant-blue-glow);
+}
+
+.chaserSpace {
+  background-color: var(--chaser-red-glow);
+}
+
+.playerSpace.boardSpace-current {
+  border: 3px solid var(--contestant-blue-glow);
+  box-shadow: 0 0 14px var(--contestant-blue-glow);
+}
+
+.chaserSpace.boardSpace-current {
+  border: 3px solid var(--chaser-red-glow);
+  box-shadow: 0 0 14px var(--chaser-red-glow);
+  background-color: var(--chaser-red-bright);
+}
+
+.chaseWagerBadge {
+  color: #ffe27a;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 18px;
+}
+
+.chaseEscapeSpace {
+  height: 36px;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  opacity: 0.7;
+  letter-spacing: 1px;
+}
+
+.chaseQuestionArea {
+  width: 100%;
+  max-width: 340px;
+  margin: 10px auto;
+  text-align: center;
+}
+
+.chaseQuestion {
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 20px;
+  margin: 10px auto;
+}
+
+.chaseOptions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin: 15px auto;
+}
+
+.chaseOptionButton {
+  width: 190px;
+  margin: 0;
+  min-height: 60px;
+  font-size: 18px;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.3;
+}
+
+.chaseOptionButton-fontSm {
+  font-size: 15px;
+}
+
+.chaseOptionButton-fontXs {
+  font-size: 13px;
+}
+
+.chaseOptionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chaseOptionButton-picked {
+  background-color: var(--contestant-blue-glow);
+}
+
+.chaseOptionButton-correct {
+  background-color: #31c31e;
+  opacity: 1;
+}
+
+.chaseOptionButton-wrong {
+  background-color: var(--chaser-red-dark);
+  opacity: 1;
+}
+
+.chaseWaitingStatus {
+  margin: 10px auto;
+}
+
+.chaseOutcomeBanner {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  padding: 30px 50px;
+  border-radius: 20px;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 48px;
+  color: #ffffff;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+.chaseOutcomeBanner-escaped {
+  background: linear-gradient(160deg, var(--contestant-blue-glow), #0a72da);
+}
+
+.chaseOutcomeBanner-caught {
+  background: linear-gradient(160deg, var(--chaser-red-glow), var(--chaser-red-dark));
+}
+
+.chase-outcome-pop-enter-active {
+  animation: offer-space-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
