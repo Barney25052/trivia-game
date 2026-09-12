@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import { Client } from "@colyseus/sdk";
 import { GamePhase } from "./TriviaTypes.ts";
+import { preloadImages } from "./assetPreload.js";
 import HomeScreen from "./screens/HomeScreen.vue"
 import LobbyScreen from "./screens/LobbyScreen.vue";
 import ChaserSelectionScreen from "./screens/ChaserSelectionScreen.vue";
@@ -16,6 +17,8 @@ import ChaserFinalScreen from "./screens/ChaserFinalScreen.vue";
 import ResultsScreen from "./screens/ResultsScreen.vue";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? "ws://localhost:2567";
+
+preloadImages();
 
 const room = ref(null);
 const playersMap = ref(null);
