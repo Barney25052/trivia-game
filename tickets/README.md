@@ -99,13 +99,28 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 
 ### Phase 4 — The board chase
 | 063 | OpenTDB multiple-choice source behind the get-questions interface | done |
-| 064 | Server — authoritative board-chase engine | backlog |
-| 065 | Client — real board-chase screen | backlog |
-| 066 | Phase 4 integration tests — full board-chase flow | backlog |
+| 064 | Server — authoritative board-chase engine | done |
+| 065 | Client — real board-chase screen (replaces the placeholder) | done |
+| 066 | Phase 4 integration tests — full board-chase flow | done |
 | 069 | Highlight the contestant's and Chaser's *current* board space | done |
 | 070 | Lay out chase answer buttons side-by-side instead of stacked | done |
 | 071 | Chase question prompt is using the wrong font | done |
 | 072 | Chase lockout — strong, shared pulsing cue (background + buttons) synced from a `chaseLockoutStarted` broadcast | done |
+| 073 | Chase correct/wrong answer reveal never renders (raced out by the next question) | done |
+
+### Phase 4 review follow-ups (verified in the Phase 4 review — 211 tests green, both builds green)
+| 074 | Chase stalls permanently when the MC question source fails or returns nothing (bounded retry → resolve as caught) | backlog |
+| 075 | Chaser disconnect mid-game resolves the room to GameEnd, team wins (`bug-010`) | backlog |
+| 076 | Chase authority-guard test gap — non-participant cannot answer; active-contestant leave mid-Chase | backlog |
+
+### Phase 5 — The final round
+| 077 | Server — final-round question delivery for the team and Chaser streams (per-side, non-repeating) | backlog |
+| 078 | Server — team answers (`submitFinalAnswer`, group model, `teamScore + 1`) | backlog |
+| 079 | Server — Chaser answer engine: `chaserScore`, win on reach, steal/push-back (floor 0), remove placeholder `finalChaserScore` | backlog |
+| 080 | Client — real Team Final screen (UI sign-off required) | backlog |
+| 081 | Client — real Chaser Final screen incl. steal prompt (UI sign-off required) | backlog |
+| 082 | Phase 5 integration tests — full final round e2e on the server | backlog |
+| 083 | Game-end results screen from real scores + drop dead `GamePlayer.score` (UI sign-off required) | backlog |
 
 ### Whole-app polish
 | 067 | Full layout/design pass across all screens once every phase is implemented (discussion, not a solo build) | backlog |
