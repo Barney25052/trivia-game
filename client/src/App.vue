@@ -31,6 +31,7 @@ const chaserSeatId = ref("");
 const mySeatId = ref("");
 const contestantsOrder = ref([]);
 const teamScore = ref(0);
+const chaserScore = ref(0);
 const chaserPot = ref(0);
 const teamPot = ref(0);
 const currentOffer = ref(null);
@@ -40,6 +41,9 @@ const currentQuestion = ref(null);
 const answerResult = ref(null);
 const finalTeamQuestion = ref(null);
 const finalBuzzSeatId = ref("");
+const finalChaserQuestion = ref(null);
+const finalSteal = ref(null);
+const finalStealResolved = ref(null);
 const revealChaserCharacterId = ref("");
 const revealChaserCharacterName = ref("");
 const chaserQuipText = ref("");
@@ -147,6 +151,11 @@ function applyPhase(phase) {
     finalTeamQuestion.value = null;
     finalBuzzSeatId.value = "";
   }
+  if (phase !== GamePhase.ChaserFinal) {
+    finalChaserQuestion.value = null;
+    finalSteal.value = null;
+    finalStealResolved.value = null;
+  }
 }
 
 function setPhaseFromServer(phase) {
@@ -202,6 +211,7 @@ async function joinLobby(playerName, roomCode) {
       activeContestantSeatId.value = newState.activeContestantSeatId;
       chaserSeatId.value = newState.chaserSeatId;
       teamScore.value = newState.teamScore;
+      chaserScore.value = newState.chaserScore;
       chaserPot.value = newState.chaserPot;
       teamPot.value = newState.teamPot;
       contestantsOrder.value = Array.from(newState.contestantsOrder);
@@ -343,17 +353,30 @@ async function joinLobby(playerName, roomCode) {
       getReadyCooldownMs.value = message.cooldownMs;
     });
 
-    // Only the team side ever receives a "team" finalQuestion (the Chaser
-    // gets nothing during TeamFinal — see sendFinalQuestion server-side); a
-    // fresh question also means the previous buzz is over.
+    // Each client only ever receives finalQuestion for its own side (see
+    // sendFinalQuestion server-side) — a fresh team question also means the
+    // previous buzz is over.
     room.value.onMessage("finalQuestion", (message) => {
-      if (message.side !== "team") return;
-      finalTeamQuestion.value = message;
-      finalBuzzSeatId.value = "";
+      if (message.side === "team") {
+        finalTeamQuestion.value = message;
+        finalBuzzSeatId.value = "";
+      } else if (message.side === "chaser") {
+        finalChaserQuestion.value = message;
+      }
     });
 
     room.value.onMessage("finalBuzz", (message) => {
       finalBuzzSeatId.value = message.seatId;
+    });
+
+    // Team-only messages (sendToTeam server-side) — the Chaser never sees a
+    // steal open or resolve.
+    room.value.onMessage("finalSteal", (message) => {
+      finalSteal.value = { ...message, startedAt: Date.now() };
+    });
+
+    room.value.onMessage("finalStealResolved", (message) => {
+      finalStealResolved.value = message;
     });
 
     room.value.onMessage("endGame", (message) => {
@@ -434,15 +457,6 @@ function sendChaseAnswer({ answerIndex, questionId }) {
   }
 }
 
-function chaserReachedScore() {
-  try {
-    room.value?.send("finalChaserScore", {});
-
-  } catch (e) {
-    console.error("Failed to send final chaser score:", e);
-  }
-}
-
 function handleLeave() {
   room.value?.leave()
   room.value  = null
@@ -494,6 +508,24 @@ function submitFinalAnswer({ answer, questionId }) {
 
   } catch (e) {
     console.error("Failed to submit final answer:", e);
+  }
+}
+
+function submitFinalChaserAnswer({ answer, questionId }) {
+  try {
+    room.value?.send("submitFinalChaserAnswer", { answer, questionId });
+
+  } catch (e) {
+    console.error("Failed to submit final chaser answer:", e);
+  }
+}
+
+function submitFinalStealAnswer({ answer, questionId }) {
+  try {
+    room.value?.send("submitFinalStealAnswer", { answer, questionId });
+
+  } catch (e) {
+    console.error("Failed to submit final steal answer:", e);
   }
 }
 
@@ -611,12 +643,19 @@ function sendChaserQuip(text) {
     <ChaserFinalScreen
       v-if="currentScreen=='chaserFinal'"
       :teamScore="teamScore"
+      :chaserScore="chaserScore"
       :mySeatId="mySeatId"
       :chaserSeatId="chaserSeatId"
       :chaserCharacterId="chaserCharacterId"
       :chaserQuipText="chaserQuipText"
       :chaserQuipKey="chaserQuipKey"
-      @chaserReached="chaserReachedScore"
+      :players="players"
+      :finalQuestion="finalChaserQuestion"
+      :finalSteal="finalSteal"
+      :finalStealResolved="finalStealResolved"
+      :answerResult="answerResult"
+      @submit-final-chaser-answer="submitFinalChaserAnswer"
+      @submit-final-steal-answer="submitFinalStealAnswer"
       @auto-quip="showChaserQuip"
       @send-quip="sendChaserQuip"
     />

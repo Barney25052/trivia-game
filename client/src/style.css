@@ -1709,3 +1709,82 @@ ul {
   font-style: normal;
   font-size: 40px;
 }
+
+/* Chaser Final (ticket 081) — Chaser panel up top / question+answer down
+   bottom normally; the target row of boxes sits fixed between them and always
+   spans the full row width. During a team steal, the steal question swaps up
+   to the top and the team takes over the bottom. */
+.chaserFinalRoot {
+  width: 700px;
+  max-width: 92vw;
+  box-sizing: border-box;
+  margin: 30px auto;
+  padding: 0 20px;
+  position: relative;
+  isolation: isolate;
+}
+
+.chaserFinalScore {
+  text-align: center;
+}
+
+.chaserFinalTop {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.chaserFinalStealQuestion {
+  box-sizing: border-box;
+  width: 100%;
+  text-align: center;
+  border-radius: 15px;
+  background-color: rgba(var(--color-white-rgb), 0.1);
+  padding: 20px;
+}
+
+.chaserFinalTargetRow {
+  display: flex;
+  width: 100%;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.chaserFinalTargetBox {
+  flex: 1 1 0;
+  box-sizing: border-box;
+  height: 46px;
+  border-radius: 8px;
+  background-color: rgba(var(--color-white-rgb), 0.15);
+  color: var(--color-white);
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.chaserFinalTargetBox-filled {
+  background-color: var(--chaser-red-glow);
+  box-shadow: 0 0 14px var(--chaser-red-glow);
+}
+
+.chaserFinalBottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 120px;
+  margin-top: 10px;
+}
+
+.chaserFinalTeamRow {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px;
+}
