@@ -118,7 +118,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 077 | Server — final-round question delivery for the team and Chaser streams (per-side, non-repeating) | done |
 | 078 | Server — team answers: buzz-in gate + `submitFinalAnswer`, `teamScore + 1` | done |
 | 079 | Server — Chaser answer engine: `chaserScore`, win on reach (tie counts), steal/push-back (floor at 0 → raise `teamScore`), remove placeholder `finalChaserScore` | done |
-| 080 | Client — real Team Final screen (UI sign-off required) | backlog |
+| 080 | Client — real Team Final screen (UI sign-off required) | done |
 | 081 | Client — real Chaser Final screen incl. steal prompt (UI sign-off required) | backlog |
 | 082 | Phase 5 integration tests — full final round e2e on the server | done |
 | 083 | Game-end results screen from real scores + drop dead `GamePlayer.score` (UI sign-off required) | backlog |

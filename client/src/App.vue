@@ -38,6 +38,8 @@ const winner = ref(null);
 const getReadyCooldownMs = ref(0);
 const currentQuestion = ref(null);
 const answerResult = ref(null);
+const finalTeamQuestion = ref(null);
+const finalBuzzSeatId = ref("");
 const revealChaserCharacterId = ref("");
 const revealChaserCharacterName = ref("");
 const chaserQuipText = ref("");
@@ -140,6 +142,10 @@ function applyPhase(phase) {
   }
   if (phase !== GamePhase.Chase) {
     chaseLockout.value = null;
+  }
+  if (phase !== GamePhase.TeamFinal) {
+    finalTeamQuestion.value = null;
+    finalBuzzSeatId.value = "";
   }
 }
 
@@ -337,6 +343,19 @@ async function joinLobby(playerName, roomCode) {
       getReadyCooldownMs.value = message.cooldownMs;
     });
 
+    // Only the team side ever receives a "team" finalQuestion (the Chaser
+    // gets nothing during TeamFinal — see sendFinalQuestion server-side); a
+    // fresh question also means the previous buzz is over.
+    room.value.onMessage("finalQuestion", (message) => {
+      if (message.side !== "team") return;
+      finalTeamQuestion.value = message;
+      finalBuzzSeatId.value = "";
+    });
+
+    room.value.onMessage("finalBuzz", (message) => {
+      finalBuzzSeatId.value = message.seatId;
+    });
+
     room.value.onMessage("endGame", (message) => {
       winner.value = message.winner;
     });
@@ -460,6 +479,24 @@ function submitAnswer({ answer, questionId }) {
   }
 }
 
+function buzzIn({ questionId }) {
+  try {
+    room.value?.send("buzzIn", { questionId });
+
+  } catch (e) {
+    console.error("Failed to buzz in:", e);
+  }
+}
+
+function submitFinalAnswer({ answer, questionId }) {
+  try {
+    room.value?.send("submitFinalAnswer", { answer, questionId });
+
+  } catch (e) {
+    console.error("Failed to submit final answer:", e);
+  }
+}
+
 function sendChaserQuip(text) {
   try {
     room.value?.send("sendChaserQuip", { text });
@@ -561,6 +598,15 @@ function sendChaserQuip(text) {
     <TeamFinalScreen
       v-if="currentScreen=='teamFinal'"
       :teamScore="teamScore"
+      :teamPot="teamPot"
+      :players="players"
+      :mySeatId="mySeatId"
+      :chaserSeatId="chaserSeatId"
+      :finalQuestion="finalTeamQuestion"
+      :finalBuzzSeatId="finalBuzzSeatId"
+      :answerResult="answerResult"
+      @buzz-in="buzzIn"
+      @submit-final-answer="submitFinalAnswer"
     />
     <ChaserFinalScreen
       v-if="currentScreen=='chaserFinal'"
