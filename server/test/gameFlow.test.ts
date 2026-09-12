@@ -429,6 +429,50 @@ describe("gameFlow transition", () => {
         });
     });
 
+    describe("chaserForfeit", () => {
+        it("from Chase -> gameEnd, team wins", () => {
+            const ctx = context({ currentPhase: GamePhase.Chase });
+            const result = transition({ type: "chaserForfeit" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.GameEnd);
+            assert.deepStrictEqual(result.effects, [{ type: "endGame", winner: "team" }]);
+        });
+
+        it("from TeamFinal -> gameEnd, team wins", () => {
+            const ctx = context({ currentPhase: GamePhase.TeamFinal });
+            const result = transition({ type: "chaserForfeit" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.GameEnd);
+            assert.deepStrictEqual(result.effects, [{ type: "endGame", winner: "team" }]);
+        });
+
+        it("valid from any post-selection phase with a chaser assigned", () => {
+            const validPhases = [
+                GamePhase.ChaserReveal,
+                GamePhase.RolesReveal,
+                GamePhase.Lineup,
+                GamePhase.CashBuilder,
+                GamePhase.Offer,
+                GamePhase.Chase,
+                GamePhase.TeamFinal,
+                GamePhase.ChaserFinal
+            ];
+            for (const phase of validPhases) {
+                const result = transition({ type: "chaserForfeit" }, context({ currentPhase: phase }));
+                assert.strictEqual(result.nextPhase, GamePhase.GameEnd);
+            }
+        });
+
+        it("throws before a chaser can exist (Lobby, ChaserSelection)", () => {
+            assert.throws(
+                () => transition({ type: "chaserForfeit" }, context({ currentPhase: GamePhase.Lobby })),
+                /chaserForfeit is not valid in phase lobby/
+            );
+            assert.throws(
+                () => transition({ type: "chaserForfeit" }, context({ currentPhase: GamePhase.ChaserSelection })),
+                /chaserForfeit is not valid in phase chaserSelection/
+            );
+        });
+    });
+
     describe("final round", () => {
         it("finalTeam + timeout -> finalChaser", () => {
             const ctx = context({ currentPhase: GamePhase.TeamFinal });

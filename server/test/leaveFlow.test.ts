@@ -6,6 +6,28 @@ import { GamePhase } from "../src/TriviaTypes.js";
 import { cleanup, getTestServer } from "./testServer.js";
 import { seatIdOf } from "./seatIdHelper.js";
 
+/** A stub `McQuestionSource` mirroring chaseFlow.test.ts — every question
+ * carries one fixed correct answer at a known text. */
+function stubChaseSource() {
+    let counter = 0;
+    return {
+        async getQuestions(amount: number) {
+            const out = [];
+            for (let i = 0; i < amount; i += 1) {
+                counter += 1;
+                out.push({
+                    id: `stub-chase-${counter}`,
+                    question: `Stub chase question ${counter}?`,
+                    category: "Stub",
+                    options: ["Correct Answer", "Wrong A", "Wrong B", "Wrong C"],
+                    correctIndex: 0
+                });
+            }
+            return out;
+        }
+    };
+}
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const waitForPhase = async (
@@ -280,6 +302,236 @@ describe("leaveFlow (integration)", () => {
             room.state.chaserSeatId === aliceSeat || room.state.chaserSeatId === seatIdOf(room, bob),
             "the chaser resolves among the remaining players once the selection timer fires"
         );
+    });
+
+    it("active contestant leaves during Chase: forfeited as caught, next contestant's round runs, no timers for the departed seat (ticket 076)", async () => {
+        const { room, alice, bob, carol } = await createForfeitRoom(colyseus);
+        room.mcQuestionSource = stubChaseSource();
+
+        const aliceSeat = seatIdOf(room, alice);
+        alice.send("revealReady");
+        bob.send("revealReady");
+        carol.send("revealReady", { characterId: "bezos" });
+        await waitForPhase(room, GamePhase.Offer);
+        await waitForActive(room, seatIdOf(room, alice));
+
+        carol.send("setChaserLowOffer", { amount: 0 });
+        await sleep(30);
+        carol.send("setChaserHighOffer", { amount: 2000 });
+        await sleep(30);
+
+        const questionMessage = alice.waitForMessage("question");
+        alice.send("offerChoice", { offer: "high" });
+        await questionMessage;
+        await waitForPhase(room, GamePhase.Chase);
+
+        alice.leave();
+        await waitForActive(room, seatIdOf(room, bob));
+        assert.strictEqual(
+            room.state.activeRound,
+            2,
+            "forfeit advances to the next contestant's round"
+        );
+        assert.strictEqual(
+            room.state.players.get(aliceSeat),
+            undefined,
+            "the departed seat is removed from the players map"
+        );
+        assert.strictEqual(
+            room.state.chaserPot > 0,
+            true,
+            "a caught contestant grows the chaser pot"
+        );
+        assert.strictEqual(
+            room.questionManager.getCurrentQuestion(aliceSeat),
+            undefined,
+            "no current question is retained for the departed seat"
+        );
+
+        // Bob's own round still completes and reaches the offer — nothing keeps
+        // firing for the departed seat.
+        const offerPromise = bob.waitForMessage("offerStart");
+        await waitForPhase(room, GamePhase.Offer);
+        const offer = await offerPromise;
+        assert.strictEqual(offer.seatId, seatIdOf(room, bob));
+    });
+
+    /**
+     * A non-host Chaser: Dave joins first (host) and stays a contestant; Alice
+     * is voted in as the Chaser. This isolates the chaser-forfeit path (ticket
+     * 075) from the pre-existing host-leave-disconnects path (they're the same
+     * player in createForfeitRoom above).
+     */
+    async function createNonHostChaserRoom(
+        colyseus: ColyseusTestServer<typeof appConfig>
+    ): Promise<{ room: any; dave: any; alice: any; bob: any }> {
+        const room = await colyseus.createRoom<GameState>("trivia", {
+            cashBuilderDurationMs: 200,
+            chaserSelectionDurationMs: 10000,
+            chaserRevealDurationMs: 80,
+            chaserCharacterRevealDurationMs: 80,
+            revealReadyCooldownMs: 80,
+            lineupDurationMs: 80,
+            teamFinalDurationMs: 200
+        });
+        const dave = await colyseus.connectTo(room, { playerName: "Dave" });
+        const alice = await colyseus.connectTo(room, { playerName: "Alice" });
+        const bob = await colyseus.connectTo(room, { playerName: "Bob" });
+        await sleep(100);
+
+        dave.send("setChaserMode", { mode: "vote" });
+        await sleep(30);
+        dave.send("startGame");
+        await sleep(50);
+        const aliceSeat = seatIdOf(room, alice);
+        dave.send("chaserVote", { targetSeatId: aliceSeat });
+        await sleep(30);
+        alice.send("chaserVote", { targetSeatId: aliceSeat });
+        await sleep(30);
+        bob.send("chaserVote", { targetSeatId: aliceSeat });
+        await waitForPhase(room, GamePhase.RolesReveal);
+
+        assert.strictEqual(room.state.players.get(seatIdOf(room, dave)).isHost, true);
+        assert.strictEqual(room.state.chaserSeatId, aliceSeat);
+        assert.deepStrictEqual(
+            [...room.state.contestantsOrder],
+            [seatIdOf(room, dave), seatIdOf(room, bob)]
+        );
+        return { room, dave, alice, bob };
+    }
+
+    it("the Chaser leaving during Chase resolves to gameEnd with the team winning by default (ticket 075, bug-010)", async () => {
+        const { room, dave, alice, bob } = await createNonHostChaserRoom(colyseus);
+        room.mcQuestionSource = stubChaseSource();
+
+        dave.send("revealReady");
+        bob.send("revealReady");
+        alice.send("revealReady", { characterId: "bezos" });
+        await waitForPhase(room, GamePhase.Offer);
+        await waitForActive(room, seatIdOf(room, dave));
+
+        alice.send("setChaserLowOffer", { amount: 0 });
+        await sleep(30);
+        alice.send("setChaserHighOffer", { amount: 2000 });
+        await sleep(30);
+
+        const questionMessage = dave.waitForMessage("question");
+        dave.send("offerChoice", { offer: "high" });
+        await questionMessage;
+        await waitForPhase(room, GamePhase.Chase);
+
+        const aliceSeat = seatIdOf(room, alice);
+        const endGameMessage = dave.waitForMessage("endGame");
+        alice.leave();
+        const endGame = await endGameMessage;
+
+        assert.strictEqual(room.state.currentPhase, GamePhase.GameEnd, "the room must not stall waiting for the departed Chaser");
+        assert.strictEqual(endGame.winner, "team", "the team wins by default when the Chaser disconnects mid-game");
+        assert.strictEqual(room.state.players.get(aliceSeat), undefined);
+    });
+
+    it("the Chaser leaving during TeamFinal resolves to gameEnd with the team winning by default (ticket 075, bug-010)", async () => {
+        const { room, dave, alice, bob } = await createNonHostChaserRoom(colyseus);
+        room.mcQuestionSource = stubChaseSource();
+
+        dave.send("revealReady");
+        bob.send("revealReady");
+        alice.send("revealReady", { characterId: "bezos" });
+        await waitForPhase(room, GamePhase.Offer);
+        await waitForActive(room, seatIdOf(room, dave));
+
+        alice.send("setChaserLowOffer", { amount: 2000 });
+        await sleep(30);
+        alice.send("setChaserHighOffer", { amount: 4000 });
+        await sleep(30);
+
+        const escapeQuestionMessage = dave.waitForMessage("question");
+        dave.send("offerChoice", { offer: "low" });
+        const escapeQuestion = await escapeQuestionMessage;
+
+        // Play Dave straight to escape as the first contestant so the round
+        // continues to Bob's cash builder, then repeat to reach TeamFinal.
+        let question = escapeQuestion;
+        for (let round = 0; round < 6 && room.state.currentPhase === GamePhase.Chase; round += 1) {
+            const correctIndex = question.options.indexOf("Correct Answer");
+            const nextQuestionOrPhase = Promise.race([
+                dave.waitForMessage("question").then((q: any) => ({ q })),
+                (async () => {
+                    while (room.state.currentPhase === GamePhase.Chase) {
+                        await sleep(10);
+                    }
+                    return { q: null };
+                })()
+            ]);
+            dave.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+            alice.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: (correctIndex + 1) % question.options.length });
+            const { q } = await nextQuestionOrPhase;
+            question = q;
+        }
+
+        // Bob still needs to run his own round to reach TeamFinal.
+        await waitForActive(room, seatIdOf(room, bob));
+        room.state.players.get(seatIdOf(room, bob)).cashBuilderMoney = 0;
+        await waitForPhase(room, GamePhase.Offer);
+        alice.send("setChaserLowOffer", { amount: 0 });
+        await sleep(30);
+        alice.send("setChaserHighOffer", { amount: 1000 });
+        await sleep(30);
+        const bobQuestionMessage = bob.waitForMessage("question");
+        bob.send("offerChoice", { offer: "middle" });
+        let bobQuestion = await bobQuestionMessage;
+        for (let round = 0; round < 6 && room.state.currentPhase === GamePhase.Chase; round += 1) {
+            const nextQuestionOrPhase = Promise.race([
+                bob.waitForMessage("question").then((q: any) => ({ q })),
+                (async () => {
+                    while (room.state.currentPhase === GamePhase.Chase) {
+                        await sleep(10);
+                    }
+                    return { q: null };
+                })()
+            ]);
+            const bobCorrectIndex = bobQuestion.options.indexOf("Correct Answer");
+            bob.send("submitChaseAnswer", { questionId: bobQuestion.questionId, answerIndex: bobCorrectIndex });
+            alice.send("submitChaseAnswer", { questionId: bobQuestion.questionId, answerIndex: (bobCorrectIndex + 1) % bobQuestion.options.length });
+            const { q } = await nextQuestionOrPhase;
+            bobQuestion = q;
+        }
+        await waitForPhase(room, GamePhase.TeamFinal);
+
+        const aliceSeat = seatIdOf(room, alice);
+        const endGameMessage = dave.waitForMessage("endGame");
+        alice.leave();
+        const endGame = await endGameMessage;
+
+        assert.strictEqual(room.state.currentPhase, GamePhase.GameEnd);
+        assert.strictEqual(endGame.winner, "team");
+        assert.strictEqual(room.state.players.get(aliceSeat), undefined);
+    });
+
+    it("a host-Chaser leaving still disconnects the room (close 6767), unchanged from before ticket 075", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", {
+            cashBuilderDurationMs: 10000,
+            chaserSelectionDurationMs: 10000,
+            chaserRevealDurationMs: 80,
+            revealReadyCooldownMs: 80
+        });
+        const carol = await colyseus.connectTo(room, { playerName: "Carol" });
+        const alice = await colyseus.connectTo(room, { playerName: "Bob" });
+        await sleep(100);
+
+        carol.send("setChaserMode", { mode: "vote" });
+        await sleep(30);
+        carol.send("startGame");
+        await sleep(50);
+        carol.send("chaserVote", { targetSeatId: seatIdOf(room, carol) });
+        await sleep(30);
+        alice.send("chaserVote", { targetSeatId: seatIdOf(room, carol) });
+        await waitForPhase(room, GamePhase.RolesReveal);
+        assert.strictEqual(room.state.chaserSeatId, seatIdOf(room, carol));
+
+        carol.leave();
+        await sleep(150);
+        assert.strictEqual(room.state.currentPhase, GamePhase.RolesReveal, "a disconnecting room does not advance the flow");
     });
 
     it("last contestant leaves during lineup: away from Lineup and into GameEnd instead of stalling (bug-004, ticket 061)", async () => {

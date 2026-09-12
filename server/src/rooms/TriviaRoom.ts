@@ -388,6 +388,24 @@ export class TriviaRoom extends Room {
       return;
     }
 
+    if (seatId && seatId === this.state.chaserSeatId && this.state.chaserSeatId !== "") {
+      // The Chaser dropped mid-game after a chaser was already assigned: the
+      // room can never advance without them (offers, chase answers) — the
+      // conservative default is game over, team wins (ticket 075, bug-010).
+      console.log(`Chaser ${seatId} left mid-game — the team wins by default`);
+      this.dispatch({ type: "chaserForfeit" });
+      if (seatId) {
+        this.state.players.delete(seatId);
+        this.sessionIdToSeatId.delete(client.sessionId);
+        const contestantIndex = this.state.contestantsOrder.indexOf(seatId);
+        if (contestantIndex >= 0) {
+          this.state.contestantsOrder.splice(contestantIndex, 1);
+        }
+        this.questionManager.clearContestant(seatId);
+      }
+      return;
+    }
+
     const phase = this.state.currentPhase;
     if (
       seatId &&

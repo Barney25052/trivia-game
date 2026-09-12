@@ -18,6 +18,7 @@ export type FlowEvent =
     | { type: "chaseEscape" }
     | { type: "chaseCaught" }
     | { type: "contestantForfeit" }
+    | { type: "chaserForfeit" }
     | { type: "finalTeamTimeout" }
     | { type: "finalChaserReachedScore" }
     | { type: "finalChaserTimeout" };
@@ -291,6 +292,34 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
             }
             effects.push({ type: "startFinalTeam" });
             return { nextPhase: GamePhase.TeamFinal, effects };
+        }
+
+        /**
+         * The Chaser's connection dropped mid-game after a chaser was assigned
+         * (ticket 075, bug-010). The game cannot continue without the Chaser
+         * for offers and head-to-head answers — the conservative default is
+         * game over, team wins.
+         */
+        case "chaserForfeit": {
+            const validPhases = [
+                GamePhase.ChaserReveal,
+                GamePhase.RolesReveal,
+                GamePhase.Lineup,
+                GamePhase.CashBuilder,
+                GamePhase.Offer,
+                GamePhase.Chase,
+                GamePhase.TeamFinal,
+                GamePhase.ChaserFinal
+            ];
+            if (!validPhases.includes(context.currentPhase)) {
+                throw new Error(
+                    `gameFlow: chaserForfeit is not valid in phase ${context.currentPhase}`
+                );
+            }
+            return {
+                nextPhase: GamePhase.GameEnd,
+                effects: [{ type: "endGame", winner: "team" }]
+            };
         }
 
         case "finalTeamTimeout": {
