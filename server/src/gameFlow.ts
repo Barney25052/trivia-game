@@ -11,6 +11,7 @@ export type FlowEvent =
     | { type: "lineupComplete" }
     | { type: "readyCooldownDone" }
     | { type: "cashBuilderTimeout" }
+    | { type: "chaserOffersSet"; low: number; high: number }
     | { type: "contestantChoice"; offer: OfferTier }
     | { type: "chaseEscape" }
     | { type: "chaseCaught" }
@@ -44,6 +45,7 @@ export type FlowEffect =
     | { type: "startReadyCooldown"; seatId: string; round: number }
     | { type: "startCashBuilder"; seatId: string; round: number }
     | { type: "startOffer"; seatId: string }
+    | { type: "chaserOffersSet"; seatId: string; low: number; high: number }
     | { type: "startChase"; seatId: string; contestantStartSpace: number; chaserStartSpace: number }
     | { type: "eliminateContestant"; seatId: string }
     | { type: "addToTeamPot"; seatId: string; amount: number }
@@ -156,6 +158,19 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
             return {
                 nextPhase: GamePhase.Offer,
                 effects: [{ type: "startOffer", seatId: context.activeContestantSeatId }]
+            };
+        }
+
+        case "chaserOffersSet": {
+            ensurePhase(event, context, GamePhase.Offer);
+            return {
+                nextPhase: GamePhase.Offer,
+                effects: [{
+                    type: "chaserOffersSet",
+                    seatId: context.activeContestantSeatId,
+                    low: event.low,
+                    high: event.high
+                }]
             };
         }
 

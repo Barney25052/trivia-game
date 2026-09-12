@@ -183,6 +183,29 @@ describe("gameFlow transition", () => {
         });
     });
 
+    describe("chaserOffersSet", () => {
+        it("offer + chaserOffersSet -> stays in Offer, effect carries the accepted amounts", () => {
+            const result = transition(
+                { type: "chaserOffersSet", low: 0, high: 4000 },
+                context({ currentPhase: GamePhase.Offer, activeContestantSeatId: "bob" })
+            );
+            assert.strictEqual(result.nextPhase, GamePhase.Offer);
+            assert.deepStrictEqual(result.effects, [{
+                type: "chaserOffersSet",
+                seatId: "bob",
+                low: 0,
+                high: 4000
+            }]);
+        });
+
+        it("throws if not in offer", () => {
+            assert.throws(
+                () => transition({ type: "chaserOffersSet", low: 0, high: 4000 }, context({ currentPhase: GamePhase.Chase })),
+                /chaserOffersSet is not valid in phase chase/
+            );
+        });
+    });
+
     describe("contestantChoice", () => {
         it("low offer starts the contestant on BOARD.startLow", () => {
             const result = transition(

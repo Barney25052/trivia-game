@@ -26,6 +26,8 @@ import {
   setChaserMode,
   chaserVote,
   revealReady,
+  setChaserLowOffer,
+  setChaserHighOffer,
   offerChoice,
   chaseResult,
   finalChaserScore,
@@ -37,9 +39,9 @@ import { clampRoomOptions } from "./handlers/clampOptions.js";
 const OFFER_TIERS: OfferTier[] = ["low", "middle", "high"];
 
 interface OfferAmounts {
-  low: number;
+  low: number | null;
   middle: number;
-  high: number;
+  high: number | null;
 }
 
 export class TriviaRoom extends Room {
@@ -182,6 +184,14 @@ export class TriviaRoom extends Room {
     revealReady: (client: Client, message: any) => {
       if (!this.checkRateLimit(client)) return;
       revealReady(client, message, this);
+    },
+    setChaserLowOffer: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      setChaserLowOffer(client, message, this);
+    },
+    setChaserHighOffer: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      setChaserHighOffer(client, message, this);
     },
     offerChoice: (client: Client, message: any) => {
       if (!this.checkRateLimit(client)) return;

@@ -111,14 +111,31 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           const player = room.state.players.get(effect.seatId);
           const take = player?.cashBuilderMoney ?? 0;
           room.currentOffer = {
-            low: Math.floor(take / 2),
+            low: null,
             middle: take,
-            high: take * 2
+            high: null
           };
-          room.currentOfferAmount = room.currentOffer.middle;
+          room.currentOfferAmount = take;
+          console.log(`Offer for ${effect.seatId}: middle ${take} — waiting for the Chaser to set low/high`);
+          const chaser = room.state.players.get(room.state.chaserSeatId);
+          const chaserCharId = chaser?.chaserCharacterId ?? "";
+          const chaserChar = CHASER_CHARACTERS.find((c) => c.id === chaserCharId);
+          room.broadcast("offerStart", {
+            seatId: effect.seatId,
+            middle: take,
+            chaserCharacterId: chaserCharId,
+            chaserCharacterName: chaserChar?.name ?? "",
+            chaserCharacterAbility: chaserChar?.ability ?? ""
+          });
+          break;
+        }
+
+        case "chaserOffersSet": {
+          room.currentOffer.low = effect.low;
+          room.currentOffer.high = effect.high;
           console.log(
-            `Offer for ${effect.seatId}: low ${room.currentOffer.low} / ` +
-            `middle ${room.currentOffer.middle} / high ${room.currentOffer.high}`
+            `Chaser set offers for ${effect.seatId}: low ${effect.low} / ` +
+            `middle ${room.currentOffer.middle} / high ${effect.high}`
           );
           const chaser = room.state.players.get(room.state.chaserSeatId);
           const chaserCharId = chaser?.chaserCharacterId ?? "";

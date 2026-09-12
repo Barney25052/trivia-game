@@ -80,7 +80,7 @@ describe("cashBuilderFlow (integration)", () => {
             cashBuilderDurationMs: 80
         });
 
-        const offerPromise = activeClient.waitForMessage("offer");
+        const offerStartPromise = activeClient.waitForMessage("offerStart");
 
         const q1 = await activeClient.waitForMessage("question");
         assert.ok(q1, "first question is delivered after cooldown");
@@ -132,26 +132,12 @@ describe("cashBuilderFlow (integration)", () => {
             "wrong answer does not increment questions asked"
         );
 
-        const offer = await offerPromise;
+        const offerStart = await offerStartPromise;
         assert.strictEqual(room.state.currentPhase, GamePhase.Offer);
-        assert.ok(
-            "low" in offer.offers && "middle" in offer.offers && "high" in offer.offers,
-            "offer message carries low/middle/high amounts"
-        );
         assert.strictEqual(
-            offer.offers.middle,
+            offerStart.middle,
             CASH_BUILDER.rewardPerCorrect,
             "middle offer equals the earned pot"
-        );
-        assert.strictEqual(
-            offer.offers.low,
-            Math.floor(CASH_BUILDER.rewardPerCorrect / 2),
-            "low offer is half the pot"
-        );
-        assert.strictEqual(
-            offer.offers.high,
-            CASH_BUILDER.rewardPerCorrect * 2,
-            "high offer is double the pot"
         );
     });
 
@@ -342,7 +328,7 @@ describe("cashBuilderFlow (integration)", () => {
             cashBuilderDurationMs: 80
         });
 
-        const offerPromise = activeClient.waitForMessage("offer");
+        const offerStartPromise = activeClient.waitForMessage("offerStart");
 
         const q1 = await activeClient.waitForMessage("question");
         const c1 = tinyBank.find((q) => q.id === q1.questionId)!;
@@ -363,8 +349,8 @@ describe("cashBuilderFlow (integration)", () => {
             "both correct answers added to the pot"
         );
 
-        const offer = await offerPromise;
+        const offerStart = await offerStartPromise;
         assert.strictEqual(room.state.currentPhase, GamePhase.Offer);
-        assert.strictEqual(offer.offers.middle, CASH_BUILDER.rewardPerCorrect * 2);
+        assert.strictEqual(offerStart.middle, CASH_BUILDER.rewardPerCorrect * 2);
     });
 });

@@ -43,6 +43,13 @@ export const CHASER_POT = {
     perRound: 30_000
 } as const;
 
+export const OFFER = {
+    /** The low offer must be a multiple of this many dollars. */
+    lowStep: 100,
+    /** The high offer must be a multiple of this many dollars. */
+    highStep: 1_000
+} as const;
+
 export const CHASER_CHARACTERS = [
     { id: "bezos", name: "Bezos", ability: "" },
     { id: "big stan", name: "Big Stan", ability: "" },

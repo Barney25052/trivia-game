@@ -77,7 +77,15 @@ describe("chaserPot lifecycle", () => {
     await waitForPhase(room, GamePhase.RolesReveal);
     alice.send("revealReady", { characterId: "bezos" });
     bob.send("revealReady", { characterId: "nami" });
+    await waitForPhase(room, GamePhase.CashBuilder);
+    room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney = 5000;
     await waitForPhase(room, GamePhase.Offer);
+
+    const chaserClient = bySession.get(room.state.chaserSeatId);
+    chaserClient.send("setChaserLowOffer", { amount: 0 });
+    await sleep(30);
+    chaserClient.send("setChaserHighOffer", { amount: 10000 });
+    await sleep(30);
 
     const contestant = bySession.get(room.state.activeContestantSeatId);
     contestant.send("offerChoice", { offer: "high" });
@@ -112,7 +120,15 @@ describe("chaserPot lifecycle", () => {
     await waitForPhase(room, GamePhase.RolesReveal);
     alice.send("revealReady", { characterId: "bezos" });
     bob.send("revealReady", { characterId: "nami" });
+    await waitForPhase(room, GamePhase.CashBuilder);
+    room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney = 5000;
     await waitForPhase(room, GamePhase.Offer);
+
+    const chaserClient = bySession.get(room.state.chaserSeatId);
+    chaserClient.send("setChaserLowOffer", { amount: 0 });
+    await sleep(30);
+    chaserClient.send("setChaserHighOffer", { amount: 10000 });
+    await sleep(30);
 
     const contestant = bySession.get(room.state.activeContestantSeatId);
     contestant.send("offerChoice", { offer: "high" });
@@ -145,7 +161,15 @@ describe("chaserPot lifecycle", () => {
     await waitForPhase(room, GamePhase.RolesReveal);
     alice.send("revealReady", { characterId: "bezos" });
     bob.send("revealReady", { characterId: "nami" });
+    await waitForPhase(room, GamePhase.CashBuilder);
+    room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney = 5000;
     await waitForPhase(room, GamePhase.Offer);
+
+    const chaserClient = bySession.get(room.state.chaserSeatId);
+    chaserClient.send("setChaserLowOffer", { amount: 0 });
+    await sleep(30);
+    chaserClient.send("setChaserHighOffer", { amount: 10000 });
+    await sleep(30);
 
     const contestant = bySession.get(room.state.activeContestantSeatId);
     contestant.send("offerChoice", { offer: "high" });

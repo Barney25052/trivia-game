@@ -120,7 +120,7 @@ describe("leaveFlow (integration)", () => {
 
         // Nothing keeps firing for the departed seat: Bob's own round still
         // completes and reaches the offer.
-        const offerPromise = bob.waitForMessage("offer");
+        const offerPromise = bob.waitForMessage("offerStart");
         await waitForPhase(room, GamePhase.Offer);
         const offer = await offerPromise;
         assert.strictEqual(offer.seatId, seatIdOf(room, bob));
@@ -142,7 +142,7 @@ describe("leaveFlow (integration)", () => {
         assert.strictEqual(room.state.players.get(aliceSeat), undefined);
         assert.strictEqual(room.state.teamPot, 0, "a forfeited offer pays nothing");
 
-        const offerPromise = bob.waitForMessage("offer");
+        const offerPromise = bob.waitForMessage("offerStart");
         await waitForPhase(room, GamePhase.Offer);
         const offer = await offerPromise;
         assert.strictEqual(offer.seatId, seatIdOf(room, bob));
@@ -188,7 +188,7 @@ describe("leaveFlow (integration)", () => {
         await waitForPhase(room, GamePhase.CashBuilder);
         await waitForActive(room, seatIdOf(room, alice));
 
-        const offerPromise = alice.waitForMessage("offer");
+        const offerPromise = alice.waitForMessage("offerStart");
         bob.leave();
         await sleep(100);
 
