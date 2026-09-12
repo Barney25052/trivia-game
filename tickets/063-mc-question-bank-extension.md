@@ -3,7 +3,7 @@
 > **Update (decision change)**: this ticket was originally drafted as "extend our bank to multiple-choice" with no opentdb at runtime. Decided instead — per `GOAL.md` "Question bank" — the board chase pulls **multiple-choice questions from the OpenTDB API at runtime**. The local bank stays open-ended-only. Scope rewritten accordingly.
 
 ## Goal
-The board chase needs 3-option multiple-choice questions. They come from the **OpenTDB API** (`https://opentdb.com/api.php`, `type=multiple`) at runtime, served to the chase engine behind the existing thin **get-questions interface** so the source can swap later. Open-ended rounds (cash builder + final) keep using our local bank (`server/data/questions.json`); MC is never stored locally.
+The board chase needs 3-option multiple-choice questions. They come from the **OpenTDB API** (`https://opentdb.com/api.php`, `type=multiple`) at runtime, served to the chase engine behind the existing thin **get-questions interface** so the source can swap later. Open-ended rounds (cash builder + final) keep using our local bank (`server/data/questions.json`); MC is never stored locally. Make sure to be aware of the limit on the free API, possibly source a large pool of questions to be used over multiple rounds to reduce API calls.
 
 ## Scope
 - New server-side OpenTDB client module (e.g. `server/src/questions/opentdb.ts`): fetch `type=multiple` questions (optionally filtering difficulty/category if we tune it), validate/trim the response, HTML-decode the question text and options (OpenTDB returns escaped text), and map each item to a server-held MC shape — `{ id, question, category, options: string[] (the 4 returned answers), correctIndex }`. Cap/validate unexpected shapes and bounds.

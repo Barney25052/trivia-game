@@ -105,6 +105,30 @@ export const CHASE_QUESTION = {
     answerWindowMs: 5_000
 } as const;
 
+/** OpenTDB runtime multiple-choice source for the board chase (Phase 4, ticket 063).
+ * The pool keeps a batch of questions in memory across rounds so we hit the free
+ * API sparingly instead of once per chase question. */
+export const OPEN_TDB = {
+    url: "https://opentdb.com/api.php",
+    tokenUrl: "https://opentdb.com/api_token.php",
+    /** OpenTDB refuses to return more than this per request. */
+    maxAmount: 50,
+    /** Default per-fetch amount when the caller doesn't specify one. */
+    defaultBatchSize: 50,
+    minAmount: 1,
+    /** Target questions a get-questions pool keeps available across rounds. */
+    poolSize: 50,
+    minPoolSize: 5,
+    maxPoolSize: 200,
+    /** Abort a single fetch after this long. */
+    fetchTimeoutMs: 5_000,
+    minFetchTimeoutMs: 1_000,
+    maxFetchTimeoutMs: 30_000,
+    /** Extra attempts beyond the first fetch. */
+    retries: 2,
+    maxRetries: 5
+} as const;
+
 export const ROOM_SETTINGS = {
     max_clients: 6
 } as const;
