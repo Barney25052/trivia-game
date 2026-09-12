@@ -2040,3 +2040,45 @@ ul {
   flex-wrap: wrap;
   gap: 18px;
 }
+
+/* Game-end results (ticket 083) — the winner banner reuses the chase
+   escape/caught color language (contestant blue vs chaser red) but as an
+   inline block rather than chaseOutcomeBanner's fixed overlay, since this
+   banner is the results screen's own primary content, not laid over
+   another screen. */
+.resultsBanner {
+  margin: 20px auto;
+  padding: 20px 30px;
+  border-radius: 20px;
+  font-family: "Roboto", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 32px;
+  color: var(--color-white);
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(var(--color-black-rgb), 0.4);
+}
+
+.resultsBanner-teamWin {
+  background: linear-gradient(160deg, var(--contestant-blue-glow), var(--gradient-page-end));
+}
+
+.resultsBanner-chaserWin {
+  background: linear-gradient(160deg, var(--chaser-red-glow), var(--chaser-red-dark));
+}
+
+.resultsPlayerList {
+  margin: 10px 0;
+}
+
+.resultsPlayerRow {
+  font-size: 22px;
+}
+
+.resultsStatus-back {
+  color: var(--color-green);
+}
+
+.resultsStatus-caught {
+  color: var(--chaser-red-bright);
+}

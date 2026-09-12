@@ -49,7 +49,6 @@ describe("GameState", () => {
     assert.strictEqual(player.madeItBack, false);
     assert.strictEqual(player.cashBuilderMoney, 0);
     assert.strictEqual(player.boardPos, 0);
-    assert.strictEqual(player.score, 0);
     assert.strictEqual(player.chaserVote, "");
     assert.deepStrictEqual([...room.state.contestantsOrder], [seatId]);
   });

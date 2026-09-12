@@ -663,6 +663,9 @@ function sendChaserQuip(text) {
       v-if="currentScreen=='gameEnd'"
       :winner="winner"
       :players="players"
+      :teamScore="teamScore"
+      :chaserScore="chaserScore"
+      :teamPot="teamPot"
       @leave="handleLeave"
     />
   </div>

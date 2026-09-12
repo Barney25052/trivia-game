@@ -14,7 +14,6 @@ export class GamePlayer extends Schema {
     @type("boolean") isHost: boolean = false;
     @type("string") chaserVote: string = "";
     @type("boolean") revealReady: boolean = false;
-    @type("number") score: number = 0;
     @type("string") seatState: string = "waiting";
     @type("string") chaserCharacterId: string = "";
     @type("string") character: string = "";
