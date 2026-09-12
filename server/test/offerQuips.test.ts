@@ -66,19 +66,19 @@ describe("offerQuips", () => {
       alice.send("revealReady", { characterId: "bezos" });
       bob.send("revealReady", { characterId: "nami" });
       await waitForPhase(room, GamePhase.CashBuilder);
+      const offerStartOnAlice = alice.waitForMessage("offerStart");
+      const offerStartOnBob = bob.waitForMessage("offerStart");
       room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney = 5000;
       await waitForPhase(room, GamePhase.Offer);
 
       const chaserSeatId = room.state.chaserSeatId;
       const chaserClient = chaserSeatId === seatIdOf(room, alice) ? alice : bob;
-      return { room, alice, bob, chaserClient };
+      return { room, alice, bob, chaserClient, offerStartOnAlice, offerStartOnBob };
     }
 
     it("offerStart / offerLowSet / offer all carry a pool quip that every client sees identically", async () => {
-      const { room, alice, bob, chaserClient } = await reachOffer(colyseus);
+      const { room, alice, bob, chaserClient, offerStartOnAlice, offerStartOnBob } = await reachOffer(colyseus);
 
-      const offerStartOnAlice = alice.waitForMessage("offerStart");
-      const offerStartOnBob = bob.waitForMessage("offerStart");
       const startOnAlice = await offerStartOnAlice;
       const startOnBob = await offerStartOnBob;
       assert.ok(
