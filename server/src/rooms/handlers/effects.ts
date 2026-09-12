@@ -216,6 +216,8 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           ).length;
           room.state.teamScore = survivors;
           console.log(`Final round: team starts at ${survivors} points (${room.teamFinalDurationMs}ms)`);
+          const firstTeamQuestion = room.finalRoundQuestions.drawNext(room.questionBank, "team");
+          room.sendFinalQuestion("team", firstTeamQuestion);
           room.activeTimer = room.scheduleTimer(room.teamFinalDurationMs, () => {
             room.dispatch({ type: "finalTeamTimeout" });
           });
@@ -224,6 +226,8 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
 
         case "startFinalChaser": {
           console.log(`Final round: chaser goes (${room.chaserFinalDurationMs}ms)`);
+          const firstChaserQuestion = room.finalRoundQuestions.drawNext(room.questionBank, "chaser");
+          room.sendFinalQuestion("chaser", firstChaserQuestion);
           room.activeTimer = room.scheduleTimer(room.chaserFinalDurationMs, () => {
             room.dispatch({ type: "finalChaserTimeout" });
           });

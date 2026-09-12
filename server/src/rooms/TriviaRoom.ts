@@ -10,6 +10,7 @@ import {
 } from "../gameFlow.js";
 import { scheduleTimer, TimerHandle } from "../timer.js";
 import { QuestionManager } from "../questions/questionManager.js";
+import { FinalRoundQuestions } from "../questions/finalRound.js";
 import { loadBank, BankQuestion } from "../questions/bank.js";
 import { createOpenTdbQuestionSource, McQuestion, McQuestionSource } from "../questions/opentdb.js";
 import { createMcBackupQuestionSource } from "../questions/mcBackup.js";
@@ -87,6 +88,7 @@ export class TriviaRoom extends Room {
   currentOffer: OfferAmounts | null = null;
   currentOfferAmount = 0;
   questionManager = new QuestionManager();
+  finalRoundQuestions = new FinalRoundQuestions();
   questionBank: BankQuestion[] = [];
   mcQuestionSource: McQuestionSource = createOpenTdbQuestionSource();
   /** Local fallback pool (ticket 090), drawn only once the live source's
@@ -154,6 +156,27 @@ export class TriviaRoom extends Room {
       questionId,
     };
     this.broadcast("question", payload);
+  }
+
+  /** Delivers a final-round question to exactly one side's clients — never a
+   * room broadcast (ticket 077): the Chaser must never receive a team prompt,
+   * or vice versa. `question` is null when that side's bank is exhausted. */
+  private sendFinalQuestion(side: "team" | "chaser", question: BankQuestion | null) {
+    const payload = {
+      side,
+      questionId: question?.id ?? null,
+      prompt: question?.question ?? null,
+    };
+    for (const client of this.clients) {
+      const seatId = this.seatIdForClient(client);
+      if (!seatId) {
+        continue;
+      }
+      const isChaser = seatId === this.state.chaserSeatId;
+      if ((side === "chaser") === isChaser) {
+        client.send("finalQuestion", payload);
+      }
+    }
   }
 
   private clearChaseAnswerTimer() {
