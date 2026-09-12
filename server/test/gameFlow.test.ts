@@ -152,18 +152,33 @@ describe("gameFlow transition", () => {
             ]);
         });
 
-        it("throws if there are no contestants", () => {
+        it("lineup + complete with zero contestants -> gameEnd instead of throwing (ticket 061)", () => {
             const ctx = context({ currentPhase: GamePhase.Lineup, contestantsOrder: [] });
-            assert.throws(
-                () => transition({ type: "lineupComplete" }, ctx),
-                /at least one contestant/
-            );
+            const result = transition({ type: "lineupComplete" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.GameEnd);
+            assert.deepStrictEqual(result.effects, [{ type: "endGame", winner: "chaser" }]);
         });
 
         it("throws if not in lineup", () => {
             assert.throws(
                 () => transition({ type: "lineupComplete" }, context()),
                 /lineupComplete is not valid in phase lobby/
+            );
+        });
+    });
+
+    describe("lineupAbandoned", () => {
+        it("lineup + last contestant leaves -> gameEnd, chaser wins (no team left to play)", () => {
+            const ctx = context({ currentPhase: GamePhase.Lineup, contestantsOrder: [] });
+            const result = transition({ type: "lineupAbandoned" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.GameEnd);
+            assert.deepStrictEqual(result.effects, [{ type: "endGame", winner: "chaser" }]);
+        });
+
+        it("throws if not in lineup", () => {
+            assert.throws(
+                () => transition({ type: "lineupAbandoned" }, context()),
+                /lineupAbandoned is not valid in phase lobby/
             );
         });
     });

@@ -296,6 +296,18 @@ export class TriviaRoom extends Room {
       this.dispatch({ type: "revealAllReady" });
     }
 
+    // If every remaining contestant leaves during the Lineup hold (ticket 049's
+    // turn-order screen), there's nobody left to run a cash builder for: resolve
+    // to GameEnd instead of letting the pending lineup timer throw and leave the
+    // room stuck in Lineup (bug-004, ticket 061).
+    if (
+      this.state.currentPhase === GamePhase.Lineup &&
+      this.state.contestantsOrder.length === 0
+    ) {
+      console.log("Last contestant left during the Lineup — no team left, ending the game");
+      this.dispatch({ type: "lineupAbandoned" });
+    }
+
     console.log(`Client left room ${this.roomId} (seat ${seatId ?? "unseated"})`);
   }
 

@@ -185,7 +185,7 @@ onUnmounted(() => {
                 :disabled="inputDisabled"
                 @keyup.enter="submit"
                 ref="inputBox"
-                @blur="inputBox.focus()"
+                @blur="inputBox?.focus()"
             />
 
             <p v-if="roundFinished" class="playerName cashBuilderStatus">Time's up!</p>

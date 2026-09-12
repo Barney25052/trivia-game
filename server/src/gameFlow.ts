@@ -9,6 +9,7 @@ export type FlowEvent =
     | { type: "chaserRevealComplete" }
     | { type: "revealAllReady" }
     | { type: "lineupComplete" }
+    | { type: "lineupAbandoned" }
     | { type: "readyCooldownDone" }
     | { type: "cashBuilderTimeout" }
     | { type: "chaserCharacterRevealComplete" }
@@ -160,11 +161,28 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
             ensurePhase(event, context, GamePhase.Lineup);
             const first = context.contestantsOrder[0];
             if (first === undefined) {
-                throw new Error("gameFlow: lineupComplete requires at least one contestant");
+                // Every contestant left during the hold. onLeave should already have
+                // resolved via lineupAbandoned, but never throw the room into a stuck
+                // Lineup if the timer somehow fires anyway (bug-004, ticket 061).
+                return {
+                    nextPhase: GamePhase.GameEnd,
+                    effects: [{ type: "endGame", winner: "chaser" }]
+                };
             }
             return {
                 nextPhase: GamePhase.CashBuilder,
                 effects: [{ type: "startReadyCooldown", seatId: first, round: context.activeRound + 1 }]
+            };
+        }
+
+        case "lineupAbandoned": {
+            // The last contestant disconnected during the Lineup hold: there is
+            // nobody left to run a cash builder for, so the team forfeits and the
+            // Chaser wins (bug-004, ticket 061).
+            ensurePhase(event, context, GamePhase.Lineup);
+            return {
+                nextPhase: GamePhase.GameEnd,
+                effects: [{ type: "endGame", winner: "chaser" }]
             };
         }
 

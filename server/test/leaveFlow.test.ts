@@ -281,4 +281,54 @@ describe("leaveFlow (integration)", () => {
             "the chaser resolves among the remaining players once the selection timer fires"
         );
     });
+
+    it("last contestant leaves during lineup: away from Lineup and into GameEnd instead of stalling (bug-004, ticket 061)", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", {
+            cashBuilderDurationMs: 200,
+            chaserSelectionDurationMs: 10000,
+            chaserRevealDurationMs: 80,
+            chaserCharacterRevealDurationMs: 80,
+            revealReadyCooldownMs: 80,
+            lineupDurationMs: 400,
+            teamFinalDurationMs: 80
+        });
+        const carol = await colyseus.connectTo(room, { playerName: "Carol" });
+        const alice = await colyseus.connectTo(room, { playerName: "Alice" });
+        await sleep(100);
+
+        // Deterministic setup: vote the host (Carol) in as the Chaser, leaving
+        // Alice as the lone contestant in the turn order.
+        carol.send("setChaserMode", { mode: "vote" });
+        await sleep(30);
+        carol.send("startGame");
+        await sleep(50);
+        carol.send("chaserVote", { targetSeatId: seatIdOf(room, carol) });
+        await sleep(30);
+        alice.send("chaserVote", { targetSeatId: seatIdOf(room, carol) });
+        await waitForPhase(room, GamePhase.RolesReveal);
+        assert.strictEqual(room.state.chaserSeatId, seatIdOf(room, carol));
+        assert.deepStrictEqual([...room.state.contestantsOrder], [seatIdOf(room, alice)]);
+
+        const aliceSeat = seatIdOf(room, alice);
+        const endGameMessage = carol.waitForMessage("endGame");
+        carol.send("revealReady", { characterId: "bezos" });
+        alice.send("revealReady");
+        await waitForPhase(room, GamePhase.Lineup);
+        assert.strictEqual(room.state.contestantsOrder.length, 1);
+
+        // The lone contestant forfeits during the hold...
+        alice.leave();
+
+        // ...and the room resolves forward instead of stalling in Lineup forever.
+        const endGame = await endGameMessage;
+        assert.strictEqual(room.state.currentPhase, GamePhase.GameEnd);
+        assert.strictEqual(endGame.winner, "chaser", "an abandoned team means the Chaser wins");
+        assert.strictEqual(room.state.players.get(aliceSeat), undefined);
+        assert.strictEqual(room.state.contestantsOrder.length, 0);
+
+        // The pending lineup timer is cancelled — the room must not drift back or
+        // throw once the would-be lineup duration expires.
+        await sleep(room.lineupDurationMs + 150);
+        assert.strictEqual(room.state.currentPhase, GamePhase.GameEnd);
+    });
 });
