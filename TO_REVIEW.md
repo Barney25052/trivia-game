@@ -37,7 +37,8 @@ Add entries like so:
 17. WHAT: Team-final answer model — the ticket's default is "the first submitted answer resolves the question" (correct → +1, wrong → no change, stream advances either way), the same no-penalty advance as the cash builder.
     WHERE: tickets/078-final-round-team-answers.md
     WHY: The show's team huddles then gives one spoken answer, so first-answer-advances is faithful — but an alternative product take is "the team keeps answering the same question until someone gets it right" (multi-player persists against a hard question). It's roughly a one-line change; the user should pick before 078 is implemented.
-    STATUS: open
+    STATUS: decided
+    DECISION: **Buzz-in** chosen by the user (2026-09-12): the team must buzz in (button or **space**) to take a question, only the first to buzz types the answer, then reveal → next question; the Chaser answers **directly with no buzz**. Follow-up clarification (same day): the team's steal in the Chaser round is **not** buzz-in — a Chaser miss opens a **20-second window** and the **first submitted answer is taken even if it's wrong**. GOAL.md rules + tickets 077/078/079/080/081/082 updated to match; the "keep answering until correct" alternative is dead.
 
 18. WHAT: Chaser-final edge rules baked into 079 as defaults: push-back floors `chaserScore` at 0 (no negative), and a Chaser reaching *exactly* `teamScore` wins ("reaches/passes" ⇒ `>=`).
     WHERE: tickets/079-final-round-chaser-engine.md

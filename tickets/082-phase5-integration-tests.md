@@ -5,11 +5,12 @@ Prove the whole final round plays correctly from `TeamFinal` through `GameEnd` �
 
 ## Scope
 - Extend `server/test/finalRound.test.ts` (or add `server/test/finalRoundFlow.test.ts`) with room-level scenarios riding the stub-handler pattern used by `roomFlow.test.ts`:
-  1. **Team round → Chaser round → Chaser win**: full walk — survivors X set `teamScore` start; correct team answers bump it; `finalTeamTimeout` → ChaserFinal; Chaser answers correctly until `chaserScore >= teamScore` → `gameEnd` winner **chaser** (assert the exact-tie case banks a chaser win).
+  1. **Team round → Chaser round → Chaser win**: full walk — survivors X set `teamScore` start; correct **buzzed** team answers bump it; `finalTeamTimeout` → ChaserFinal; Chaser answers directly (no buzz) until `chaserScore >= teamScore` → `gameEnd` winner **chaser** (assert the exact-tie case banks a chaser win).
   2. **Chaser timeout → team win**: walk the same route but let the Chaser's timer expire → `gameEnd` winner **team**.
-  3. **Steal push-back in anger**: Chaser answers wrong, the team steals correctly (`chaserScore - 1`, floored at 0), then the Chaser still wins by climbing back.
-  4. **Eliminated players answer in the team round** and their correct answers count toward `teamScore`.
-  5. **End-to-end phase order** through a full game (reuse/shorten durations via the room-option overrides from 024): `... ChaserFinal` from the last contestant's chase is reached and the game terminates — no stale `gameFlow` path, no hang (and the null-bank team/chaser exhaustion path from 077 doesn't stall).
+  3. **Steal push-back in anger**: Chaser answers wrong, the team steals correctly within the 20s window (`chaserScore - 1`, floored at 0), then the Chaser still wins by climbing back. Also assert a wrong first steal answer closes the window (no second chance, no push-back) and that an unclaimed steal (window expires) advances the Chaser with no score change — **no buzz involved.**
+  4. **Eliminated players buzz in during the team round** and their correct answers count toward `teamScore`.
+  5. **Buzz race**: two team contestants both `buzzIn` on the same question; the first buzz wins and the second is rejected; only the winner's `submitFinalAnswer` is accepted.
+  6. **End-to-end phase order** through a full game (reuse/shorten durations via the room-option overrides from 024): `... ChaserFinal` from the last contestant's chase is reached and the game terminates — no stale `gameFlow` path, no hang (and the null-bank team/chaser exhaustion path from 077 doesn't stall).
 - Mirrors the guards already unit-tested in 077/078/079 — this ticket asserts the *composition*, not re-testing each guard.
 
 ## Acceptance

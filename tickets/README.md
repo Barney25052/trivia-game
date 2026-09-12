@@ -115,7 +115,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 
 ### Phase 5 — The final round
 | 077 | Server — final-round question delivery for the team and Chaser streams (per-side, non-repeating) | backlog |
-| 078 | Server — team answers (`submitFinalAnswer`, group model, `teamScore + 1`) | backlog |
+| 078 | Server — team answers: buzz-in gate + `submitFinalAnswer`, `teamScore + 1` | backlog |
 | 079 | Server — Chaser answer engine: `chaserScore`, win on reach, steal/push-back (floor 0), remove placeholder `finalChaserScore` | backlog |
 | 080 | Client — real Team Final screen (UI sign-off required) | backlog |
 | 081 | Client — real Chaser Final screen incl. steal prompt (UI sign-off required) | backlog |

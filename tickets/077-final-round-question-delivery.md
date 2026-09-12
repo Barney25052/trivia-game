@@ -10,6 +10,7 @@ Phase 5 kickoff. The final round's two parallel **open-ended** streams (team and
   - `startFinalChaser`: draw and deliver the first Chaser question.
 - **Delivery is per-side, never broadcast**: `client.send("finalQuestion", { side: "team" | "chaser", questionId, prompt })` to the non-chaser seats (team) and to the Chaser seat (chaser) separately. No broadcast of prompts to the whole room — this half-resolves the still-open TO_REVIEW #13 (question payload sensitivity) by making the wire itself side-isolated for the final, and the Chaser can never see a team prompt (or vice versa). The client filter in `App.vue` is NOT the trust boundary here — the server never sends the wrong side a prompt.
 - New message types follow ticket 035's shape — add `FinalQuestionPayload` to `server/src/shared/MessageTypes.ts`.
+- **Who owns the question is 078's job**: 077's `finalQuestion` is purely the prompt; the per-question buzz lock (`currentFinalTeamBuzzer`), the `buzzIn`/`finalBuzz` messages, and the "only the buzzer submits" rule land in 078.
 - Bank exhaustion mid-round: send `"finalQuestion", null` to that side only; the side's remaining timer keeps running (matches the cash-builder exhaustion precedent) — the timer, not a question, ends the round.
 - Tunables: no new durations needed (`FINAL_ROUND` has `teamDurationMs`/`chaserDurationMs` already); the draw retry must not exist here — the bank is local and synchronous.
 

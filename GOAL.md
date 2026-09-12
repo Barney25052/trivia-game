@@ -4,7 +4,7 @@ Living document for the project's goal and plan. Any agent session should treat 
 
 ## Goal
 
-Build an online **asymmetric trivia game** inspired by *The Chase*: one player is the **Chaser**, the rest are **Contestants**. Each contestant builds a cash pot, then races the Chaser on a money board — and the team finishes with a group final round against the clock.
+Build an online **asymmetric trivia game** inspired by *The Chase*: one player is the **Chaser**, the rest are **Contestants**. Each contestant builds a cash pot, then races the Chaser on a money board — and the team finishes with a **buzz-in final round** against the clock.
 
 Current tech foundation (to be extended):
 - **Server**: Colyseus 0.17 (TypeScript) in `server/` — authoritative state, timers, and scoring.
@@ -38,17 +38,17 @@ Current tech foundation (to be extended):
 
 Repeat cash builder + offer + chase for every contestant.
 
-**Play is strictly turn-based, one contestant at a time.** The contestants take turns in a fixed order: only the active contestant plays their cash builder → offer → chase; every other contestant waits (they're spectators at the table — see the social/dead-player features). No two contestants ever play at the same time. The only round where everyone answers at once is the **team final** ("answering as a group" below). The **Chaser** is not idle — they're active in *every* contestant's round (making offers, then answering the chase questions head-to-head) — but contestants never overlap each other.
+**Play is strictly turn-based, one contestant at a time.** The contestants take turns in a fixed order: only the active contestant plays their cash builder → offer → chase; every other contestant waits (they're spectators at the table — see the social/dead-player features). No two contestants ever play at the same time. The only round where everyone is in the action at once is the **team final** — but even there only *one* contestant answers at a time: **buzz-in** (below). The **Chaser** is not idle — they're active in *every* contestant's round (making offers, then answering the chase questions head-to-head) — but contestants never overlap each other.
 
 ### Final round (team vs Chaser)
-- The **team** gets **2 minutes** of open-ended questions, answering as a group. Every correct answer is **+1**.
+- The **team** gets **2 minutes** of open-ended questions. **Buzz-in answering**: a question is shown to all non-Chaser players; the first to **buzz in** (an on-screen button, or pressing **space**) wins the right to answer it — and only that contestant can type the answer. A correct answer is **+1** and the next question drops; a wrong answer shows the correct one and moves on (no penalty — the same free-answer policy as the cash builder). If nobody buzzes, the question stays up until a buzz arrives or the clock runs out; the 2-minute timer is the only bound on the round.
 - The team starts with **X points, where X = the number of contestants who made it back**.
 - **Two parallel question sets**: the team and Chaser answer **different** sets — the team draws one set, the Chaser gets the other (both drawn from the same bank, same difficulty). Neither side sees the other's questions.
-- **Eliminated players rejoin for this round**: everyone — including contestants who were caught — answers in the team's group round. X is unchanged and still only counts survivors; eliminated players just add their answers to the 2-minute tally.
-- **If no one made it back** (X = 0), the team still plays the Final for a nominal pot — everyone answers, the Chaser is just X ahead where X=0 until the team catches up.
-- Then the **Chaser** gets **2 minutes** of open-ended questions:
+- **Eliminated players rejoin for this round**: everyone — including contestants who were caught — can buzz in during the team round. X is unchanged and still only counts survivors; eliminated players just add their buzz-in answers to the 2-minute tally.
+- **If no one made it back** (X = 0), the team still plays the Final for a nominal pot — everyone buzzes in, the Chaser is just X ahead where X=0 until the team catches up.
+- Then the **Chaser** gets **2 minutes** of open-ended questions — the Chaser answers **directly, with no buzz-in** (the prompt is shown and they just type, like the cash builder):
   - Correct answer → Chaser **+1**.
-  - Wrong answer → the team gets a chance to answer; if they're right they **push the Chaser back** one.
+  - Wrong answer → the team gets a **20-second steal window — no buzz-in**: the missed question opens up to all contestants, anyone can type an answer, and the **first submitted answer is taken, even if it's wrong**. A correct steal **pushes the Chaser back** one; a wrong one — or nobody answering in time — just moves the Chaser on (the visible correct answer is shown, the same free-answer policy as the cash builder).
 - If the Chaser **reaches/passes the team's score** → Chaser wins. If the Chaser **runs out of time first** → the team wins.
 
 ### Question bank
@@ -66,10 +66,10 @@ This game is adapted from the UK show *The Chase* (ITV), per official documents/
 | ~7-step money board; the higher/lower you play for, the closer to / further from the Chaser you start (middle = 5 correct to reach home, high = 6, low = 4) | Board spaces 1–7, escape at 0; low=4, middle=5, high=6 — **identical reach-home counts** |
 | Lower offer can be near-$0 (or negative) if the Chaser limits exposure | Same idea (our low can reach $0) |
 | Head-to-head: first to answer right forces the other into a **5-second lockout** | Same 5s window |
-| Final: survivors (only) answer as a team vs Chaser for an equal share of the prize fund | All players rejoin the group round; X = survivors only; fund split among survivors' team pot |
+| Final: survivors (only) answer as a team vs Chaser for an equal share of the prize fund | All players rejoin; X = survivors only; team answers by **buzz-in** (button or space), Chaser types directly with **no buzz**; fund split among survivors' team pot |
 | Team picks **two categories**, Chaser gets the other | Two parallel open-ended sets from the same bank; team picks, Chaser gets the other — neither sees theirs |
 
-Deliberate differences we keep: the Chaser is a **player** (not a pro/host), so a **Chaser pot** bounds offers; open-ended typed answers (not spoken); eliminated players rejoin the final; MC comes from OpenTDB (3 options shown).
+Deliberate differences we keep: the Chaser is a **player** (not a pro/host), so a **Chaser pot** bounds offers; open-ended typed answers (not spoken) — the team side of the final is **buzz-in** (first to buzz owns the question); eliminated players rejoin the final; MC comes from OpenTDB (3 options shown).
 
 ## Current state
 
@@ -144,9 +144,9 @@ Granular agent tasks drafted in the Phase 3 review, tracked in `tickets/README.m
 ### Phase 5 — Final round
 Granular agent tasks drafted in the Phase 4 review, tracked in `tickets/README.md` (077–083).
 - [ ] Server: per-side final-round question delivery — team and Chaser streams from the same bank, non-repeating, never broadcast to the wrong side, answers never on the wire (077)
-- [ ] Team: 2-min open-ended group round starting at X (survivors count); any non-chaser answer bumps `teamScore + 1` (078)
-- [ ] Chaser: 2-min round — correct answers chase the target; a wrong answer opens a team steal window that pushes the Chaser back (079) — win/lose resolution on reach ("reaches/passes") vs timeout
-- [ ] Client: real Team Final screen (080, UI sign-off) and Chaser Final screen incl. steal prompts (081, UI sign-off)
+- [ ] Team: 2-min open-ended **buzz-in** round starting at X (survivors count); first to buzz owns the question, a correct answer bumps `teamScore + 1` (078)
+- [ ] Chaser: 2-min round — Chaser answers **directly, no buzz**; correct answers chase the target; a wrong answer opens a **20s team steal — first submitted answer wins (no buzz), correct steals push the Chaser back** (079) — win/lose resolution on reach ("reaches/passes") vs timeout
+- [ ] Client: real Team Final screen — buzz button + space, buzzer types the answer (080, UI sign-off); Chaser Final screen — Chaser types with no buzz, plus steal prompts (081, UI sign-off)
 - [ ] Phase 5 integration tests (082)
 - [ ] Game-end results from real scores; drop the dead `GamePlayer.score` (083, UI sign-off)
 
