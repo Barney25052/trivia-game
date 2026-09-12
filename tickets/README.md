@@ -88,6 +88,22 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 ### Follow-up bug fixes
 | 053 | Cash builder — on-screen pot/count still don't increase (`bug-005`) | done\*\* |
 | 054 | Random chaser — skip the ChaserSelection player-list hold, go straight to the wheel (`bug-006`) | done |
+| 058 | Fix the impossible low offer when a contestant banks $0 and the team pot is $0 | backlog |
+| 060 | Fix `roomFlow` test race — `phases` array misses `RolesReveal` broadcast (`bug-003`) | backlog |
+| 061 | Recover the game when the last contestant leaves during the `Lineup` hold (`bug-004`) | backlog |
+| 062 | Fix cash-builder answer input silently swallowing submissions (`bug-008`) | backlog |
+
+### Phase 3 follow-up — new feature
+| 059 | Chaser character reveal — new phase after the first cash builder, before the first offer | backlog |
+
+### Phase 4 — The board chase
+| 063 | Extend the question bank to multiple-choice | backlog |
+| 064 | Server — authoritative board-chase engine | backlog |
+| 065 | Client — real board-chase screen | backlog |
+| 066 | Phase 4 integration tests — full board-chase flow | backlog |
+
+### Whole-app polish
+| 067 | Full layout/design pass across all screens once every phase is implemented (discussion, not a solo build) | backlog |
 
 \*\*\* 056: scope was narrowed with the user before implementation (per AGENTS.md's UI sign-off rule) from "always there, every phase" to **only the phases where the Chaser and a contestant are face-to-face**: Offer, Chase, and the Chaser Final — not Lobby, Chaser Selection/Reveal, Roles Reveal, Lineup, Cash Builder, or Team Final. Placement is inline on the left side of each of those three screens (matching where the box already sat in Offer, per ticket 052) rather than a global fixed-position overlay, so `ChaserPanel.vue` is instantiated once per "table" screen instead of a single App-level mount; quip display state (`chaserQuipText`/`chaserQuipKey`) is still centralized in `App.vue` and passed down, with each screen able to feed it local auto-quips (`@auto-quip`) alongside the real `chaserQuip` broadcast from ticket 055. `OfferScreen.vue`'s inline chaser box/portrait/bubble markup was extracted into the shared component as scoped. Verified manually with two browser clients through a full round (Lobby → chaser pick → Offer, incl. a live Chaser-typed quip arriving on the other client → Chase → Team Final (panel correctly absent) → Chaser Final); found and logged an unrelated pre-existing bug in the process (`bug-008`, `CashBuilderScreen.vue` answer input).
 

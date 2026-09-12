@@ -24,14 +24,14 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: `phases` always contains every phase the server transitioned through, since `phase` broadcast messages are delivered before state settles.
 - Root cause (suspected): `waitForPhase` polls server state directly and returns as soon as state matches; the Colyseus `phase` broadcast message is delivered asynchronously, so alice's `onMessage` handler may not have run yet when the assert fires. Classic client-delivery-vs-server-state race.
 - Repro: `cd server && npm test` on clean `dev` HEAD — "chaser reveal is its own phase" fails; re-runs also fail.
-- Status: open
+- Status: triaged — ticket 060
 
 ## `bug-004` — Room can stall in `Lineup` if the last contestant leaves during the 7s hold
 - Found: 2026-09-11 · ticket 049 · `server/src/rooms/TriviaRoom.ts` (`onLeave`), `server/src/gameFlow.ts` (`lineupComplete`)
 - What you saw: ticket 049 inserts a `Lineup` hold after the roles-reveal ready gate. If every remaining contestant leaves during that 7s window (e.g. a 2-contestant room where one is the chaser and the other forfeits), `onLeave` removes them from `contestantsOrder`, then the pending lineup timer fires `lineupComplete`, which throws "at least one contestant" — dispatch catches and logs, but the room is stuck in `Lineup` forever (gridlocked like the pre-existing no-contestants cases).
 - Expected: a departing-seat exit from `Lineup` resolves forward (advance to `CashBuilder`, or end the game/room) instead of stalling.
 - Repro steps: prefer 2-player room (host+chaser and one contestant); walk to RolesReveal, both send `revealReady`, wait until `Lineup`, then `alice.leave()`; observe phase stays `lineup` past the `lineupDurationMs` timer.
-- Status: open
+- Status: triaged — ticket 061
 
 ## `bug-005` — Cash builder: on-screen pot and "correct answers" count still don't increase (ticket 048 closed without a client fix)
 - Found: 2026-09-11 · user report (ticket 048 reopened) · `client/src/App.vue`, `client/src/screens/CashBuilderScreen.vue`
@@ -60,4 +60,4 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: every Enter-triggered submission reaches the server and the input always clears.
 - Suspected cause: `submit()` flips `awaitingNext`/`inputDisabled` to `true` synchronously, which sets the input's `:disabled` attribute; a browser auto-blurs an element the instant it becomes disabled while focused, and `@blur="inputBox.focus()"` then dereferences `inputBox.value` without optional chaining (unlike the `handleGlobalKeydown` use of `inputBox.value?.focus()` just above it) — if the ref is momentarily null during that patch, the handler throws and (per the repro) the answer never reaches `room.send`.
 - Repro steps: 1. Run `server` + `client` dev, two players, reach `CashBuilder` as the active contestant. 2. Type an answer and press Enter. 3. Watch devtools console for the `focus()` TypeError and confirm the input text is not cleared / pot unchanged. May take 1-2 tries to reproduce.
-- Status: open
+- Status: triaged — ticket 062

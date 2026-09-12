@@ -73,7 +73,7 @@ Deliberate differences we keep: the Chaser is a **player** (not a pro/host), so 
 ## Current state
 
 - The room is mid-refactor from a *simpler* trivia game to the asymmetric rules above (tickets 001–025 across Phase 0/1 + follow-up). The foundation and phase wiring are in place; the game is not yet playable end-to-end.
-- Working today (server): create/join `trivia` room; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers (`src/timer.ts`); open-ended question bank (572 questions) with loader, non-repeating random picker, and a lenient/fuzzy answer checker (`src/questions/answerChecker.ts`); a **pure `gameFlow` state machine** whose `FlowEffect`s the room applies. `npm test` is green (**136** tests).
+- Working today (server): create/join `trivia` room; first-joiner-is-host; `GameState`/`GamePlayer` schema synced (roles, board, chaser pot, team pot); server game-config constants + `PlayerRole`; cancellable room-clock timers (`src/timer.ts`); open-ended question bank (572 questions) with loader, non-repeating random picker, and a lenient/fuzzy answer checker (`src/questions/answerChecker.ts`); a **pure `gameFlow` state machine** whose `FlowEffect`s the room applies. `npm test` is green (**168** tests, verified in the Phase 3 review).
 - The room (tickets 007–008, 013) dispatches real `gameFlow` transitions: `startGame` → authoritative **chaser selection** (random or vote, host-driven) → cash builder → offer → chase, repeating per non-chaser contestant, then team final → chaser final → game end, with server-authoritative timers wired. Client has screens for the new phases (ticket 009) and `SERVER_URL` is configurable via `VITE_SERVER_URL` (ticket 010).
 - **Phase 1 (lobby & chaser selection) is done**: authoritative **chaser selection** in **random** and **vote** modes (013) plus the client screens — mode pick + vote buttons (014); role badges, a static rules panel, and a chaser-identity reveal when selection resolves (015); server-side player-name validation on join (016). Tickets 017 (deterministic `roomFlow` e2e) and 018 (TriviaTypes parity) also landed.
 - **Phase 1 follow-up (tickets 019–025) is done**: random chaser wheel animation (019), lobby polish with settings rail (020), roles-reveal as a gated phase with ready vote + get-ready cooldown (021 + 022), authority/phase guards on offer/chase/final handlers (023), room-option clamping (024), and explicit random default (025). Reviewed and verified (see `REVIEWERS.md` review). Three follow-up tickets created: 026 (drop the synced `GamePlayer.sessionId` field), 027 (remove template cruft + dead CSS), 028 (clear the chaser-wheel overlay on leave).
@@ -81,7 +81,8 @@ Deliberate differences we keep: the Chaser is a **player** (not a pro/host), so 
 - **Seat-id identity (034 + 044) is done**: game logic (the players map, `contestantsOrder`, `chaserSeatId`, `activeContestantSeatId`, question targeting, offers, chaser votes) is keyed by a stable room-local **seat id** (`seat-N`), not the connection-scoped sessionId. `GamePlayer.sessionId` is dropped from the schema; clients learn their seat id via a `whoami` → `seatId` handshake. The sessionId survives only as a server-side translation map (`sessionIdToSeatId`, cleaned up on leave) and for per-connection rate limiting/logs.
 - **Lineup interstitial (049) is done**: after the roles-reveal ready gate, the room holds a new `Lineup` phase (`revealAllReady → Lineup → CashBuilder`) that lists the contestants in turn order (1st, 2nd, 3rd…, face placeholders for now) for `LINEUP.durationMs` (~7s, clamped via `lineupDurationMs` room option), then auto-advances to contestant 1's get-ready cooldown + cash builder. `GamePhase.Lineup` added to both `TriviaTypes.ts` copies, with a pure `gameFlow` transition test + a roomFlow hold test.
 - **Phase 3 — Chaser pot + offer-setting (050–051, server) is done**: `chaserPot` is a live budget (`CHASER_POT.initial`/`perRound` in `gameConfig.ts`) that grows $30k after every round and is debited by the escape payout, floored at $0 (050). The Offer phase is now a real two-step round (051): `startOffer` broadcasts `"offerStart"` with just the middle amount; the Chaser then calls `setChaserLowOffer` (multiple of $100, < middle, and if negative no more than the current team pot) — broadcasting `"offerLowSet"` — then `setChaserHighOffer` (multiple of $1,000, > middle, ≤ the Chaser's remaining pot), which dispatches the new `chaserOffersSet` gameFlow effect and broadcasts the final `"offer"` with all three tiers. `offerChoice` now rejects until both are set. No more auto-computed low/half-high/double math.
-- NOT done yet: the offer screen's client UI (052); the MC board-chase (Phase 4 — comes from our own bank, opentdb dropped by decision); the chase/final screens are still placeholders.
+- **Phase 3 — Offer screen client UI (052) and persistent Chaser presence (055–056) are done**, reviewed. Two follow-ups found in review: an **impossible low-offer softlock** when a contestant banks $0 in the cash builder while the team pot is still $0 (ticket 058, blocker — no legal low offer exists under the current validation, confirmed in code); and a new **Chaser character reveal phase** (ticket 059, product ask) between the first cash builder and the first offer, giving the already-picked character (036) its own reveal beat instead of only showing up inline on the Offer screen. Ticket 057 (sync the Offer screen's auto-quips across clients, `bug-007`) remains backlog.
+- NOT done yet: the MC board-chase (Phase 4 — comes from our own bank, opentdb dropped by decision; tickets 063–066 drafted in the Phase 3 review). The chase/final screens are still placeholders — `ChaseScreen.vue` today is a stub with fake "Option 1/2/3" buttons and a client-self-reported `chaseResult`, trusting the client for correctness (to be replaced by 064).
 - Ticket 012 (done) removed template/legacy cruft: `MyRoom` → `TriviaRoom`, dropped the dead `Question`/`Answer` game phases and `Question`/`QuestionInstance` schema classes, and renamed the server package to `trivia-server`.
 
 ## Plan
@@ -119,15 +120,22 @@ Found on the first playthrough + security review; tracked as tickets and verifie
 ### Phase 3 — The offer
 - [x] Chaser pot lifecycle (server): grows $30k/round, debited on escape, floored at $0 (050)
 - [x] Chaser types the high and low offers based on the middle (what the current player earned); low < middle < high, both capped by the Chaser's remaining pot; negative low allowed down to -teamPot (server, 051) — see "The offer" rules above
-- [ ] Client: offer screen for the Chaser to type low/high and the contestant to pick (052)
+- [x] Client: offer screen for the Chaser to type low/high and the contestant to pick (052)
+- [x] Persistent Chaser panel (box, portrait, quip bubble) across Offer/Chase/ChaserFinal (055–056)
+- [ ] Fix the impossible low offer when middle is $0 and the team pot is $0 (058, blocker found in Phase 3 review)
+- [ ] Chaser character reveal — new phase after the first cash builder, before the first offer (059)
+- [ ] Sync the Offer screen's auto-quips across clients (057, `bug-007`)
 - [ ] High/low multiplier strategy visible to the Chaser (pot remaining)
 
 ### Phase 4 — The board chase
-- [ ] Extend the question bank to multiple-choice (`options[]` + server-held `correctIndex`, loaded like the open-ended bank) — no opentdb at runtime
-- [ ] 7-space board; contestant starts 4/5/6 per offer; Chaser starts at 8 (off board, first correct → 7)
-- [ ] 3-option MC questions; 5-second timer once one side answers
-- [ ] **Both sides may advance on a correct answer** in the same question
-- [ ] Catch = Chaser reaches contestant's space (out); escape = space 0 (offer → team pot)
+Granular agent tasks drafted in the Phase 3 review, tracked in `tickets/README.md` (063–066).
+- [ ] Extend the question bank to multiple-choice (`options[]` + server-held `correctIndex`, loaded like the open-ended bank) — no opentdb at runtime (063)
+- [ ] 7-space board; contestant starts 4/5/6 per offer; Chaser starts at 8 (off board, first correct → 7) (064)
+- [ ] 3-option MC questions; 5-second timer once one side answers (064)
+- [ ] **Both sides may advance on a correct answer** in the same question (064)
+- [ ] Catch = Chaser reaches contestant's space (out); escape = space 0 (offer → team pot) (064)
+- [ ] Real client chase screen replacing the current placeholder (065)
+- [ ] Phase 4 integration tests (066)
 
 ### Phase 5 — Final round
 - [ ] Team: 2-min open-ended group round starting at X (survivors count)

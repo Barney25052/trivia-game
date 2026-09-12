@@ -91,3 +91,8 @@ All items reviewed. Closed items (#3, #4) deleted; open items converted to ticke
     WHY: This is GOAL.md open question #2 ("exact-match vs lenient") answered implicitly by the implementer: filler words are stripped, transpositions pass, single substitutions fail, multi-edit smudges pass. It directly shapes the cash-builder difficulty and how wrong a "right" can be. Since Phase 4 (final rounds + MC) reuses the same checker, flip this into an explicit decision (ticket 047 tracks the reconciliation); the artifacts go in `ANSWER_CHECK` or the docstring, not in the code's assumptions.
     STATUS: decided
     DECISION: Lenient single-edit policy chosen — `checkAnswer` now consumes `ANSWER_CHECK` (normaliseWhitespace, caseInsensitive, allowSingleEdit, editDistanceRatio); GOAL.md open question #2 answered. → Ticket 047.
+
+15. WHAT: `server/src/rooms/handlers/messageHandlers.ts` is 306 lines and mixes every phase's message handlers in one file (lobby/vote, roles-reveal ready, offer low/high, chase result, final score, chaser quip, cash-builder answer) — well past the ~150-200 line comfort zone `REVIEWERS.md` flags.
+    WHERE: server/src/rooms/handlers/messageHandlers.ts:1-306
+    WHY: Ticket 031 already split dispatch/effects/handlers out of `TriviaRoom.ts` once; `messageHandlers.ts` is now the file absorbing all new growth instead. Phase 4 (ticket 064) adds a whole new chase-answer handler with real lockout-timer logic — landing that on top of this file pushes it well past 400 lines and further mixes concerns (lobby setup vs. live gameplay scoring). Worth deciding whether to split by phase (e.g. `handlers/lobby.ts`, `handlers/offer.ts`, `handlers/chase.ts`) before 064 lands, rather than after it's even bigger.
+    STATUS: open
