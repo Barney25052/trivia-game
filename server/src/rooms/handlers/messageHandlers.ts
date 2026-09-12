@@ -295,8 +295,7 @@ export function submitAnswer(client: any, message: any, room: any) {
                 seatId,
                 "open",
                 nextQuestion.id,
-                nextQuestion.question,
-                nextQuestion.category
+                nextQuestion.question
             );
         } else {
             room.broadcast("question", null);

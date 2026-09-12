@@ -118,13 +118,12 @@ export class TriviaRoom extends Room {
     };
   }
 
-  private broadcastQuestion(round: number, targetSeatId: string, kind: "open" | "mc", questionId: number, prompt: string, category: string, options?: string[]) {
-    const payload: { round: number; targetSeatId: string; kind: "open" | "mc"; prompt: string; category: string; options?: string[]; questionId: number } = {
+  private broadcastQuestion(round: number, targetSeatId: string, kind: "open" | "mc", questionId: number, prompt: string, options?: string[]) {
+    const payload: { round: number; targetSeatId: string; kind: "open" | "mc"; prompt: string; options?: string[]; questionId: number } = {
       round,
       targetSeatId,
       kind,
       prompt,
-      category,
       options,
       questionId,
     };

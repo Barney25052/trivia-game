@@ -105,8 +105,7 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
               effect.seatId,
               "open",
               firstQuestion.id,
-              firstQuestion.question,
-              firstQuestion.category
+              firstQuestion.question
             );
           } else {
             room.broadcast("question", null);

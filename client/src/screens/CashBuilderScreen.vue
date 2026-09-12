@@ -172,7 +172,6 @@ onUnmounted(() => {
                     <p class="cashBuilderRevealAnswer">The answer was <strong>{{ revealedCorrectAnswer }}</strong></p>
                 </template>
                 <template v-else-if="currentQuestion">
-                    <span class="cashBuilderCategory">{{ currentQuestion.category }}</span>
                     <p class="cashBuilderQuestion">{{ currentQuestion.prompt }}</p>
                 </template>
                 <p v-else class="playerName">Waiting for the first question…</p>

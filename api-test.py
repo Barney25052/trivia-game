@@ -1,7 +1,7 @@
 import requests
 
 
-url = "https://opentdb.com/api.php?amount=10&category=9&difficulty=hard&type=multiple"
+url = "https://opentdb.com/api.php?amount=10&difficulty=hard&type=multiple"
 
 response = requests.get(
     url

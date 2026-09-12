@@ -40,7 +40,7 @@ describe("QuestionManager", () => {
   it("drawNext returns a question and records the ID as used", () => {
     const qm = new QuestionManager();
     qm.initContestant("alice");
-    const single = [{ id: 1, category: "test", question: "Q1", answer: "A1" }] as BankQuestion[];
+    const single = [{ id: 1, question: "Q1", answer: "A1" }] as BankQuestion[];
     const drawn = qm.drawNext(single, "alice");
     assert.strictEqual(drawn?.id, 1);
     assert.strictEqual(drawn?.question, "Q1");
@@ -51,8 +51,8 @@ describe("QuestionManager", () => {
     const qm = new QuestionManager();
     qm.initContestant("alice");
     const small = [
-      { id: 1, category: "test", question: "Q1", answer: "A1" },
-      { id: 2, category: "test", question: "Q2", answer: "A2" }
+      { id: 1, question: "Q1", answer: "A1" },
+      { id: 2, question: "Q2", answer: "A2" }
     ] as BankQuestion[];
     const first = qm.drawNext(small, "alice");
     const second = qm.drawNext(small, "alice");
@@ -64,8 +64,8 @@ describe("QuestionManager", () => {
     const qm = new QuestionManager();
     qm.initContestant("alice");
     const small = [
-      { id: 1, category: "test", question: "Q1", answer: "A1" },
-      { id: 2, category: "test", question: "Q2", answer: "A2" }
+      { id: 1, question: "Q1", answer: "A1" },
+      { id: 2, question: "Q2", answer: "A2" }
     ] as BankQuestion[];
     qm.drawNext(small, "alice");
     const second = qm.drawNext(small, "alice");
@@ -76,7 +76,7 @@ describe("QuestionManager", () => {
     const qm = new QuestionManager();
     qm.initContestant("alice");
     qm.initContestant("bob");
-    const single = [{ id: 1, category: "test", question: "Q1", answer: "A1" }] as BankQuestion[];
+    const single = [{ id: 1, question: "Q1", answer: "A1" }] as BankQuestion[];
     assert.strictEqual(qm.drawNext(single, "alice")?.id, 1);
     assert.strictEqual(qm.drawNext(single, "bob")?.id, 1, "bob's set is independent of alice's");
   });
@@ -84,7 +84,7 @@ describe("QuestionManager", () => {
   it("drawNext returns null when the bank is exhausted", () => {
     const qm = new QuestionManager();
     qm.initContestant("alice");
-    const single = [{ id: 1, category: "test", question: "Q1", answer: "A1" }] as BankQuestion[];
+    const single = [{ id: 1, question: "Q1", answer: "A1" }] as BankQuestion[];
     assert.ok(qm.drawNext(single, "alice"));
     assert.strictEqual(qm.drawNext(single, "alice"), null);
   });
@@ -92,7 +92,7 @@ describe("QuestionManager", () => {
   it("clearContestant frees the contestant's state", () => {
     const qm = new QuestionManager();
     qm.initContestant("alice");
-    const single = [{ id: 1, category: "test", question: "Q1", answer: "A1" }] as BankQuestion[];
+    const single = [{ id: 1, question: "Q1", answer: "A1" }] as BankQuestion[];
     qm.drawNext(single, "alice");
     qm.clearContestant("alice");
     assert.strictEqual(qm.getCurrentQuestion("alice"), undefined);
@@ -154,7 +154,7 @@ describe("cashBuilder", () => {
       !("answer" in firstQuestion),
       "the question broadcast must never leak the answer"
     );
-    assert.ok("prompt" in firstQuestion && "category" in firstQuestion && "questionId" in firstQuestion);
+    assert.ok("prompt" in firstQuestion && "questionId" in firstQuestion);
 
     const canonical = bank.find((q) => q.id === firstQuestion.questionId);
     assert.ok(canonical, "question id resolves in the bank");
@@ -254,7 +254,7 @@ describe("cashBuilder", () => {
 
   it("an alternative answer counts as correct", async () => {
     const bank = [
-      { id: 1, category: "test", question: "Which planet is known as the Red Planet?", answer: "Mars", alternatives: ["Red planet", "Sol"] }
+      { id: 1, question: "Which planet is known as the Red Planet?", answer: "Mars", alternatives: ["Red planet", "Sol"] }
     ] as BankQuestion[];
     const { room, activeClient, activeSeatId } = await openCashBuilder(bank);
 

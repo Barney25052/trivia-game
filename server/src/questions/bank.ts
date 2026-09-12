@@ -5,7 +5,6 @@ import { randomInt } from "node:crypto";
 
 export interface BankQuestion {
     id: number;
-    category: string;
     question: string;
     answer: string;
     alternatives?: string[];

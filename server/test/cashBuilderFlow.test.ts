@@ -89,7 +89,6 @@ describe("cashBuilderFlow (integration)", () => {
         assert.ok(!("answer" in q1), "question must not leak the answer");
         assert.ok(typeof q1.questionId === "number");
         assert.ok(typeof q1.prompt === "string");
-        assert.ok(typeof q1.category === "string");
 
         const canonical1 = bank.find((q) => q.id === q1.questionId);
         assert.ok(canonical1, "question id resolves in the bank");
@@ -322,8 +321,8 @@ describe("cashBuilderFlow (integration)", () => {
 
     it("bank exhaustion: a tiny bank of 2 questions is drained, then null is broadcast and the timer still transitions to Offer", async () => {
         const tinyBank: BankQuestion[] = [
-            { id: 1, category: "test", question: "What is 2+2?", answer: "4" },
-            { id: 2, category: "test", question: "Capital of France?", answer: "Paris" }
+            { id: 1, question: "What is 2+2?", answer: "4" },
+            { id: 2, question: "Capital of France?", answer: "Paris" }
         ];
         const { room, activeClient, activeSeatId } = await openCashBuilder(colyseus, {
             bankOverride: tinyBank,
