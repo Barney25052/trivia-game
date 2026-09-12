@@ -1,7 +1,7 @@
 import { FlowEffect } from "../../gameFlow.js";
 import { PlayerRole } from "../../TriviaTypes.js";
 import * as chaserSelection from "./chaserSelection.js";
-import { CHASER_CHARACTERS, CHASER_REVEAL, CHASER_SELECTION, LINEUP } from "../../gameConfig.js";
+import { CHASER_CHARACTERS, CHASER_POT, CHASER_REVEAL, CHASER_SELECTION, LINEUP } from "../../gameConfig.js";
 
 export function applyEffects(effects: FlowEffect[], room: any, context: any): void {
     for (const effect of effects) {
@@ -146,6 +146,7 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           if (player) {
             player.isEliminated = true;
           }
+          room.state.chaserPot += CHASER_POT.perRound;
           console.log(`${effect.seatId} was caught — out of the game`);
           break;
         }
@@ -156,6 +157,8 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
             player.madeItBack = true;
           }
           room.state.teamPot += effect.amount;
+          room.state.chaserPot += CHASER_POT.perRound;
+          room.state.chaserPot = Math.max(0, room.state.chaserPot - effect.amount);
           console.log(`${effect.seatId} made it back — ${effect.amount} added to the team pot`);
           break;
         }
