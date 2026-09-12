@@ -1,7 +1,7 @@
 # 064: Server — authoritative board-chase engine (Phase 4)
 
 ## Goal
-Replace the current honor-system `chaseResult` handler (`server/src/rooms/handlers/messageHandlers.ts:204-219`) — which just trusts a client-sent `{ escaped: boolean }` with no question, no timer, and no position tracking at all — with the real head-to-head board chase per `GOAL.md`: 7-space board, MC questions from the bank (063), a 5-second lockout window once either side answers, both sides able to advance on the same question, and server-driven catch/escape resolution.
+Replace the current honor-system `chaseResult` handler (`server/src/rooms/handlers/messageHandlers.ts:204-219`) — which just trusts a client-sent `{ escaped: boolean }` with no question, no timer, and no position tracking at all — with the real head-to-head board chase per `GOAL.md`: 7-space board, MC questions from OpenTDB (063), a 5-second lockout window once either side answers, both sides able to advance on the same question, and server-driven catch/escape resolution.
 
 ## Scope
 - `server/src/gameConfig.ts`: `CHASE_QUESTION` already has `optionCount`/`answerWindowMs` stubs — wire them for real; add any additional tunables needed (e.g. board size already in `BOARD`).
@@ -17,4 +17,4 @@ Replace the current honor-system `chaseResult` handler (`server/src/rooms/handle
 - No `correctIndex` ever appears in a message broadcast to non-Chaser... actually never to *any* client before that question resolves — grep the diff for this before calling it done.
 
 ## Dependencies
-- Depends on 063 (MC question bank). Should land before 065 (client screen needs the real message contract) and 066 (integration tests need this engine).
+- Depends on 063 (OpenTDB MC source). Should land before 065 (client screen needs the real message contract) and 066 (integration tests need this engine).

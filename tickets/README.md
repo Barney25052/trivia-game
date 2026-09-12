@@ -97,7 +97,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 059 | Chaser character reveal — new phase after the first cash builder, before the first offer | done |
 
 ### Phase 4 — The board chase
-| 063 | Extend the question bank to multiple-choice | backlog |
+| 063 | Multiple-choice questions from OpenTDB for the board chase | backlog |
 | 064 | Server — authoritative board-chase engine | backlog |
 | 065 | Client — real board-chase screen | backlog |
 | 066 | Phase 4 integration tests — full board-chase flow | backlog |

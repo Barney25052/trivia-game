@@ -11,8 +11,8 @@ Multiplayer trivia game built on Colyseus. Two independent npm projects — ther
 - `client/` — Vue 3 (`<script setup>`) + Vite + Colyseus SDK. Entry: `src/main.ts` → `src/App.vue`.
   - `npm run dev` — Vite dev server
   - `npm run build` — `vue-tsc -b && vite build` (this is the typecheck step; there is no separate typecheck script)
-- `api-test.py` — root-level scratch script for testing the opentdb.com API; not part of the app.
-- The open-ended question bank (`server/src/questions/bank.ts`, loaded from `server/data/questions.json`, 572 questions) is loaded on the server, covered by tests, and wired into the cash builder (Phase 2); wiring it into the final phases is Phase 2+. The board chase plans to pull multiple-choice questions from the same owned bank (Phase 4); nothing fetches from opentdb at runtime yet.
+- `api-test.py` — root-level scratch script for testing the opentdb.com API — the planned runtime source for the board-chase multiple-choice questions (Phase 4); not wired into the app yet.
+- The open-ended question bank (`server/src/questions/bank.ts`, loaded from `server/data/questions.json`, 572 questions) is loaded on the server, covered by tests, and wired into the cash builder (Phase 2); wiring it into the final phases is Phase 2+. The board chase pulls **multiple-choice questions from the OpenTDB API at runtime** (Phase 4, behind a thin get-questions interface) instead of the local bank; nothing fetches from opentdb yet.
 
 ## Gotchas
 

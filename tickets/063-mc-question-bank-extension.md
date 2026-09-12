@@ -1,17 +1,21 @@
-# 063: Extend the question bank to multiple-choice (Phase 4)
+# 063: Multiple-choice questions from OpenTDB for the board chase (Phase 4)
+
+> **Update (decision change)**: this ticket was originally drafted as "extend our bank to multiple-choice" with no opentdb at runtime. Decided instead — per `GOAL.md` "Question bank" — the board chase pulls **multiple-choice questions from the OpenTDB API at runtime**. The local bank stays open-ended-only. Scope rewritten accordingly.
 
 ## Goal
-The board chase needs 3-option multiple-choice questions from our own bank (no opentdb at runtime — decided in `GOAL.md`). Today `server/data/questions.json` / `BankQuestion` (`server/src/questions/bank.ts`) only support the open-ended `{ answer, alternatives }` shape used by the cash builder and final round.
+The board chase needs 3-option multiple-choice questions. They come from the **OpenTDB API** (`https://opentdb.com/api.php`, `type=multiple`) at runtime, served to the chase engine behind the existing thin **get-questions interface** so the source can swap later. Open-ended rounds (cash builder + final) keep using our local bank (`server/data/questions.json`); MC is never stored locally.
 
 ## Scope
-- `server/src/questions/bank.ts`: extend `BankQuestion` to optionally carry an MC shape — `options: string[]` (the full option pool for a question) and `correctIndex: number` — alongside the existing open-ended fields. Keep both kinds in one bank file (a `kind: "open" | "mc"` discriminant, or infer from the presence of `options`) rather than splitting into two files, matching how `broadcastQuestion` (`TriviaRoom.ts:119`) already carries a `kind` field for the wire format.
-- `server/data/questions.json`: add a meaningful set of MC questions (existing bank has 572 open-ended entries at various categories — decide with the user whether to add new MC-authored entries or derive MC options from existing open-ended answers + distractors; **this needs a quick check-in with the user on where the MC content comes from**, since hand-authoring hundreds of MC questions is a real content task, not just code).
-- `loadBank()` / `pickRandom()`: no signature change needed if MC and open questions share one array and one id space — a per-kind filter at the picker call site is enough (the board chase and cash builder each ask for a specific `kind`).
-- Update `server/test/*` question-bank tests to cover MC entries (options length, correctIndex bounds, never serialized to a client before reveal — this is the security invariant from `AGENTS.md`: "the correct MC index... must stay server-side until the moment of resolution").
+- New server-side OpenTDB client module (e.g. `server/src/questions/opentdb.ts`): fetch `type=multiple` questions (optionally filtering difficulty/category if we tune it), validate/trim the response, HTML-decode the question text and options (OpenTDB returns escaped text), and map each item to a server-held MC shape — `{ id, question, category, options: string[] (the 4 returned answers), correctIndex }`. Cap/validate unexpected shapes and bounds.
+- Deliver via the chase engine showing **3 of 4** options; `correctIndex` stays server-only until the moment of resolution — the AGENTS.md "never broadcast the correct answer before reveal" invariant (extend `broadcastQuestion`'s existing `kind: "mc"` wire path with `options`; never send `correctIndex`).
+- Fetching is **best-effort**: bounded timeout, retry, and graceful in-flight-failure handling so a network blip can't hard-crash the round (see `GOAL.md` Phase 6 hardening).
+- `api-test.py` at the repo root is the scratch harness for the API — reference it, don't depend on it.
+- No changes to the local open-ended bank for MC.
 
 ## Acceptance
-- `cd server && npm test` green with new tests for MC entries (shape validation, correctIndex never present on the client-facing payload — see 064's delivery handler).
+- `cd server && npm test` green with new tests for the OpenTDB mapping/validation — shape, option count, `correctIndex` bounds, HTML decode — using fixture payloads (no live network in tests).
 - `cd server && npm run build` green.
+- Grep the diff: `correctIndex` never appears in any client-bound message before reveal.
 
 ## Dependencies
-- None (extends 004/005's existing bank infrastructure). Should land before 064 (board-chase engine needs MC questions to draw from).
+- None (extends 004/005's bank infrastructure for open-ended only). Should land before 064 (board-chase engine draws MC questions from it).
