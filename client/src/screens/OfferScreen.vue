@@ -1,9 +1,6 @@
 <script setup>
 import { computed, ref, watch } from "vue";
-import { ChaserCharacter } from "../TriviaTypes.ts";
-import bezosIcon from "../assets/images/chasers/bezos-icon.png";
-import bigStanIcon from "../assets/images/chasers/bigstan-icon.png";
-import namiIcon from "../assets/images/chasers/nami-icon.png";
+import ChaserPanel from "../components/ChaserPanel.vue";
 import face1 from "../assets/images/face-1.png";
 import face2 from "../assets/images/face-2.png";
 import face3 from "../assets/images/face-3.png";
@@ -26,10 +23,13 @@ const props = defineProps({
     mySeatId: { type: String, default: "" },
     players: { type: Array, default: () => [] },
     chaserSeatId: { type: String, default: "" },
+    chaserCharacterId: { type: String, default: "" },
+    chaserQuipText: { type: String, default: "" },
+    chaserQuipKey: { type: Number, default: 0 },
     chaserPot: { type: Number, default: 0 },
     teamPot: { type: Number, default: 0 }
 });
-const emit = defineEmits(["setLow", "setHigh", "choose"]);
+const emit = defineEmits(["setLow", "setHigh", "choose", "auto-quip", "send-quip"]);
 
 // Mirrors server/src/gameConfig.ts OFFER + BOARD — duplicated client-side the
 // same way GamePhase is (see AGENTS.md gotchas): no shared module between the
@@ -42,12 +42,6 @@ const BOARD_SPACES = [7, 6, 5, 4, 3, 2, 1];
 const LOW_SPACE = 4;
 const MIDDLE_SPACE = 5;
 const HIGH_SPACE = 6;
-
-const chaserPortraits = {
-    [ChaserCharacter.Bezos]: bezosIcon,
-    [ChaserCharacter.BigStan]: bigStanIcon,
-    [ChaserCharacter.Nami]: namiIcon
-};
 
 const faceImages = [face1, face2, face3];
 const hairImages = [hair1, hair2, hair3, hair4, hair5, hair6];
@@ -75,7 +69,6 @@ const lowInput = ref("");
 const highInput = ref("");
 const lowError = ref("");
 const highError = ref("");
-const quip = ref("");
 
 const hasMiddle = computed(() => props.offer?.middle !== null && props.offer?.middle !== undefined);
 const hasLow = computed(() => props.offer?.low !== null && props.offer?.low !== undefined);
@@ -88,8 +81,6 @@ const contestantName = computed(() => {
     const player = props.players.find((p) => p.seatId === props.offer?.seatId);
     return player?.name ?? "The contestant";
 });
-
-const chaserPortrait = computed(() => chaserPortraits[props.offer?.chaserCharacterId] ?? null);
 
 function seatSeed(text) {
     let hash = 0;
@@ -142,7 +133,7 @@ function amountFor(space) {
 
 function pickQuip(stage) {
     const pool = QUIPS[stage];
-    quip.value = pool[Math.floor(Math.random() * pool.length)];
+    emit("auto-quip", pool[Math.floor(Math.random() * pool.length)]);
 }
 
 watch(() => props.offer?.seatId, (seatId) => {
@@ -205,22 +196,13 @@ function submitHigh() {
             <p class="playerName">{{ contestantName }} faces the Chaser</p>
 
             <div class="offerLayout">
-                <div class="offerChaserBox">
-                    <div class="offerMaskBox">
-                        <img
-                            v-if="chaserPortrait"
-                            :src="chaserPortrait"
-                            :alt="offer.chaserCharacterName"
-                            class="offerChaserPortrait"
-                        />
-                    </div>
-                    <Transition name="offer-pop">
-                        <div v-if="quip" :key="quip" class="offerSpeechBubble">{{ quip }}</div>
-                    </Transition>
-                    <p v-if="offer.chaserCharacterName" class="playerName offerChaserName">
-                        {{ offer.chaserCharacterName }}
-                    </p>
-                </div>
+                <ChaserPanel
+                    :character-id="chaserCharacterId"
+                    :quip-text="chaserQuipText"
+                    :quip-key="chaserQuipKey"
+                    :is-chaser="isChaser"
+                    @send-quip="emit('send-quip', $event)"
+                />
 
                 <div class="offerBoard">
                     <div v-for="space in BOARD_SPACES" :key="space" class="offerBoardSpace">

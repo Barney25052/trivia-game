@@ -18,3 +18,6 @@ Make the Chaser a visible, "always there" presence for the whole game (after the
 ## Dependencies
 - Depends on 055 (server quip channel).
 - Depends on 052 (extracts its inline chaser-box markup into the shared component).
+
+## Resolution (scope confirmed with user before implementation)
+"Every phase" was narrowed to only the phases where the Chaser and a contestant are face-to-face: **Offer, Chase, and the Chaser Final**. Not shown in Lobby, Chaser Selection/Reveal, Roles Reveal, Lineup, Cash Builder, or Team Final. Placement is inline on the left side of each of those three screens (matching the existing Offer box position from 052), not a global fixed-position overlay — so `ChaserPanel.vue` is used once per "table" screen rather than mounted once in `App.vue` outside the phase `v-if` chain as originally scoped. Quip display state still lives centrally in `App.vue` (`chaserQuipText`/`chaserQuipKey`), fed by both the server's `chaserQuip` broadcast (055) and each screen's own local auto-quip triggers (`@auto-quip`), so all three screens share one visual/behavioral source of truth even though the component isn't a single persistent instance.

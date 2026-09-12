@@ -53,3 +53,11 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: every client shows the same quip text at the same stage of the same offer round.
 - Repro steps: open two browser clients on the same room, reach the Offer phase, and compare the chaser's speech-bubble text on both screens as the low/high offers are set — they're picked independently and can diverge.
 - Status: triaged — ticket 057
+
+## `bug-008` — Cash builder answer input silently swallows the submission (uncaught `focus()` on null)
+- Found: 2026-09-12 · ticket 056 · `client/src/screens/CashBuilderScreen.vue` (the answer `<input>`, `@blur="inputBox.focus()"`, `submit()`)
+- What you saw: pressing Enter in the cash-builder answer input (both via real typing and via browser automation) intermittently does nothing — the input text is not cleared, `cashBuilderMoney`/`cashBuilderCorrectAnswers` don't change, and the same question stays on screen. The console shows `Vue warn: Unhandled error during execution of native event handler` at `<CashBuilderScreen>`, with the underlying error `TypeError: Cannot read properties of null (reading 'focus')`. Sending the identical `submitAnswer` message directly over the room connection (bypassing this input entirely) works every time and correctly updates the pot — isolating the bug to this component's focus handling, not the server.
+- Expected: every Enter-triggered submission reaches the server and the input always clears.
+- Suspected cause: `submit()` flips `awaitingNext`/`inputDisabled` to `true` synchronously, which sets the input's `:disabled` attribute; a browser auto-blurs an element the instant it becomes disabled while focused, and `@blur="inputBox.focus()"` then dereferences `inputBox.value` without optional chaining (unlike the `handleGlobalKeydown` use of `inputBox.value?.focus()` just above it) — if the ref is momentarily null during that patch, the handler throws and (per the repro) the answer never reaches `room.send`.
+- Repro steps: 1. Run `server` + `client` dev, two players, reach `CashBuilder` as the active contestant. 2. Type an answer and press Enter. 3. Watch devtools console for the `focus()` TypeError and confirm the input text is not cleared / pot unchanged. May take 1-2 tries to reproduce.
+- Status: open

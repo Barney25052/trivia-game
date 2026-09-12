@@ -34,6 +34,10 @@ const winner = ref(null);
 const getReadyCooldownMs = ref(0);
 const currentQuestion = ref(null);
 const answerResult = ref(null);
+const chaserQuipText = ref("");
+const chaserQuipKey = ref(0);
+let chaserQuipClearTimeout = null;
+const CHASER_QUIP_DISPLAY_MS = 6000;
 
 const currentScreen = computed(() => {
   if (!room.value) return "home";
@@ -55,6 +59,7 @@ const currentScreen = computed(() => {
 
 const myPlayer = computed(() => playersMap.value?.get(mySeatId.value));
 const isHost = computed(() => myPlayer.value?.isHost === true);
+const chaserCharacterId = computed(() => playersMap.value?.get(chaserSeatId.value)?.chaserCharacterId ?? "");
 
 // These read cashBuilderMoney/cashBuilderCorrectAnswers directly off players.value
 // (rather than through an intermediate `activeContestant` computed) because the
@@ -84,6 +89,16 @@ const lineupContestants = computed(() =>
         .map((seatId) => players.value.find((p) => p.seatId === seatId))
         .filter(Boolean)
 );
+
+function showChaserQuip(text) {
+  if (!text) return;
+  chaserQuipText.value = text;
+  chaserQuipKey.value += 1;
+  if (chaserQuipClearTimeout) clearTimeout(chaserQuipClearTimeout);
+  chaserQuipClearTimeout = setTimeout(() => {
+    chaserQuipText.value = "";
+  }, CHASER_QUIP_DISPLAY_MS);
+}
 
 async function handleJoin({ playerName, roomCode }) {
   await joinLobby(playerName, roomCode);
@@ -138,6 +153,10 @@ async function joinLobby(playerName, roomCode) {
 
     room.value.onMessage("answerResult", (message) => {
       answerResult.value = message;
+    });
+
+    room.value.onMessage("chaserQuip", (message) => {
+      showChaserQuip(message.text);
     });
 
     room.value.onMessage("offerStart", (message) => {
@@ -282,6 +301,15 @@ function submitAnswer({ answer, questionId }) {
     console.error("Failed to submit answer:", e);
   }
 }
+
+function sendChaserQuip(text) {
+  try {
+    room.value?.send("sendChaserQuip", { text });
+
+  } catch (e) {
+    console.error("Failed to send chaser quip:", e);
+  }
+}
 </script>
 
 <template>
@@ -337,18 +365,29 @@ function submitAnswer({ answer, questionId }) {
       :mySeatId="mySeatId"
       :players="players"
       :chaserSeatId="chaserSeatId"
+      :chaserCharacterId="chaserCharacterId"
+      :chaserQuipText="chaserQuipText"
+      :chaserQuipKey="chaserQuipKey"
       :chaserPot="chaserPot"
       :teamPot="teamPot"
       @choose="chooseOffer"
       @setLow="setChaserLowOffer"
       @setHigh="setChaserHighOffer"
+      @auto-quip="showChaserQuip"
+      @send-quip="sendChaserQuip"
     />
     <ChaseScreen
       v-if="currentScreen=='chase'"
       :players="players"
       :activeContestantSeatId="activeContestantSeatId"
       :chaserSeatId="chaserSeatId"
+      :mySeatId="mySeatId"
+      :chaserCharacterId="chaserCharacterId"
+      :chaserQuipText="chaserQuipText"
+      :chaserQuipKey="chaserQuipKey"
       @chaseResult="sendChaseResult"
+      @auto-quip="showChaserQuip"
+      @send-quip="sendChaserQuip"
     />
     <TeamFinalScreen
       v-if="currentScreen=='teamFinal'"
@@ -357,7 +396,14 @@ function submitAnswer({ answer, questionId }) {
     <ChaserFinalScreen
       v-if="currentScreen=='chaserFinal'"
       :teamScore="teamScore"
+      :mySeatId="mySeatId"
+      :chaserSeatId="chaserSeatId"
+      :chaserCharacterId="chaserCharacterId"
+      :chaserQuipText="chaserQuipText"
+      :chaserQuipKey="chaserQuipKey"
       @chaserReached="chaserReachedScore"
+      @auto-quip="showChaserQuip"
+      @send-quip="sendChaserQuip"
     />
     <ResultsScreen
       v-if="currentScreen=='gameEnd'"
