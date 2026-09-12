@@ -111,7 +111,12 @@ export function setChaserLowOffer(client: any, message: any, room: any) {
         return;
     }
     if (!room.currentOffer || room.currentOffer.low !== null) {
-        console.log(client.sessionId, "Low offer already set (or offer not started)");
+        console.log(
+            client.sessionId,
+            room.currentOffer?.middle === 0
+                ? "Can not set a low offer — middle is $0, there is nothing to set"
+                : "Low offer already set (or offer not started)"
+        );
         return;
     }
     const amount = message?.amount;

@@ -175,7 +175,7 @@ async function joinLobby(playerName, roomCode) {
       currentOffer.value = {
         seatId: message.seatId,
         middle: message.middle,
-        low: null,
+        low: message.low,
         high: null,
         chaserCharacterId: message.chaserCharacterId,
         chaserCharacterName: message.chaserCharacterName,

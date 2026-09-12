@@ -829,5 +829,52 @@ alice.send("chaserVote", { targetSeatId: seatIdOf(room, bob) });
       activeClient.send("offerChoice", { offer: "middle" });
       await waitForPhase(room, GamePhase.Chase);
     });
+
+    it("ticket 058: a $0 middle with a $0 team pot skips the low offer — Chaser sets high only, round still reaches Chase", async () => {
+      const room = await colyseus.createRoom<GameState>("trivia", {
+        cashBuilderDurationMs: 250,
+        chaserSelectionDurationMs: 80,
+        chaserRevealDurationMs: 80,
+        chaserCharacterRevealDurationMs: 80,
+        revealReadyCooldownMs: 80,
+        lineupDurationMs: 80
+      });
+      const alice = await colyseus.connectTo(room, { playerName: "Alice" });
+      const bob = await colyseus.connectTo(room, { playerName: "Bob" });
+      await sleep(100);
+
+      alice.send("startGame");
+      await waitForPhase(room, GamePhase.RolesReveal);
+      alice.send("revealReady", { characterId: "bezos" });
+      bob.send("revealReady", { characterId: "nami" });
+      await waitForPhase(room, GamePhase.CashBuilder);
+      // Leave cashBuilderMoney at its default $0 — the contestant answers nothing correctly,
+      // and this is the first round, so the team pot is also still $0.
+      const offerStartPromise = alice.waitForMessage("offerStart");
+      await waitForPhase(room, GamePhase.Offer);
+
+      assert.strictEqual(room.state.teamPot, 0, "first contestant of the game — team pot starts at $0");
+      assert.strictEqual(room.currentOffer.middle, 0);
+      assert.strictEqual(room.currentOffer.low, 0, "low is pre-filled at $0 so the offer stays resolvable");
+
+      const offerStart = await offerStartPromise;
+      assert.strictEqual(offerStart.low, 0, "the offerStart broadcast carries the pre-filled low");
+
+      const chaser = room.state.chaserSeatId;
+      const active = room.state.activeContestantSeatId;
+      const chaserClient = chaser === seatIdOf(room, alice) ? alice : bob;
+      const activeClient = active === seatIdOf(room, alice) ? alice : bob;
+
+      chaserClient.send("setChaserLowOffer", { amount: -100 });
+      await sleep(50);
+      assert.strictEqual(room.currentOffer.low, 0, "a low offer can not be set when middle is already $0");
+
+      chaserClient.send("setChaserHighOffer", { amount: 8000 });
+      await sleep(50);
+      assert.strictEqual(room.currentOffer.high, 8000, "the Chaser can still complete the offer with a high only");
+
+      activeClient.send("offerChoice", { offer: "middle" });
+      await waitForPhase(room, GamePhase.Chase);
+    });
   });
 });

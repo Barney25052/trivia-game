@@ -123,19 +123,23 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           room.questionManager.clearContestant(effect.seatId);
           const player = room.state.players.get(effect.seatId);
           const take = player?.cashBuilderMoney ?? 0;
+          // A $0 middle has no legal low offer (ticket 058) — skip the low-offer
+          // step by pre-filling it with $0 instead of waiting on the Chaser.
           room.currentOffer = {
-            low: null,
+            low: take === 0 ? 0 : null,
             middle: take,
             high: null
           };
           room.currentOfferAmount = take;
-          console.log(`Offer for ${effect.seatId}: middle ${take} — waiting for the Chaser to set low/high`);
+          const waitingFor = take === 0 ? "high" : "low/high";
+          console.log(`Offer for ${effect.seatId}: middle ${take} — waiting for the Chaser to set ${waitingFor}`);
           const chaser = room.state.players.get(room.state.chaserSeatId);
           const chaserCharId = chaser?.chaserCharacterId ?? "";
           const chaserChar = CHASER_CHARACTERS.find((c) => c.id === chaserCharId);
           room.broadcast("offerStart", {
             seatId: effect.seatId,
             middle: take,
+            low: room.currentOffer.low,
             chaserCharacterId: chaserCharId,
             chaserCharacterName: chaserChar?.name ?? "",
             chaserCharacterAbility: chaserChar?.ability ?? "",

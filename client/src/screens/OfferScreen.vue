@@ -87,7 +87,7 @@ const neutralEyesImg = computed(() => {
 
 const reaction = computed(() => {
     if (hasHigh.value && props.offer.high > HAPPY_HIGH_THRESHOLD) return "happy";
-    if (hasLow.value && props.offer.low <= SAD_LOW_THRESHOLD) return "sad";
+    if (hasLow.value && props.offer.middle !== 0 && props.offer.low <= SAD_LOW_THRESHOLD) return "sad";
     return "neutral";
 });
 const eyesImg = computed(() => {
@@ -108,7 +108,9 @@ function formatAmount(amount) {
 
 function amountFor(space) {
     if (space === MIDDLE_SPACE) return hasMiddle.value ? props.offer.middle : null;
-    if (space === LOW_SPACE) return hasLow.value ? props.offer.low : null;
+    // A $0 middle has no real low offer (ticket 058) — the board's low space
+    // stays blank instead of duplicating the $0 shown at middle.
+    if (space === LOW_SPACE) return hasLow.value && props.offer.middle !== 0 ? props.offer.low : null;
     if (space === HIGH_SPACE) return hasHigh.value ? props.offer.high : null;
     return null;
 }
@@ -242,7 +244,11 @@ function submitHigh() {
                 <template v-else-if="isPickingContestant">
                     <template v-if="hasLow && hasHigh">
                         <div class="offerTierRow">
-                            <button class="startButton offerTierButton" @click="emit('choose', 'low')">
+                            <button
+                                v-if="offer.middle !== 0"
+                                class="startButton offerTierButton"
+                                @click="emit('choose', 'low')"
+                            >
                                 <span :class="{ 'offer-amount-negative': offer.low <= 0 }">Low — {{ formatAmount(offer.low) }}</span>
                             </button>
                             <button class="startButton offerTierButton" @click="emit('choose', 'middle')">
