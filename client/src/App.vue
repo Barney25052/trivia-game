@@ -61,6 +61,15 @@ const chaseFreeze = ref(null);
 const CHASE_RESULT_HOLD_MS = 2500;
 let chaseResultHoldTimeout = null;
 let pendingPhase = null;
+// The same "result then immediately next question" ordering also races out the
+// green/red answer reveal on ordinary (non-terminal) chase rounds (ticket 073):
+// the server resolves the question and draws the next one while the client is
+// still trying to paint the highlight. So any chaseQuestionResult for the
+// current question holds the next "question" message for a short reveal beat
+// before it replaces currentQuestion. pendingQuestion buffers that message.
+const CHASE_REVEAL_HOLD_MS = 1500;
+let chaseRevealHoldTimeout = null;
+let pendingQuestion = null;
 
 const currentScreen = computed(() => {
   if (!room.value) return "home";
@@ -144,6 +153,12 @@ function setPhaseFromServer(phase) {
   applyPhase(phase);
 }
 
+function applyQuestion(message) {
+  currentQuestion.value = message;
+  chaseQuestionResult.value = null;
+  chaseLockout.value = null;
+}
+
 function showChaserQuip(text) {
   if (!text) return;
   chaserQuipText.value = text;
@@ -196,9 +211,14 @@ async function joinLobby(playerName, roomCode) {
     });
 
     room.value.onMessage("question", (message) => {
-      currentQuestion.value = message;
-      chaseQuestionResult.value = null;
-      chaseLockout.value = null;
+      if (chaseResultHoldTimeout || chaseRevealHoldTimeout) {
+        // A chase result is still on screen (terminal banner hold or the short
+        // reveal beat) — applying this question now would wipe the highlight
+        // before it can paint. Buffer it until the hold clears.
+        pendingQuestion = message;
+        return;
+      }
+      applyQuestion(message);
     });
 
     room.value.onMessage("chaseLockoutStarted", (message) => {
@@ -220,29 +240,56 @@ async function joinLobby(playerName, roomCode) {
           && message.chaserBoardPos !== null
           && message.contestantBoardPos !== null
           && message.chaserBoardPos <= message.contestantBoardPos;
-      if (!escaped && !caught) return;
 
-      // Freeze the board as it looked at the moment of the result — state may
-      // already have moved on to the next contestant by the time the hold
-      // below clears (startCashBuilder for the next contestant fires in the
-      // same server-side dispatch as chaseEscape/chaseCaught).
-      chaseFreeze.value = {
-        activeContestantSeatId: activeContestantSeatId.value,
-        chaserSeatId: chaserSeatId.value,
-        players: players.value.map((p) => ({ seatId: p.seatId, name: p.name, boardPos: p.boardPos }))
-      };
-      chaseOutcome.value = escaped ? "escaped" : "caught";
-      if (chaseResultHoldTimeout) clearTimeout(chaseResultHoldTimeout);
-      chaseResultHoldTimeout = setTimeout(() => {
-        chaseResultHoldTimeout = null;
-        chaseOutcome.value = null;
-        chaseQuestionResult.value = null;
-        chaseFreeze.value = null;
-        if (pendingPhase !== null) {
-          applyPhase(pendingPhase);
-          pendingPhase = null;
+      if (escaped || caught) {
+        // Terminal result — its own, longer hold (catch/escape banner) supersedes
+        // the short reveal beat, so drop any pending reveal hold rather than let
+        // the two fight over chaseQuestionResult.
+        if (chaseRevealHoldTimeout) {
+          clearTimeout(chaseRevealHoldTimeout);
+          chaseRevealHoldTimeout = null;
         }
-      }, CHASE_RESULT_HOLD_MS);
+
+        // Freeze the board as it looked at the moment of the result — state may
+        // already have moved on to the next contestant by the time the hold
+        // below clears (startCashBuilder for the next contestant fires in the
+        // same server-side dispatch as chaseEscape/chaseCaught).
+        chaseFreeze.value = {
+          activeContestantSeatId: activeContestantSeatId.value,
+          chaserSeatId: chaserSeatId.value,
+          players: players.value.map((p) => ({ seatId: p.seatId, name: p.name, boardPos: p.boardPos }))
+        };
+        chaseOutcome.value = escaped ? "escaped" : "caught";
+        if (chaseResultHoldTimeout) clearTimeout(chaseResultHoldTimeout);
+        chaseResultHoldTimeout = setTimeout(() => {
+          chaseResultHoldTimeout = null;
+          chaseOutcome.value = null;
+          chaseQuestionResult.value = null;
+          chaseFreeze.value = null;
+          if (pendingPhase !== null) {
+            applyPhase(pendingPhase);
+            pendingPhase = null;
+          }
+          if (pendingQuestion !== null) {
+            applyQuestion(pendingQuestion);
+            pendingQuestion = null;
+          }
+        }, CHASE_RESULT_HOLD_MS);
+        return;
+      }
+
+      // Non-terminal result — hold the next question for a short reveal beat so
+      // the correct/wrong highlight actually renders (ticket 073).
+      if (chaseRevealHoldTimeout) clearTimeout(chaseRevealHoldTimeout);
+      chaseRevealHoldTimeout = setTimeout(() => {
+        chaseRevealHoldTimeout = null;
+        if (pendingQuestion !== null) {
+          applyQuestion(pendingQuestion);
+          pendingQuestion = null;
+        } else {
+          chaseQuestionResult.value = null;
+        }
+      }, CHASE_REVEAL_HOLD_MS);
     });
 
     room.value.onMessage("chaserQuip", (message) => {
@@ -384,7 +431,12 @@ function handleLeave() {
     clearTimeout(chaseResultHoldTimeout);
     chaseResultHoldTimeout = null;
   }
+  if (chaseRevealHoldTimeout) {
+    clearTimeout(chaseRevealHoldTimeout);
+    chaseRevealHoldTimeout = null;
+  }
   pendingPhase = null;
+  pendingQuestion = null;
   chaseOutcome.value = null;
   chaseFreeze.value = null;
   chaseLockout.value = null;
