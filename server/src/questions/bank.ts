@@ -18,7 +18,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // From both the source tree (server/src/questions/) and the build output
 // (server/build/questions/) this resolves to server/data/questions.json.
-const QUESTIONS_PATH = resolve(__dirname, "../../data/questions.json");
+// Exported so the add-question endpoint (app.config.ts, ticket 091) writes
+// back to the exact same file `loadBank()` reads, in both run modes.
+export const QUESTIONS_PATH = resolve(__dirname, "../../data/questions.json");
 
 export function loadBank(): BankQuestion[] {
     let raw: string;

@@ -193,6 +193,16 @@ export const PLAYER_NAME = {
     maxLength: 24
 } as const;
 
+/** Caps for the add-question endpoint (ticket 091) — the web path into the
+ * open-ended bank. No `category`: it is legacy/unused per GOAL.md and must
+ * never appear on an added question. */
+export const BANK_EDIT = {
+    maxQuestionLength: 300,
+    maxAnswerLength: 100,
+    maxAlternativeLength: 100,
+    maxAlternatives: 10
+} as const;
+
 export const ANSWER_CHECK = {
     /** Trim + collapse runs of internal whitespace before comparing. */
     normaliseWhitespace: true,
