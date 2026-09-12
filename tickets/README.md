@@ -78,8 +78,8 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 \* 048 closed after only proving the server patch path — the on-screen render fix never landed; see ticket 053 (reopened by user report, `bug-005`).
 
 ### Phase 3 — The Offer
-| 050 | Chaser pot — lifecycle, payouts, and cap (server) | backlog |
-| 051 | Chaser sets the high & low offers; contestant picks (server) | backlog |
+| 050 | Chaser pot — lifecycle, payouts, and cap (server) | done |
+| 051 | Chaser sets the high & low offers; contestant picks (server) | done |
 | 052 | Offer screen — Chaser sets high/low with pot visibility; contestant picks; spectators wait | done |
 | 055 | Persistent Chaser quip channel (server) | backlog |
 | 056 | Persistent Chaser panel — box, portrait, and quip bubble across every phase (client) | backlog |
