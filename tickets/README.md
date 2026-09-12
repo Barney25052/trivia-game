@@ -83,8 +83,10 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 052 | Offer screen — Chaser sets high/low with pot visibility; contestant picks; spectators wait | backlog |
 
 ### Follow-up bug fixes
-| 053 | Cash builder — on-screen pot/count still don't increase (`bug-005`) | backlog |
+| 053 | Cash builder — on-screen pot/count still don't increase (`bug-005`) | done\*\* |
 | 054 | Random chaser — skip the ChaserSelection player-list hold, go straight to the wheel (`bug-006`) | backlog |
+
+\*\* 053: root cause was in `client/src/App.vue` — `activeContestantMoney`/`activeContestantCorrectAnswers` were computed from `activeContestant.value` (itself a computed). The active contestant's Colyseus schema instance keeps the same object identity across state patches (only its properties mutate), so Vue's computed never saw the *reference* change and never re-fired the downstream computeds, even though `players.value` (a plain ref, reassigned to a fresh array on every patch) was updating correctly. Fixed by having each derived computed read `players.value.find(...)` directly instead of chaining through `activeContestant`. Also added the wrong-answer flash/reveal from the ticket's scope: server now sends a per-client `answerResult` message (`correct`, `correctAnswer`) on every `submitAnswer`, and holds the next question for `wrongAnswerRevealMs` (2.5s default, room-configurable, see `CASH_BUILDER.wrongAnswerRevealMs` in `gameConfig.ts`) on a wrong answer so the contestant can read the correct answer while the screen flashes red; a correct answer flashes green immediately. No Vue test harness exists, so this was verified manually via two browser SDK clients (see `server/test/cashBuilderFlow.test.ts` for the automated server-side coverage of `answerResult` and the reveal delay) — to re-verify by hand: start `server` + `client` dev, join two browsers, answer correctly (pot/count should update on both the active player's and the spectator's screen instantly) and answer wrong (screen should flash red and show "Correct answer: …" for ~2.5s before the next question, with input disabled during that window).
 
 Status values: `backlog`, `in-progress`, `done`.
 

@@ -7,7 +7,8 @@ const props = defineProps({
     isActiveContestant: { type: Boolean, default: false },
     activeContestantName: { type: String, default: "" },
     cashBuilderMoney: { type: Number, default: 0 },
-    cashBuilderCorrectAnswers: { type: Number, default: 0 }
+    cashBuilderCorrectAnswers: { type: Number, default: 0 },
+    answerResult: { type: Object, default: null }
 });
 const emit = defineEmits(["submit-answer"]);
 
@@ -21,10 +22,13 @@ const potFlash = ref(false);
 const timerStarted = ref(false);
 const seenQuestion = ref(false);
 const inputBox = ref(null);
+const screenFlash = ref("");
+const revealedCorrectAnswer = ref("");
 
 let cooldownInterval = null;
 let questionInterval = null;
 let potFlashTimeout = null;
+let screenFlashTimeout = null;
 
 const cooldownActive = computed(() => cooldownLeft.value > 0);
 const roundFinished = computed(() => {
@@ -81,6 +85,15 @@ watch(() => props.currentQuestion, (question) => {
     if (question) {
         seenQuestion.value = true;
         awaitingNext.value = false;
+        // The wrong-answer flash has no timer of its own — it's meant to hold until
+        // the next question arrives, so clear it here. The correct-answer flash is
+        // a brief animation that clears itself on its own timer instead: a correct
+        // answer's next question can arrive in the same tick as the flash starting,
+        // and clearing it here would cut the animation off before it's visible.
+        if (screenFlash.value === "cashBuilder-flash-wrong") {
+            screenFlash.value = "";
+        }
+        revealedCorrectAnswer.value = "";
         startQuestionTimer();
     } else {
         awaitingNext.value = false;
@@ -94,6 +107,21 @@ watch(() => props.cashBuilderMoney, (current, previous) => {
         potFlashTimeout = setTimeout(() => {
             potFlash.value = false;
         }, 600);
+    }
+});
+
+watch(() => props.answerResult, (result) => {
+    if (!result) return;
+    if (screenFlashTimeout) clearTimeout(screenFlashTimeout);
+    if (result.correct) {
+        revealedCorrectAnswer.value = "";
+        screenFlash.value = "cashBuilder-flash-correct";
+        screenFlashTimeout = setTimeout(() => {
+            screenFlash.value = "";
+        }, 700);
+    } else {
+        revealedCorrectAnswer.value = result.correctAnswer;
+        screenFlash.value = "cashBuilder-flash-wrong";
     }
 });
 
@@ -116,11 +144,14 @@ onUnmounted(() => {
     if (cooldownInterval) clearInterval(cooldownInterval);
     if (questionInterval) clearInterval(questionInterval);
     if (potFlashTimeout) clearTimeout(potFlashTimeout);
+    if (screenFlashTimeout) clearTimeout(screenFlashTimeout);
     document.removeEventListener('keydown', handleGlobalKeydown);
 });
 </script>
 
 <template>
+  <div class="cashBuilderRoot">
+    <div class="cashBuilderScreenFlash" :class="screenFlash"></div>
     <div class="lobby cashBuilder">
         <h2 class="lobbyTitle">Cash Builder</h2>
 
@@ -135,15 +166,22 @@ onUnmounted(() => {
             </div>
             <p class="playerName cashBuilderMeta">{{ questionsLabel }}</p>
 
-            <template v-if="currentQuestion">
-                <span class="cashBuilderCategory">{{ currentQuestion.category }}</span>
-                <p class="cashBuilderQuestion">{{ currentQuestion.prompt }}</p>
-            </template>
-            <p v-else class="playerName">Waiting for the first question…</p>
+            <div class="cashBuilderQuestionArea" :class="{ 'cashBuilderQuestionArea-wrong': revealedCorrectAnswer }">
+                <template v-if="revealedCorrectAnswer">
+                    <span class="cashBuilderRevealLabel">✗ WRONG!</span>
+                    <p class="cashBuilderRevealAnswer">The answer was <strong>{{ revealedCorrectAnswer }}</strong></p>
+                </template>
+                <template v-else-if="currentQuestion">
+                    <span class="cashBuilderCategory">{{ currentQuestion.category }}</span>
+                    <p class="cashBuilderQuestion">{{ currentQuestion.prompt }}</p>
+                </template>
+                <p v-else class="playerName">Waiting for the first question…</p>
+            </div>
 
             <input
                 v-model="answerInput"
                 class="cashBuilderInput"
+                :class="{ 'cashBuilderInput-wrong': revealedCorrectAnswer }"
                 placeholder="Type your answer..."
                 :disabled="inputDisabled"
                 @keyup.enter="submit"
@@ -152,7 +190,7 @@ onUnmounted(() => {
             />
 
             <p v-if="roundFinished" class="playerName cashBuilderStatus">Time's up!</p>
-            <p v-else-if="awaitingNext" class="playerName cashBuilderStatus">Next question…</p>
+            <p v-else-if="awaitingNext && !revealedCorrectAnswer" class="playerName cashBuilderStatus">Next question…</p>
         </template>
 
         <template v-else>
@@ -166,4 +204,5 @@ onUnmounted(() => {
             <p v-if="roundFinished" class="playerName cashBuilderStatus">Time's up!</p>
         </template>
     </div>
+  </div>
 </template>

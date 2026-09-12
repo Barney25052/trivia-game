@@ -20,6 +20,13 @@ export function clampRoomOptions(room: TriviaRoom, options: any): void {
             CASH_BUILDER.maxMs
         );
     }
+    if (typeof options?.wrongAnswerRevealMs === "number") {
+        room.wrongAnswerRevealMs = clamp(
+            options.wrongAnswerRevealMs,
+            CASH_BUILDER.wrongAnswerRevealMinMs,
+            CASH_BUILDER.wrongAnswerRevealMaxMs
+        );
+    }
     if (typeof options?.chaserSelectionDurationMs === "number") {
         room.chaserSelectionDurationMs = clamp(
             options.chaserSelectionDurationMs,

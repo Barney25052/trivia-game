@@ -175,22 +175,37 @@ export function submitAnswer(client: any, message: any, room: any) {
         return;
     }
 
-    if (checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])])) {
+    const isCorrect = checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])]);
+    if (isCorrect) {
         player.cashBuilderMoney += CASH_BUILDER.rewardPerCorrect;
         player.cashBuilderCorrectAnswers += 1;
     }
 
-    const nextQuestion = room.questionManager.drawNext(room.questionBank, seatId);
-    if (nextQuestion) {
-        room.broadcastQuestion(
-            room.state.activeRound,
-            seatId,
-            "open",
-            nextQuestion.id,
-            nextQuestion.question,
-            nextQuestion.category
-        );
+    client.send("answerResult", {
+        correct: isCorrect,
+        correctAnswer: currentQuestion.answer,
+        questionId: currentQuestion.id
+    });
+
+    const advanceQuestion = () => {
+        const nextQuestion = room.questionManager.drawNext(room.questionBank, seatId);
+        if (nextQuestion) {
+            room.broadcastQuestion(
+                room.state.activeRound,
+                seatId,
+                "open",
+                nextQuestion.id,
+                nextQuestion.question,
+                nextQuestion.category
+            );
+        } else {
+            room.broadcast("question", null);
+        }
+    };
+
+    if (isCorrect) {
+        advanceQuestion();
     } else {
-        room.broadcast("question", null);
+        room.scheduleTimer(room.wrongAnswerRevealMs, advanceQuestion);
     }
 }

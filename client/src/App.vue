@@ -31,6 +31,7 @@ const currentOffer = ref(null);
 const winner = ref(null);
 const getReadyCooldownMs = ref(0);
 const currentQuestion = ref(null);
+const answerResult = ref(null);
 
 const currentScreen = computed(() => {
   if (!room.value) return "home";
@@ -53,13 +54,20 @@ const currentScreen = computed(() => {
 const myPlayer = computed(() => playersMap.value?.get(mySeatId.value));
 const isHost = computed(() => myPlayer.value?.isHost === true);
 
-const activeContestant = computed(
-    () => players.value.find((p) => p.seatId === activeContestantSeatId.value)
+// These read cashBuilderMoney/cashBuilderCorrectAnswers directly off players.value
+// (rather than through an intermediate `activeContestant` computed) because the
+// active contestant's schema instance keeps the same object identity across state
+// patches — only its properties mutate. A computed that depends on that stable
+// reference never re-fires, so downstream computeds built on top of it go stale.
+// Depending on players.value directly (a fresh array every patch) keeps them live.
+const activeContestantName = computed(
+    () => players.value.find((p) => p.seatId === activeContestantSeatId.value)?.name ?? ""
 );
-const activeContestantName = computed(() => activeContestant.value?.name ?? "");
-const activeContestantMoney = computed(() => activeContestant.value?.cashBuilderMoney ?? 0);
+const activeContestantMoney = computed(
+    () => players.value.find((p) => p.seatId === activeContestantSeatId.value)?.cashBuilderMoney ?? 0
+);
 const activeContestantCorrectAnswers = computed(
-    () => activeContestant.value?.cashBuilderCorrectAnswers ?? 0
+    () => players.value.find((p) => p.seatId === activeContestantSeatId.value)?.cashBuilderCorrectAnswers ?? 0
 );
 const isActiveContestant = computed(
     () => activeContestantSeatId.value !== "" && mySeatId.value === activeContestantSeatId.value
@@ -113,11 +121,16 @@ async function joinLobby(playerName, roomCode) {
       currentPhase.value = message.phase;
       if (message.phase !== GamePhase.CashBuilder) {
         getReadyCooldownMs.value = 0;
+        answerResult.value = null;
       }
     });
 
     room.value.onMessage("question", (message) => {
       currentQuestion.value = message;
+    });
+
+    room.value.onMessage("answerResult", (message) => {
+      answerResult.value = message;
     });
 
     room.value.onMessage("offer", (message) => {
@@ -266,6 +279,7 @@ function submitAnswer({ answer, questionId }) {
       :activeContestantName="activeContestantName"
       :cashBuilderMoney="activeContestantMoney"
       :cashBuilderCorrectAnswers="activeContestantCorrectAnswers"
+      :answerResult="answerResult"
       @submit-answer="submitAnswer"
     />
     <OfferScreen

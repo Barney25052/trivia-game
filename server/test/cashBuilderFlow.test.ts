@@ -32,7 +32,7 @@ const bank = loadBank();
  */
 async function openCashBuilder(
     colyseus: ColyseusTestServer<typeof appConfig>,
-    opts?: { bankOverride?: BankQuestion[]; cashBuilderDurationMs?: number }
+    opts?: { bankOverride?: BankQuestion[]; cashBuilderDurationMs?: number; wrongAnswerRevealMs?: number }
 ): Promise<{
     room: any;
     activeClient: any;
@@ -44,7 +44,8 @@ async function openCashBuilder(
         chaserSelectionDurationMs: 80,
         chaserRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
-        lineupDurationMs: 80
+        lineupDurationMs: 80,
+        wrongAnswerRevealMs: opts?.wrongAnswerRevealMs ?? 0
     });
     if (opts?.bankOverride) {
         room.questionBank = opts.bankOverride;
@@ -201,6 +202,55 @@ describe("cashBuilderFlow (integration)", () => {
             CASH_BUILDER.rewardPerCorrect,
             "server state agrees"
         );
+    });
+
+    it("submitAnswer sends an answerResult to the submitting client only, with correct/wrong flag and the correct answer text", async () => {
+        const { activeClient, benchClient } = await openCashBuilder(colyseus, {
+            cashBuilderDurationMs: 8000
+        });
+
+        const q1 = await activeClient.waitForMessage("question");
+        const canonical1 = bank.find((q) => q.id === q1.questionId)!;
+
+        const benchGotResult = benchClient.waitForMessage("answerResult");
+        const activeResult1 = activeClient.waitForMessage("answerResult");
+        const q2Promise = activeClient.waitForMessage("question");
+        activeClient.send("submitAnswer", { answer: canonical1.answer, questionId: q1.questionId });
+        const result1 = await activeResult1;
+        assert.strictEqual(result1.correct, true, "correct answer reports correct: true");
+        assert.strictEqual(result1.correctAnswer, canonical1.answer);
+
+        const q2 = await q2Promise;
+        const canonical2 = bank.find((q) => q.id === q2.questionId)!;
+
+        const activeResult2 = activeClient.waitForMessage("answerResult");
+        activeClient.send("submitAnswer", { answer: "definitely wrong", questionId: q2.questionId });
+        const result2 = await activeResult2;
+        assert.strictEqual(result2.correct, false, "wrong answer reports correct: false");
+        assert.strictEqual(result2.correctAnswer, canonical2.answer, "wrong answer reveals the correct answer text");
+
+        const raceTimeout = new Promise((resolve) => setTimeout(() => resolve("no-result"), 200));
+        assert.strictEqual(
+            await Promise.race([benchGotResult, raceTimeout]),
+            "no-result",
+            "the bench spectator never receives answerResult"
+        );
+    });
+
+    it("a wrong answer holds the correct-answer reveal for wrongAnswerRevealMs before the next question is delivered", async () => {
+        const { activeClient } = await openCashBuilder(colyseus, {
+            cashBuilderDurationMs: 8000,
+            wrongAnswerRevealMs: 300
+        });
+
+        const q1 = await activeClient.waitForMessage("question");
+
+        const start = Date.now();
+        const q2Promise = activeClient.waitForMessage("question");
+        activeClient.send("submitAnswer", { answer: "definitely wrong", questionId: q1.questionId });
+        await q2Promise;
+        const elapsed = Date.now() - start;
+        assert.ok(elapsed >= 300, `next question should be held back for the reveal window (elapsed ${elapsed}ms)`);
     });
 
     it("submitAnswer from a non-active player is rejected (no pot change, no question advance)", async () => {

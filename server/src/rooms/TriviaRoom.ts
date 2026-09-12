@@ -50,6 +50,7 @@ export class TriviaRoom extends Room {
   private seatCounter = 0;
 
   cashBuilderDurationMs: number = CASH_BUILDER.durationMs;
+  wrongAnswerRevealMs: number = CASH_BUILDER.wrongAnswerRevealMs;
   chaserSelectionDurationMs: number | null = null;
   chaserRevealDurationMs: number = CHASER_REVEAL.durationMs;
   revealReadyCooldownMs: number = REVEAL_READY.cooldownMs;

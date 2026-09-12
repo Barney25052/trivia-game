@@ -121,7 +121,8 @@ describe("cashBuilder", () => {
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      wrongAnswerRevealMs: 0
     });
     if (bankOverride) {
       room.questionBank = bankOverride;

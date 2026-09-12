@@ -660,6 +660,15 @@ ul {
   max-width: 640px;
 }
 
+.cashBuilderQuestionArea {
+  height: 175px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 .cashBuilderCategory {
   display: block;
   width: fit-content;
@@ -673,6 +682,7 @@ ul {
   font-style: normal;
   font-size: 18px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .cashBuilderQuestion {
@@ -680,9 +690,10 @@ ul {
   font-family: "Luckiest Guy", cursive;
   font-weight: 400;
   font-style: normal;
-  font-size: 28px;
+  font-size: 24px;
   text-align: center;
   padding: 10px 20px;
+  margin: 0;
 }
 
 .cashBuilderMeta {
@@ -746,6 +757,83 @@ ul {
 
 .cashBuilderStatus {
   font-size: 20px;
+}
+
+.cashBuilderRoot {
+  /* Establishes a fresh stacking context so the flash's z-index: -1 is
+     compared only against its sibling .lobby card, not against body's own
+     background — otherwise the flash paints behind the whole page instead
+     of just behind this screen's text. */
+  isolation: isolate;
+}
+
+.cashBuilderScreenFlash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-color: transparent;
+  transition: background-color 0.25s ease-out;
+}
+
+.cashBuilder-flash-correct {
+  background-color: rgba(46, 204, 113, 0.6);
+}
+
+/* Wrong answers hold a solid red tint for the whole reveal window (cleared in
+   script when the next question arrives), so the "you got it wrong" signal
+   doesn't fade out while the correct-answer reveal is still on screen. */
+.cashBuilder-flash-wrong {
+  background-color: rgba(231, 76, 60, 0.5);
+}
+
+.cashBuilderInput-wrong {
+  border: 3px solid #e74c3c !important;
+  background-color: #fdecea !important;
+  animation: cash-builder-input-shake 0.4s ease-in-out;
+}
+
+@keyframes cash-builder-input-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.cashBuilderQuestionArea-wrong {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 3px solid #ff3b2f;
+  border-radius: 16px;
+  animation: cash-builder-reveal-pop 0.2s ease-out;
+}
+
+.cashBuilderRevealLabel {
+  display: block;
+  font-family: "Luckiest Guy", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 34px;
+  letter-spacing: 1px;
+  color: #ff3b2f;
+  text-shadow: 0 0 10px rgba(255, 59, 47, 0.9), 0 2px 0 rgba(0, 0, 0, 0.25);
+  text-transform: uppercase;
+}
+
+.cashBuilderRevealAnswer {
+  margin: 8px 0 0;
+  font-size: 20px;
+  color: #ffffff;
+}
+
+.cashBuilderRevealAnswer strong {
+  color: #ffe27a;
+  font-size: 24px;
+}
+
+@keyframes cash-builder-reveal-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes pot-flash {

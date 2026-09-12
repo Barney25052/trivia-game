@@ -1,4 +1,5 @@
 const CASH_BUILDER_DURATION_MS = 60_000;
+const CASH_BUILDER_WRONG_REVEAL_MS = 1_000;
 const CHASER_SELECTION_RANDOM_MS = 8_000;
 const CHASER_SELECTION_VOTE_MS = 30_000;
 const CHASER_REVEAL_DURATION_MS = 5_000;
@@ -16,7 +17,11 @@ export const CASH_BUILDER = {
     durationMs: CASH_BUILDER_DURATION_MS,
     rewardPerCorrect: 1_000,
     minMs: TIMER_CLAMP.minMs,
-    maxMs: CASH_BUILDER_DURATION_MS * TIMER_CLAMP.maxFactor
+    maxMs: CASH_BUILDER_DURATION_MS * TIMER_CLAMP.maxFactor,
+    /** How long a wrong answer's reveal (correct answer + red flash) stays up before the next question. */
+    wrongAnswerRevealMs: CASH_BUILDER_WRONG_REVEAL_MS,
+    wrongAnswerRevealMinMs: 0,
+    wrongAnswerRevealMaxMs: CASH_BUILDER_WRONG_REVEAL_MS * TIMER_CLAMP.maxFactor
 } as const;
 
 export const CHASER_SELECTION = {
