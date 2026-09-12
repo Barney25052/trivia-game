@@ -88,7 +88,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 ### Follow-up bug fixes
 | 053 | Cash builder — on-screen pot/count still don't increase (`bug-005`) | done\*\* |
 | 054 | Random chaser — skip the ChaserSelection player-list hold, go straight to the wheel (`bug-006`) | done |
-| 058 | Fix the impossible low offer when a contestant banks $0 and the team pot is $0 | backlog |
+| 058 | Fix the impossible low offer when a contestant banks $0 and the team pot is $0 | done\*\*\*\* |
 | 060 | Fix `roomFlow` test race — `phases` array misses `RolesReveal` broadcast (`bug-003`) | done |
 | 061 | Recover the game when the last contestant leaves during the `Lineup` hold (`bug-004`) | done |
 | 062 | Fix cash-builder answer input silently swallowing submissions (`bug-008`) | done |
@@ -109,13 +109,13 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 073 | Chase correct/wrong answer reveal never renders (raced out by the next question) | done |
 
 ### Phase 4 review follow-ups (verified in the Phase 4 review — 211 tests green, both builds green)
-| 074 | Chase stalls permanently when the MC question source fails or returns nothing (bounded retry → local MC backup pool → resolve as caught only if the backup runs out) | backlog |
-| 075 | Chaser disconnect mid-game resolves the room to GameEnd, team wins (`bug-010`) | backlog |
-| 076 | Chase authority-guard test gap — non-participant cannot answer; active-contestant leave mid-Chase | backlog |
-| 090 | Local ~100-question MC backup question bank (`server/data/mc-backup.json`, OpenTDB `type=multiple` shape) loaded through the get-questions interface as the chase's fallback source | backlog |
+| 074 | Chase stalls permanently when the MC question source fails or returns nothing (bounded retry → local MC backup pool → resolve as caught only if the backup runs out) | done |
+| 075 | Chaser disconnect mid-game resolves the room to GameEnd, team wins (`bug-010`) | done |
+| 076 | Chase authority-guard test gap — non-participant cannot answer; active-contestant leave mid-Chase | done |
+| 090 | Local ~100-question MC backup question bank (`server/data/mc-backup.json`, OpenTDB `type=multiple` shape) loaded through the get-questions interface as the chase's fallback source | done |
 
 ### Phase 5 — The final round
-| 077 | Server — final-round question delivery for the team and Chaser streams (per-side, non-repeating) | backlog |
+| 077 | Server — final-round question delivery for the team and Chaser streams (per-side, non-repeating) | done |
 | 078 | Server — team answers: buzz-in gate + `submitFinalAnswer`, `teamScore + 1` | backlog |
 | 079 | Server — Chaser answer engine: `chaserScore`, win on reach (tie counts), steal/push-back (floor at 0 → raise `teamScore`), remove placeholder `finalChaserScore` | backlog |
 | 080 | Client — real Team Final screen (UI sign-off required) | backlog |
@@ -136,6 +136,8 @@ These pulled the Chase/CashBuilder/palette items out of the 067 whole-app pass e
 | 067 | Full layout/design pass across all screens once every phase is implemented (discussion, not a solo build) | backlog |
 
 \*\*\* 056: scope was narrowed with the user before implementation (per AGENTS.md's UI sign-off rule) from "always there, every phase" to **only the phases where the Chaser and a contestant are face-to-face**: Offer, Chase, and the Chaser Final — not Lobby, Chaser Selection/Reveal, Roles Reveal, Lineup, Cash Builder, or Team Final. Placement is inline on the left side of each of those three screens (matching where the box already sat in Offer, per ticket 052) rather than a global fixed-position overlay, so `ChaserPanel.vue` is instantiated once per "table" screen instead of a single App-level mount; quip display state (`chaserQuipText`/`chaserQuipKey`) is still centralized in `App.vue` and passed down, with each screen able to feed it local auto-quips (`@auto-quip`) alongside the real `chaserQuip` broadcast from ticket 055. `OfferScreen.vue`'s inline chaser box/portrait/bubble markup was extracted into the shared component as scoped. Verified manually with two browser clients through a full round (Lobby → chaser pick → Offer, incl. a live Chaser-typed quip arriving on the other client → Chase → Team Final (panel correctly absent) → Chaser Final); found and logged an unrelated pre-existing bug in the process (`bug-008`, `CashBuilderScreen.vue` answer input).
+
+\*\*\*\* 058: found already implemented in code (server + client) but left marked `backlog` in this table — corrected 2026-09-12, no new work needed.
 
 \*\* 053: root cause was in `client/src/App.vue` — `activeContestantMoney`/`activeContestantCorrectAnswers` were computed from `activeContestant.value` (itself a computed). The active contestant's Colyseus schema instance keeps the same object identity across state patches (only its properties mutate), so Vue's computed never saw the *reference* change and never re-fired the downstream computeds, even though `players.value` (a plain ref, reassigned to a fresh array on every patch) was updating correctly. Fixed by having each derived computed read `players.value.find(...)` directly instead of chaining through `activeContestant`. Also added the wrong-answer flash/reveal from the ticket's scope: server now sends a per-client `answerResult` message (`correct`, `correctAnswer`) on every `submitAnswer`, and holds the next question for `wrongAnswerRevealMs` (2.5s default, room-configurable, see `CASH_BUILDER.wrongAnswerRevealMs` in `gameConfig.ts`) on a wrong answer so the contestant can read the correct answer while the screen flashes red; a correct answer flashes green immediately. No Vue test harness exists, so this was verified manually via two browser SDK clients (see `server/test/cashBuilderFlow.test.ts` for the automated server-side coverage of `answerResult` and the reveal delay) — to re-verify by hand: start `server` + `client` dev, join two browsers, answer correctly (pot/count should update on both the active player's and the spectator's screen instantly) and answer wrong (screen should flash red and show "Correct answer: …" for ~2.5s before the next question, with input disabled during that window).
 
