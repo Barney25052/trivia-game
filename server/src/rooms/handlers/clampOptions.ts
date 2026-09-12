@@ -1,6 +1,7 @@
 import { TriviaRoom } from "../TriviaRoom.js";
 import {
     CASH_BUILDER,
+    CHASE_QUESTION,
     CHASER_CHARACTER_REVEAL,
     CHASER_REVEAL,
     CHASER_SELECTION,
@@ -75,6 +76,13 @@ export function clampRoomOptions(room: TriviaRoom, options: any): void {
             options.chaserFinalDurationMs,
             FINAL_ROUND.minMs,
             FINAL_ROUND.maxMs
+        );
+    }
+    if (typeof options?.chaseAnswerWindowMs === "number") {
+        room.chaseAnswerWindowMs = clamp(
+            options.chaseAnswerWindowMs,
+            CHASE_QUESTION.minAnswerWindowMs,
+            CHASE_QUESTION.maxAnswerWindowMs
         );
     }
     if (typeof options?.rateLimitMaxMessages === "number") {

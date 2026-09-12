@@ -102,7 +102,9 @@ export const BOARD = {
 
 export const CHASE_QUESTION = {
     optionCount: 3,
-    answerWindowMs: 5_000
+    answerWindowMs: 5_000,
+    minAnswerWindowMs: TIMER_CLAMP.minMs,
+    maxAnswerWindowMs: 5_000 * TIMER_CLAMP.maxFactor
 } as const;
 
 /** OpenTDB runtime multiple-choice source for the board chase (Phase 4, ticket 063).

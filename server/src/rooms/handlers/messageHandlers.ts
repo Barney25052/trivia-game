@@ -211,20 +211,54 @@ export function offerChoice(client: any, message: any, room: any) {
     room.dispatch({ type: "contestantChoice", offer });
 }
 
-export function chaseResult(client: any, message: any, room: any) {
+/** Server-authoritative board-chase answer (ticket 064): both the active
+ * contestant and the Chaser submit their pick for the same MC question via
+ * this message — the room resolves correctness and board movement itself,
+ * never trusting a client-sent result. */
+export function submitChaseAnswer(client: any, message: any, room: any) {
     if (room.state.currentPhase !== GamePhase.Chase) {
-        console.log(client.sessionId, "Can not send a chase result outside Chase!");
+        console.log(client.sessionId, "Can not submit a chase answer outside Chase!");
         return;
     }
     const seatId = room.seatIdForClient(client);
-    if (seatId !== room.state.activeContestantSeatId) {
-        console.log(client.sessionId, "Can not send a chase result — not the active contestant!");
+    const isContestant = seatId === room.state.activeContestantSeatId;
+    const isChaser = seatId === room.state.chaserSeatId;
+    if (!isContestant && !isChaser) {
+        console.log(client.sessionId, "Can not submit a chase answer — not in this chase!");
         return;
     }
-    if (message?.escaped === true) {
-        room.dispatch({ type: "chaseEscape" });
-    } else {
-        room.dispatch({ type: "chaseCaught" });
+    if (
+        typeof message?.questionId !== "string" ||
+        typeof message?.answerIndex !== "number" ||
+        !Number.isInteger(message.answerIndex)
+    ) {
+        console.log(client.sessionId, "Ignoring malformed chase answer:", message);
+        return;
+    }
+    const question = room.currentChaseQuestion;
+    if (!question || question.id !== message.questionId) {
+        console.log(client.sessionId, "Chase answer does not match the current question");
+        return;
+    }
+    if (message.answerIndex < 0 || message.answerIndex >= question.optionCount) {
+        console.log(client.sessionId, "Chase answer index out of range:", message.answerIndex);
+        return;
+    }
+    const role: "contestant" | "chaser" = isContestant ? "contestant" : "chaser";
+    if (role in room.chaseAnswers) {
+        console.log(client.sessionId, "Already answered this chase question");
+        return;
+    }
+    const wasFirstAnswer = Object.keys(room.chaseAnswers).length === 0;
+    room.chaseAnswers[role] = message.answerIndex;
+    console.log(`${seatId} (${role}) answered chase question ${question.id}`);
+
+    if (Object.keys(room.chaseAnswers).length === 2) {
+        room.resolveChaseQuestion();
+    } else if (wasFirstAnswer) {
+        room.chaseAnswerTimer = room.scheduleTimer(room.chaseAnswerWindowMs, () => {
+            room.resolveChaseQuestion();
+        });
     }
 }
 

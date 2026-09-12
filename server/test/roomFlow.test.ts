@@ -20,6 +20,77 @@ async function setChaserOffers(
   await sleep(30);
 }
 
+/** A stub `McQuestionSource` for chase tests — every question carries one
+ * fixed correct answer ("Correct Answer") at a known text, so a test can find
+ * its index in whatever shuffled `options` the room broadcasts without ever
+ * needing the server's secret `correctIndex`. */
+function stubChaseSource() {
+  let counter = 0;
+  return {
+    async getQuestions(amount: number) {
+      const out = [];
+      for (let i = 0; i < amount; i += 1) {
+        counter += 1;
+        out.push({
+          id: `stub-chase-${counter}`,
+          question: `Stub chase question ${counter}?`,
+          category: "Stub",
+          options: ["Correct Answer", "Wrong A", "Wrong B", "Wrong C"],
+          correctIndex: 0
+        });
+      }
+      return out;
+    }
+  };
+}
+
+/**
+ * Registers an auto-answer handler that answers every chase question for
+ * both sides, always giving the contestant's side `contestantCorrect` and
+ * the chaser's side the opposite. Must be called *before* whatever triggers
+ * entry into the Chase phase (the first "mc" question can be broadcast
+ * before the test's own `waitForPhase(Chase)` poll notices, so registering
+ * late misses it — same delivery-vs-state race as bug-003/bug-009). Requires
+ * `room.mcQuestionSource` to already be `stubChaseSource()`.
+ */
+function armChaseAutoAnswer(
+  contestantClient: { send: (type: string, message?: any) => void; onMessage: (type: string, cb: (message: any) => void) => void },
+  chaserClient: { send: (type: string, message?: any) => void },
+  contestantCorrect: boolean
+): void {
+  contestantClient.onMessage("question", (message: any) => {
+    if (!message || message.kind !== "mc") {
+      return;
+    }
+    const correctIndex = message.options.indexOf("Correct Answer");
+    const wrongIndex = (correctIndex + 1) % message.options.length;
+    contestantClient.send("submitChaseAnswer", {
+      questionId: message.questionId,
+      answerIndex: contestantCorrect ? correctIndex : wrongIndex
+    });
+    chaserClient.send("submitChaseAnswer", {
+      questionId: message.questionId,
+      answerIndex: contestantCorrect ? wrongIndex : correctIndex
+    });
+  });
+}
+
+/** Waits for the chase (armed via `armChaseAutoAnswer`) to resolve — i.e. the
+ * phase to leave Chase for an escape or a catch. */
+const waitForChaseResolved = async (
+  room: { state: { currentPhase: GamePhase } },
+  timeoutMs = 5000
+): Promise<void> => {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (room.state.currentPhase !== GamePhase.Chase) {
+      return;
+    }
+    await sleep(20);
+  }
+  assert.fail(`timed out waiting for the chase to resolve; still ${room.state.currentPhase}`);
+};
+
 const waitForPhase = async (
   room: { state: { currentPhase: GamePhase } },
   phase: GamePhase,
@@ -210,6 +281,7 @@ describe("roomFlow", () => {
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80
     });
+    room.mcQuestionSource = stubChaseSource();
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
@@ -250,9 +322,9 @@ describe("roomFlow", () => {
 
     const first = bySession.get(room.state.activeContestantSeatId);
     await setChaserOffers(chaserClient, 0, 2000);
+    armChaseAutoAnswer(first, chaserClient, true);
     first.send("offerChoice", { offer: "middle" });
-    await waitForPhase(room, GamePhase.Chase);
-    first.send("chaseResult", { escaped: true });
+    await waitForChaseResolved(room);
 
     // Round 2: cashBuilder timeout skips straight to Offer — no reveal replay.
     await waitForPhase(room, GamePhase.CashBuilder);
@@ -345,6 +417,7 @@ describe("roomFlow", () => {
       lineupDurationMs: 80,
       teamFinalDurationMs: 80
     });
+    room.mcQuestionSource = stubChaseSource();
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
@@ -377,10 +450,9 @@ alice.send("startGame");
     await setChaserOffers(chaserClient, 0, 2000);
 
     const first = bySession.get(room.state.activeContestantSeatId);
+    armChaseAutoAnswer(first, chaserClient, true);
     first.send("offerChoice", { offer: "high" });
-    await waitForPhase(room, GamePhase.Chase);
-
-    first.send("chaseResult", { escaped: true });
+    await waitForChaseResolved(room);
     await waitForPhase(room, GamePhase.CashBuilder);
     const second = bySession.get(room.state.activeContestantSeatId);
     assert.ok(second && second !== first, "second contestant is not the chaser");
@@ -392,10 +464,9 @@ alice.send("startGame");
     await waitForPhase(room, GamePhase.Offer);
     await setChaserOffers(chaserClient, 0, 2000);
 
+    armChaseAutoAnswer(second, chaserClient, false);
     second.send("offerChoice", { offer: "middle" });
-    await waitForPhase(room, GamePhase.Chase);
-
-    second.send("chaseResult", { escaped: false });
+    await waitForChaseResolved(room);
     await waitForPhase(room, GamePhase.TeamFinal);
     assert.strictEqual(room.state.players.get(seatIdOf(room, second)).isEliminated, true);
     assert.strictEqual(room.state.teamScore, 1, "only the first contestant survived, so the team starts at 1");
@@ -424,6 +495,7 @@ alice.send("startGame");
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80
     });
+    room.mcQuestionSource = stubChaseSource();
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
     await sleep(100);
@@ -462,7 +534,7 @@ alice.send("startGame");
     await waitForPhase(room, GamePhase.Chase);
   });
 
-  it("chaseResult is guarded: rejected in the lobby and by the chaser; the active contestant's result still transitions", async () => {
+  it("submitChaseAnswer is guarded: rejected outside Chase and from a bystander; the contestant and chaser can each answer", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
@@ -471,11 +543,13 @@ alice.send("startGame");
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80
     });
+    room.mcQuestionSource = stubChaseSource();
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
+    const carol = await colyseus.connectTo(room, { playerName: "Carol" });
     await sleep(100);
 
-    alice.send("chaseResult", { escaped: true });
+    alice.send("submitChaseAnswer", { questionId: "whatever", answerIndex: 0 });
     await sleep(50);
     assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
 
@@ -483,25 +557,57 @@ alice.send("startGame");
     await waitForPhase(room, GamePhase.RolesReveal);
     alice.send("revealReady", { characterId: "bezos" });
     bob.send("revealReady", { characterId: "nami" });
+    carol.send("revealReady", { characterId: "bezos" });
     await waitForPhase(room, GamePhase.CashBuilder);
     room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney = 1000;
     await waitForPhase(room, GamePhase.Offer);
 
-    const chaser = room.state.chaserSeatId;
-    const active = room.state.activeContestantSeatId;
-    const chaserClient = chaser === seatIdOf(room, alice) ? alice : bob;
-    const activeClient = active === seatIdOf(room, alice) ? alice : bob;
+    const bySession = new Map<string, typeof alice>(
+      [alice, bob, carol].map((client) => [seatIdOf(room, client), client])
+    );
+    const chaserClient = bySession.get(room.state.chaserSeatId)!;
+    const activeSeatId = room.state.activeContestantSeatId;
+    const activeClient = bySession.get(activeSeatId)!;
+    const bystander = [alice, bob, carol].find(
+      (client) => client !== chaserClient && client !== activeClient
+    )!;
 
     await setChaserOffers(chaserClient, 0, 2000);
+    const questionMessage = activeClient.waitForMessage("question");
     activeClient.send("offerChoice", { offer: "high" });
     await waitForPhase(room, GamePhase.Chase);
+    const question = await questionMessage;
+    assert.strictEqual(question.kind, "mc");
 
-    chaserClient.send("chaseResult", { escaped: true });
+    // A bystander (not the active contestant or the Chaser) can not answer.
+    bystander.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: 0 });
     await sleep(50);
     assert.strictEqual(room.state.currentPhase, GamePhase.Chase);
 
-    activeClient.send("chaseResult", { escaped: true });
-    await waitForPhase(room, GamePhase.TeamFinal);
+    // Both the active contestant and the Chaser can answer the same question.
+    // Arm the auto-answer for later questions before sending this one manually —
+    // resolving it triggers the next chase question right away (bug-003/bug-009
+    // style race between broadcast delivery and a test's own listener setup).
+    armChaseAutoAnswer(activeClient, chaserClient, true);
+    const correctIndex = question.options.indexOf("Correct Answer");
+    const wrongIndex = (correctIndex + 1) % question.options.length;
+    const contestantBefore = room.state.players.get(room.state.activeContestantSeatId).boardPos;
+    activeClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+    chaserClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: wrongIndex });
+    await sleep(50);
+    // The auto-answer armed above keeps driving further rounds once this one
+    // resolves, so assert progress rather than an exact stopping point.
+    assert.ok(
+      room.state.players.get(room.state.activeContestantSeatId).boardPos < contestantBefore,
+      "the contestant's correct answer moved them toward the escape space"
+    );
+
+    await waitForChaseResolved(room);
+    // Three players means a second contestant is still in line after this
+    // escape — the round moves on to their cash builder, not straight to
+    // TeamFinal (that only happens once every contestant has gone).
+    await waitForPhase(room, GamePhase.CashBuilder);
+    assert.strictEqual(room.state.players.get(activeSeatId).madeItBack, true);
   });
 
   it("finalChaserScore is guarded: rejected in the lobby and by a contestant; the Chaser's call still transitions", async () => {
@@ -514,6 +620,7 @@ alice.send("startGame");
       lineupDurationMs: 80,
       teamFinalDurationMs: 80
     });
+    room.mcQuestionSource = stubChaseSource();
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
     await sleep(100);
@@ -536,9 +643,9 @@ alice.send("startGame");
     const activeClient = active === seatIdOf(room, alice) ? alice : bob;
 
     await setChaserOffers(chaserClient, 0, 2000);
+    armChaseAutoAnswer(activeClient, chaserClient, true);
     activeClient.send("offerChoice", { offer: "high" });
-    await waitForPhase(room, GamePhase.Chase);
-    activeClient.send("chaseResult", { escaped: true });
+    await waitForChaseResolved(room);
     await waitForPhase(room, GamePhase.ChaserFinal);
 
     activeClient.send("finalChaserScore");
@@ -684,6 +791,7 @@ alice.send("chaserVote", { targetSeatId: seatIdOf(room, bob) });
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80
       });
+      room.mcQuestionSource = stubChaseSource();
       const alice = await colyseus.connectTo(room, { playerName: "Alice" });
       const bob = await colyseus.connectTo(room, { playerName: "Bob" });
       await sleep(100);
@@ -839,6 +947,7 @@ alice.send("chaserVote", { targetSeatId: seatIdOf(room, bob) });
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80
       });
+      room.mcQuestionSource = stubChaseSource();
       const alice = await colyseus.connectTo(room, { playerName: "Alice" });
       const bob = await colyseus.connectTo(room, { playerName: "Bob" });
       await sleep(100);

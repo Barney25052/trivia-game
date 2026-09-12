@@ -68,3 +68,10 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: the test registers the `offerStart`/`offerLowSet`/`offer` `waitForMessage` listeners before the broadcasts can be delivered (e.g. right after entering the CashBuilder phase), or gates on the client's own message delivery like ticket 060's `waitForPhaseBroadcast`.
 - Repro steps: 1. `cd server && npm test`. 2. Observe `offerQuips` "offerStart ... timed out" (reproduced on 2/2 runs).
 - Status: resolved — fixed in-ticket 2026-09-12 as part of ticket 068 (`reachOffer` now registers the `offerStart` listeners for both clients right after entering `CashBuilder`, before the cash-builder timer fires and broadcasts; the test awaits the pre-registered promises instead of calling `waitForMessage` after `Offer` already settled)
+
+## `bug-010` — Chaser leaving mid-round is not handled in `onLeave` (only the active contestant is)
+- Found: 2026-09-12 · ticket 064 · `server/src/rooms/TriviaRoom.ts` (`onLeave`)
+- What you saw: `onLeave` only special-cases the active contestant leaving during `CashBuilder`/`Offer`/`Chase` (dispatches `contestantForfeit`). If the Chaser disconnects mid-round — including mid-`Chase`, where ticket 064 now has the Chaser actively submitting answers via `submitChaseAnswer` — the room is left with a `chaserSeatId` pointing at a departed seat and no player record; nothing forfeits or ends the round, so the game can stall waiting on a Chaser answer that will never come once the lockout timer path is exhausted (no lockout is possible if the room drops a live connection mid-answer other than colyseus's own reconnection grace, but no game-flow event covers this case regardless).
+- Expected: a Chaser disconnect mid-round resolves the game forward the same way an active-contestant disconnect does today, rather than leaving the room in a state nothing can advance out of.
+- Repro steps: reach `Chase` (or any active round) as the Chaser, then have the Chaser's client disconnect; observe `chaserSeatId` still references the departed seat and the phase never advances on its own.
+- Status: open

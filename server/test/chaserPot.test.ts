@@ -24,6 +24,75 @@ const waitForPhase = async (
   assert.fail(`timed out waiting for phase ${phase}; got ${room.state.currentPhase}`);
 };
 
+/** A stub `McQuestionSource` for chase tests — see roomFlow.test.ts for the
+ * full rationale behind the fixed "Correct Answer" text. */
+function stubChaseSource() {
+  let counter = 0;
+  return {
+    async getQuestions(amount: number) {
+      const out = [];
+      for (let i = 0; i < amount; i += 1) {
+        counter += 1;
+        out.push({
+          id: `stub-chase-${counter}`,
+          question: `Stub chase question ${counter}?`,
+          category: "Stub",
+          options: ["Correct Answer", "Wrong A", "Wrong B", "Wrong C"],
+          correctIndex: 0
+        });
+      }
+      return out;
+    }
+  };
+}
+
+/**
+ * Registers an auto-answer handler that answers every chase question for
+ * both sides, always giving the contestant's side `contestantCorrect` and the
+ * chaser's side the opposite. Must be called *before* whatever triggers entry
+ * into the Chase phase — the first "mc" question can be broadcast before a
+ * `waitForPhase(Chase)` poll notices, so registering late misses it (same
+ * delivery-vs-state race as bug-003/bug-009). Requires `room.mcQuestionSource`
+ * to already be `stubChaseSource()`.
+ */
+function armChaseAutoAnswer(
+  contestantClient: { send: (type: string, message?: any) => void; onMessage: (type: string, cb: (message: any) => void) => void },
+  chaserClient: { send: (type: string, message?: any) => void },
+  contestantCorrect: boolean
+): void {
+  contestantClient.onMessage("question", (message: any) => {
+    if (!message || message.kind !== "mc") {
+      return;
+    }
+    const correctIndex = message.options.indexOf("Correct Answer");
+    const wrongIndex = (correctIndex + 1) % message.options.length;
+    contestantClient.send("submitChaseAnswer", {
+      questionId: message.questionId,
+      answerIndex: contestantCorrect ? correctIndex : wrongIndex
+    });
+    chaserClient.send("submitChaseAnswer", {
+      questionId: message.questionId,
+      answerIndex: contestantCorrect ? wrongIndex : correctIndex
+    });
+  });
+}
+
+/** Waits for the chase (armed via `armChaseAutoAnswer`) to resolve — i.e. the
+ * phase to leave Chase for an escape or a catch. */
+async function waitForChaseResolved(
+  room: { state: { currentPhase: GamePhase } },
+  timeoutMs = 5000
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (room.state.currentPhase !== GamePhase.Chase) {
+      return;
+    }
+    await sleep(20);
+  }
+  assert.fail(`timed out waiting for the chase to resolve; still ${room.state.currentPhase}`);
+}
+
 describe("chaserPot lifecycle", () => {
   let colyseus: ColyseusTestServer<typeof appConfig>;
 
@@ -66,6 +135,7 @@ describe("chaserPot lifecycle", () => {
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80
     });
+    room.mcQuestionSource = stubChaseSource();
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
@@ -90,11 +160,15 @@ describe("chaserPot lifecycle", () => {
     await sleep(30);
 
     const contestant = bySession.get(room.state.activeContestantSeatId);
+    // Arm before sending: the chase can resolve to an escape within a few ms
+    // once both sides auto-answer, so a `waitForPhase(Chase)` poll afterward
+    // can land after it has already moved on to TeamFinal.
+    armChaseAutoAnswer(contestant, chaserClient, true);
     contestant.send("offerChoice", { offer: "high" });
-    await waitForPhase(room, GamePhase.Chase);
+    await sleep(30);
     const offerAmount = (room as any).currentOfferAmount;
 
-    contestant.send("chaseResult", { escaped: true });
+    await waitForChaseResolved(room);
     await waitForPhase(room, GamePhase.TeamFinal);
 
     const expected = Math.max(0, CHASER_POT.initial + CHASER_POT.perRound - offerAmount);
@@ -110,6 +184,7 @@ describe("chaserPot lifecycle", () => {
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80
     });
+    room.mcQuestionSource = stubChaseSource();
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
@@ -134,10 +209,9 @@ describe("chaserPot lifecycle", () => {
     await sleep(30);
 
     const contestant = bySession.get(room.state.activeContestantSeatId);
+    armChaseAutoAnswer(contestant, chaserClient, false);
     contestant.send("offerChoice", { offer: "high" });
-    await waitForPhase(room, GamePhase.Chase);
-
-    contestant.send("chaseResult", { escaped: false });
+    await waitForChaseResolved(room);
     await waitForPhase(room, GamePhase.TeamFinal);
 
     assert.strictEqual(room.state.chaserPot, CHASER_POT.initial + CHASER_POT.perRound);
@@ -152,6 +226,7 @@ describe("chaserPot lifecycle", () => {
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80
     });
+    room.mcQuestionSource = stubChaseSource();
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
@@ -176,12 +251,24 @@ describe("chaserPot lifecycle", () => {
     await sleep(30);
 
     const contestant = bySession.get(room.state.activeContestantSeatId);
+    // Catch the first question manually (a one-shot promise, registered ahead
+    // of the send) so `currentOfferAmount` can be overridden before anyone
+    // answers, then arm auto-answer for the remaining rounds — arming up
+    // front would risk the chase resolving (and paying out) before this test
+    // gets to override the amount.
+    const firstQuestion = contestant.waitForMessage("question");
     contestant.send("offerChoice", { offer: "high" });
-    await waitForPhase(room, GamePhase.Chase);
+    const question = await firstQuestion;
 
     (room as any).currentOfferAmount = CHASER_POT.initial + CHASER_POT.perRound + 1_000_000;
 
-    contestant.send("chaseResult", { escaped: true });
+    armChaseAutoAnswer(contestant, chaserClient, true);
+    const correctIndex = question.options.indexOf("Correct Answer");
+    const wrongIndex = (correctIndex + 1) % question.options.length;
+    contestant.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+    chaserClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: wrongIndex });
+
+    await waitForChaseResolved(room);
     await waitForPhase(room, GamePhase.TeamFinal);
 
     assert.strictEqual(room.state.chaserPot, 0, "pot never drops below 0");

@@ -11,8 +11,12 @@ import {
 import { scheduleTimer, TimerHandle } from "../timer.js";
 import { QuestionManager } from "../questions/questionManager.js";
 import { loadBank, BankQuestion } from "../questions/bank.js";
+import { createOpenTdbQuestionSource, McQuestionSource } from "../questions/opentdb.js";
+import { pickChaseOptions } from "../questions/chaseOptions.js";
 import {
+  BOARD,
   CASH_BUILDER,
+  CHASE_QUESTION,
   CHASER_CHARACTER_REVEAL,
   CHASER_REVEAL,
   FINAL_ROUND,
@@ -30,7 +34,7 @@ import {
   setChaserLowOffer,
   setChaserHighOffer,
   offerChoice,
-  chaseResult,
+  submitChaseAnswer,
   finalChaserScore,
   submitAnswer,
   sendChaserQuip,
@@ -45,6 +49,17 @@ interface OfferAmounts {
   middle: number;
   high: number | null;
 }
+
+/** The chase question currently in play, held server-side only. `correctIndex`
+ * indexes into the narrowed options shown to clients and is never broadcast
+ * until the question resolves. */
+interface ActiveChaseQuestion {
+  id: string;
+  correctIndex: number;
+  optionCount: number;
+}
+
+type ChaseRole = "contestant" | "chaser";
 
 export class TriviaRoom extends Room {
   maxClients = ROOM_SETTINGS.max_clients;
@@ -64,12 +79,17 @@ export class TriviaRoom extends Room {
   chaserFinalDurationMs: number = FINAL_ROUND.chaserDurationMs;
   rateLimitMaxMessages: number = RATE_LIMIT.maxMessages;
   rateLimitWindowMs: number = RATE_LIMIT.windowMs;
+  chaseAnswerWindowMs: number = CHASE_QUESTION.answerWindowMs;
 
   activeTimer: TimerHandle | null = null;
   currentOffer: OfferAmounts | null = null;
   currentOfferAmount = 0;
   questionManager = new QuestionManager();
   questionBank: BankQuestion[] = [];
+  mcQuestionSource: McQuestionSource = createOpenTdbQuestionSource();
+  currentChaseQuestion: ActiveChaseQuestion | null = null;
+  chaseAnswers: Partial<Record<ChaseRole, number>> = {};
+  chaseAnswerTimer: TimerHandle | null = null;
   private messageTimes: Map<string, number[]> = new Map();
 
   onCreate (options: any) {
@@ -118,8 +138,8 @@ export class TriviaRoom extends Room {
     };
   }
 
-  private broadcastQuestion(round: number, targetSeatId: string, kind: "open" | "mc", questionId: number, prompt: string, options?: string[]) {
-    const payload: { round: number; targetSeatId: string; kind: "open" | "mc"; prompt: string; options?: string[]; questionId: number } = {
+  private broadcastQuestion(round: number, targetSeatId: string, kind: "open" | "mc", questionId: number | string, prompt: string, options?: string[]) {
+    const payload: { round: number; targetSeatId: string; kind: "open" | "mc"; prompt: string; options?: string[]; questionId: number | string } = {
       round,
       targetSeatId,
       kind,
@@ -128,6 +148,108 @@ export class TriviaRoom extends Room {
       questionId,
     };
     this.broadcast("question", payload);
+  }
+
+  private clearChaseAnswerTimer() {
+    if (this.chaseAnswerTimer !== null) {
+      this.chaseAnswerTimer.cancel();
+      this.chaseAnswerTimer = null;
+    }
+    this.currentChaseQuestion = null;
+    this.chaseAnswers = {};
+  }
+
+  /** Draws the next MC question for the chase and broadcasts it — the option
+   * list shown to clients is narrowed to `CHASE_QUESTION.optionCount` options,
+   * and `correctIndex` is held only in `currentChaseQuestion`, never sent. */
+  private async startNextChaseQuestion(): Promise<void> {
+    this.currentChaseQuestion = null;
+    this.chaseAnswers = {};
+
+    let drawn;
+    try {
+      drawn = await this.mcQuestionSource.getQuestions(1);
+    } catch (error) {
+      console.error("Failed to draw a chase question:", error);
+      this.broadcast("question", null);
+      return;
+    }
+    const question = drawn[0];
+    if (!question) {
+      console.error("Chase question source returned no questions");
+      this.broadcast("question", null);
+      return;
+    }
+
+    const { options, correctIndex } = pickChaseOptions(question, CHASE_QUESTION.optionCount);
+    this.currentChaseQuestion = { id: question.id, correctIndex, optionCount: options.length };
+
+    this.broadcastQuestion(
+      this.state.activeRound,
+      this.state.activeContestantSeatId,
+      "mc",
+      question.id,
+      question.question,
+      options
+    );
+  }
+
+  /** Resolves the current chase question once both sides have answered, or the
+   * lockout window closes — moves board positions and dispatches
+   * chaseEscape/chaseCaught when a side reaches the terminal space. */
+  private resolveChaseQuestion() {
+    if (this.state.currentPhase !== GamePhase.Chase) {
+      return;
+    }
+    const question = this.currentChaseQuestion;
+    if (!question) {
+      return;
+    }
+    if (this.chaseAnswerTimer !== null) {
+      this.chaseAnswerTimer.cancel();
+      this.chaseAnswerTimer = null;
+    }
+    const answers = this.chaseAnswers;
+    this.currentChaseQuestion = null;
+    this.chaseAnswers = {};
+
+    const contestantSeatId = this.state.activeContestantSeatId;
+    const chaserSeatId = this.state.chaserSeatId;
+    const contestant = this.state.players.get(contestantSeatId);
+    const chaser = this.state.players.get(chaserSeatId);
+    const contestantCorrect = answers.contestant === question.correctIndex;
+    const chaserCorrect = answers.chaser === question.correctIndex;
+
+    if (contestant && contestantCorrect) {
+      contestant.boardPos = Math.max(BOARD.escapeSpace, contestant.boardPos - 1);
+    }
+    if (chaser && chaserCorrect) {
+      chaser.boardPos = chaser.boardPos === BOARD.chaserStartOffboard
+        ? BOARD.chaserFirstCorrectSpace
+        : Math.max(BOARD.escapeSpace, chaser.boardPos - 1);
+    }
+
+    this.broadcast("chaseQuestionResult", {
+      questionId: question.id,
+      correctIndex: question.correctIndex,
+      contestantCorrect,
+      chaserCorrect,
+      contestantBoardPos: contestant?.boardPos ?? null,
+      chaserBoardPos: chaser?.boardPos ?? null,
+    });
+
+    if (contestant && contestant.boardPos <= BOARD.escapeSpace) {
+      this.dispatch({ type: "chaseEscape" });
+      return;
+    }
+    if (contestant && chaser && chaser.boardPos <= contestant.boardPos) {
+      this.dispatch({ type: "chaseCaught" });
+      return;
+    }
+
+    this.startNextChaseQuestion().catch((error) => {
+      console.error("Failed to draw the next chase question:", error);
+    });
   }
 
   private isHost (client: Client): boolean {
@@ -140,6 +262,7 @@ export class TriviaRoom extends Room {
       const context = this.flowContext();
       const result = transition(event, context);
       this.clearTimer();
+      this.clearChaseAnswerTimer();
       applyEffects(result.effects, this, context);
       this.setPhase(result.nextPhase);
     } catch (error) {
@@ -200,9 +323,9 @@ export class TriviaRoom extends Room {
       if (!this.checkRateLimit(client)) return;
       offerChoice(client, message, this);
     },
-    chaseResult: (client: Client, message: any) => {
+    submitChaseAnswer: (client: Client, message: any) => {
       if (!this.checkRateLimit(client)) return;
-      chaseResult(client, message, this);
+      submitChaseAnswer(client, message, this);
     },
     finalChaserScore: (client: Client, message: any) => {
       if (!this.checkRateLimit(client)) return;

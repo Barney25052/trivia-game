@@ -170,10 +170,21 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
         }
 
         case "startChase": {
+          const contestant = room.state.players.get(effect.seatId);
+          if (contestant) {
+            contestant.boardPos = effect.contestantStartSpace;
+          }
+          const chaser = room.state.players.get(room.state.chaserSeatId);
+          if (chaser) {
+            chaser.boardPos = effect.chaserStartSpace;
+          }
           console.log(
             `Chase: ${effect.seatId} starts at space ${effect.contestantStartSpace}, ` +
             `chaser at ${effect.chaserStartSpace}`
           );
+          room.startNextChaseQuestion().catch((error: unknown) => {
+            console.error("Failed to start the chase question:", error);
+          });
           break;
         }
 
