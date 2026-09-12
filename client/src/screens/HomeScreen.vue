@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from "vue";
 defineProps([]);
-const emit = defineEmits(["join", "create"]);
+const emit = defineEmits(["join", "create", "add-questions"]);
 
 const playerName = ref("");
 const roomCode = ref("");
@@ -35,6 +35,9 @@ function handleCreate() {
   }
   emit("join", { playerName: playerName.value, roomCode: "" });
 }
+function handleAddQuestions() {
+  emit("add-questions");
+}
 </script>
 
 <template>
@@ -47,6 +50,7 @@ function handleCreate() {
           <button @click="handleJoin" class="joinButton">Join Lobby</button>
           <button @click="handleCreate" class="createButton">Create Lobby</button>
         </div>
+        <button @click="handleAddQuestions" class="addQuestionsLink">Add questions</button>
       </div>
   </div>
 </template>

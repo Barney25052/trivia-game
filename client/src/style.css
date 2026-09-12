@@ -2082,3 +2082,61 @@ ul {
 .resultsStatus-caught {
   color: var(--chaser-red-bright);
 }
+
+/* Add-question screen (ticket 092) — a quiet home-page entry point into
+   091's add-question endpoint; reuses the home/homeInputs/joinButton look,
+   these are the only new rules it needed. */
+.addQuestionsLink {
+  display: block;
+  width: fit-content;
+  height: auto;
+  margin: 15px auto 0;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--color-white);
+  font-size: 16px;
+  font-weight: 400;
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+.addQuestionsLink:hover {
+  opacity: 1;
+  transform: none;
+  box-shadow: none;
+}
+
+.addQuestionTextarea {
+  width: 350px;
+  min-height: 90px;
+  box-sizing: border-box;
+  display: block;
+  border-radius: 20px;
+  background-color: var(--color-white);
+  border-color: transparent;
+  appearance: none;
+  margin: 10px auto;
+  padding: 15px 20px;
+  text-align: center;
+  font-size: 18px;
+  font-family: "Roboto", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  box-shadow: 0 4px 10px rgba(var(--color-black-rgb), 0.25);
+  resize: vertical;
+}
+
+.addQuestionError {
+  color: var(--color-danger);
+  font-size: 16px;
+  padding: 5px;
+}
+
+.addQuestionSuccess {
+  color: var(--color-green);
+  font-size: 20px;
+  padding: 5px;
+  text-align: center;
+}
