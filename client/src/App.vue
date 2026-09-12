@@ -27,6 +27,8 @@ const chaserSeatId = ref("");
 const mySeatId = ref("");
 const contestantsOrder = ref([]);
 const teamScore = ref(0);
+const chaserPot = ref(0);
+const teamPot = ref(0);
 const currentOffer = ref(null);
 const winner = ref(null);
 const getReadyCooldownMs = ref(0);
@@ -110,6 +112,8 @@ async function joinLobby(playerName, roomCode) {
       activeContestantSeatId.value = newState.activeContestantSeatId;
       chaserSeatId.value = newState.chaserSeatId;
       teamScore.value = newState.teamScore;
+      chaserPot.value = newState.chaserPot;
+      teamPot.value = newState.teamPot;
       contestantsOrder.value = Array.from(newState.contestantsOrder);
     });
 
@@ -123,6 +127,9 @@ async function joinLobby(playerName, roomCode) {
         getReadyCooldownMs.value = 0;
         answerResult.value = null;
       }
+      if (message.phase !== GamePhase.Offer) {
+        currentOffer.value = null;
+      }
     });
 
     room.value.onMessage("question", (message) => {
@@ -133,8 +140,33 @@ async function joinLobby(playerName, roomCode) {
       answerResult.value = message;
     });
 
+    room.value.onMessage("offerStart", (message) => {
+      currentOffer.value = {
+        seatId: message.seatId,
+        middle: message.middle,
+        low: null,
+        high: null,
+        chaserCharacterId: message.chaserCharacterId,
+        chaserCharacterName: message.chaserCharacterName,
+        chaserCharacterAbility: message.chaserCharacterAbility
+      };
+    });
+
+    room.value.onMessage("offerLowSet", (message) => {
+      if (currentOffer.value?.seatId !== message.seatId) return;
+      currentOffer.value = { ...currentOffer.value, low: message.low };
+    });
+
     room.value.onMessage("offer", (message) => {
-      currentOffer.value = message;
+      currentOffer.value = {
+        seatId: message.seatId,
+        middle: message.offers.middle,
+        low: message.offers.low,
+        high: message.offers.high,
+        chaserCharacterId: message.chaserCharacterId,
+        chaserCharacterName: message.chaserCharacterName,
+        chaserCharacterAbility: message.chaserCharacterAbility
+      };
     });
 
     room.value.onMessage("getReady", (message) => {
@@ -189,6 +221,24 @@ function chooseOffer(offer) {
 
   } catch (e) {
     console.error("Failed to choose offer:", e);
+  }
+}
+
+function setChaserLowOffer(amount) {
+  try {
+    room.value?.send("setChaserLowOffer", { amount });
+
+  } catch (e) {
+    console.error("Failed to set the low offer:", e);
+  }
+}
+
+function setChaserHighOffer(amount) {
+  try {
+    room.value?.send("setChaserHighOffer", { amount });
+
+  } catch (e) {
+    console.error("Failed to set the high offer:", e);
   }
 }
 
@@ -287,7 +337,12 @@ function submitAnswer({ answer, questionId }) {
       :offer="currentOffer"
       :mySeatId="mySeatId"
       :players="players"
+      :chaserSeatId="chaserSeatId"
+      :chaserPot="chaserPot"
+      :teamPot="teamPot"
       @choose="chooseOffer"
+      @setLow="setChaserLowOffer"
+      @setHigh="setChaserHighOffer"
     />
     <ChaseScreen
       v-if="currentScreen=='chase'"

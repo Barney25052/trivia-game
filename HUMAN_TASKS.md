@@ -9,3 +9,4 @@ Status values: `todo`, `done`.
 | bezos-icon.png | Bezos chaser character portrait | RolesRevealScreen (character picker) | done |
 | bigstan-icon.png | Big Stan chaser character portrait | RolesRevealScreen (character picker) | done |
 | nami-icon.png | Nami chaser character portrait | RolesRevealScreen (character picker) | done |
+| shoulders.png | Contestant shoulders/torso silhouette to sit under the layered face | OfferScreen (contestant reaction box) | todo |

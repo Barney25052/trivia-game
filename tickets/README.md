@@ -80,7 +80,10 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 ### Phase 3 — The Offer
 | 050 | Chaser pot — lifecycle, payouts, and cap (server) | backlog |
 | 051 | Chaser sets the high & low offers; contestant picks (server) | backlog |
-| 052 | Offer screen — Chaser sets high/low with pot visibility; contestant picks; spectators wait | backlog |
+| 052 | Offer screen — Chaser sets high/low with pot visibility; contestant picks; spectators wait | done |
+| 055 | Persistent Chaser quip channel (server) | backlog |
+| 056 | Persistent Chaser panel — box, portrait, and quip bubble across every phase (client) | backlog |
+| 057 | Sync the Offer screen's auto-generated quips across clients (`bug-007`) | backlog |
 
 ### Follow-up bug fixes
 | 053 | Cash builder — on-screen pot/count still don't increase (`bug-005`) | done\*\* |

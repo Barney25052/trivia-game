@@ -46,3 +46,10 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: in random mode the pick resolves immediately and the room goes straight to the wheel; vote mode still holds on the player-list screen for the vote timer.
 - Repro steps: 1. Host joins (default mode is random). 2. Start the game. 3. Observe ~8s of the player-list screen before the wheel.
 - Status: triaged — ticket 054
+
+## `bug-007` — Offer screen's auto-generated quips aren't synced across clients
+- Found: 2026-09-12 · ticket 052 · `client/src/screens/OfferScreen.vue` (`pickQuip`, `quip`)
+- What you saw: the Chaser speech-bubble quip is picked with `Math.random()` independently on every client whenever `offer.seatId`/low/high changes, so two players watching the same offer round can see different quip text at the same moment — there's no single source of truth for what the bubble says.
+- Expected: every client shows the same quip text at the same stage of the same offer round.
+- Repro steps: open two browser clients on the same room, reach the Offer phase, and compare the chaser's speech-bubble text on both screens as the low/high offers are set — they're picked independently and can diverge.
+- Status: triaged — ticket 057
