@@ -148,6 +148,12 @@ The "it just hangs" steal interaction plus the final-round choreography the user
 | 099 | Client — final-round answer bubbles hold ~3s instead of clearing the instant the next question arrives | backlog |
 | 100 | Client — green background flash when a final-round answer is right (correct buzzer answer + correct steal) | backlog |
 
+### Custom contestant characters (drafted 2026-09-12)
+Custom-pickable contestant avatars (5 hairstyles, 3 faces, hair/face/shirt colour × 9); contestants only — the Chaser keeps the roster portraits. Codec `[hairStyle][hairColour][faceStyle][faceColour][shirtColour]`. Colours = grayscale art tinted via CSS. Reactions: neutral default, correct → smile, wrong → frown, two wrong in a row → teary; flashes ~3s then neutral.
+| 101 | Server — character codec + `GamePlayer.character` + validated `setCharacter` | backlog |
+| 102 | Client — lobby character picker + shared `CharacterFace` component + greyscale-tint palette (UI sign-off required) | backlog |
+| 103 | Contestant reactions — server `reaction` cues + flash/revert face expressions (UI sign-off required) | backlog |
+
 ### Whole-app polish
 | 067 | Full layout/design pass across all screens once every phase is implemented (discussion, not a solo build) | backlog |
 
