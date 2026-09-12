@@ -228,9 +228,7 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           console.log(`Final round: chaser goes (${room.chaserFinalDurationMs}ms)`);
           const firstChaserQuestion = room.finalRoundQuestions.drawNext(room.questionBank, "chaser");
           room.sendFinalQuestion("chaser", firstChaserQuestion);
-          room.activeTimer = room.scheduleTimer(room.chaserFinalDurationMs, () => {
-            room.dispatch({ type: "finalChaserTimeout" });
-          });
+          room.startChaserFinalClock();
           break;
         }
 

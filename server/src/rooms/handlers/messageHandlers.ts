@@ -395,6 +395,7 @@ export function submitFinalChaserAnswer(client: any, message: any, room: any) {
 
     console.log("Chaser answered incorrectly — opening the steal window for the team");
     room.finalStealActive = true;
+    room.pauseChaserFinalClock();
     room.sendToTeam("finalSteal", {
         questionId: currentQuestion.id,
         prompt: currentQuestion.question,
@@ -407,7 +408,10 @@ export function submitFinalChaserAnswer(client: any, message: any, room: any) {
         }
         room.finalStealActive = false;
         console.log("Steal window expired unclaimed — the Chaser advances");
-        room.advanceFinalChaserQuestion();
+        room.resumeChaserFinalClock();
+        if (room.state.currentPhase === GamePhase.ChaserFinal) {
+            room.advanceFinalChaserQuestion();
+        }
     });
 }
 
@@ -467,7 +471,10 @@ export function submitFinalStealAnswer(client: any, message: any, room: any) {
     if (isCorrect) {
         room.sendToTeam("finalStealResolved", { pushedBack });
     }
-    room.advanceFinalChaserQuestion();
+    room.resumeChaserFinalClock();
+    if (room.state.currentPhase === GamePhase.ChaserFinal) {
+        room.advanceFinalChaserQuestion();
+    }
 }
 
 export function sendChaserQuip(client: any, message: any, room: any) {

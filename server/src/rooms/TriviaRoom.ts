@@ -105,6 +105,14 @@ export class TriviaRoom extends Room {
   finalStealActive = false;
   finalStealTimer: TimerHandle | null = null;
 
+  /** Resumable Chaser-final clock (ticket 094). `chaserFinalRemainingMs` holds
+   * either the full budget while the countdown runs or the frozen remainder
+   * while a steal window is open; `chaserFinalClockRunning` tells a pause
+   * whether there is actually anything to freeze. */
+  chaserFinalRemainingMs: number = 0;
+  chaserFinalClockRunning = false;
+  private chaserFinalClockStartedAt = 0;
+
   activeTimer: TimerHandle | null = null;
   currentOffer: OfferAmounts | null = null;
   currentOfferAmount = 0;
@@ -215,6 +223,57 @@ export class TriviaRoom extends Room {
       this.finalStealTimer = null;
     }
     this.finalStealActive = false;
+  }
+
+  /** Starts the Chaser-final countdown for the full budget (ticket 094). The
+   * clock is resumable: a Chaser miss pauses it (`pauseChaserFinalClock`) and
+   * the frozen remainder resumes on steal resolution or expiry. */
+  startChaserFinalClock() {
+    this.chaserFinalRemainingMs = this.chaserFinalDurationMs;
+    this.runChaserFinalCountdown();
+  }
+
+  /** Freezes the Chaser-final countdown at the current remaining time (ticket
+   * 094) — called when a Chaser miss opens the steal window so the 2-minute
+   * clock does not burn while the team pushes back. */
+  pauseChaserFinalClock() {
+    if (!this.chaserFinalClockRunning) {
+      return;
+    }
+    this.chaserFinalRemainingMs -= Date.now() - this.chaserFinalClockStartedAt;
+    this.chaserFinalClockRunning = false;
+    if (this.activeTimer !== null) {
+      this.activeTimer.cancel();
+      this.activeTimer = null;
+    }
+    console.log(`Chaser final clock paused — ${this.chaserFinalRemainingMs}ms remain`);
+  }
+
+  /** Resumes the frozen Chaser-final countdown for the remaining time (ticket
+   * 094) — called when the steal resolves or expires unclaimed. A remainder
+   * already at or below 0 dispatches `finalChaserTimeout` (the team wins) right
+   * away instead of scheduling another tick of non-existent time. */
+  resumeChaserFinalClock() {
+    if (this.chaserFinalClockRunning || this.state.currentPhase !== GamePhase.ChaserFinal) {
+      return;
+    }
+    if (this.chaserFinalRemainingMs <= 0) {
+      console.log("Chaser final clock already exhausted on resume — the team wins");
+      this.dispatch({ type: "finalChaserTimeout" });
+      return;
+    }
+    this.runChaserFinalCountdown();
+  }
+
+  private runChaserFinalCountdown() {
+    this.chaserFinalClockStartedAt = Date.now();
+    this.chaserFinalClockRunning = true;
+    this.activeTimer = this.scheduleTimer(this.chaserFinalRemainingMs, () => {
+      this.chaserFinalClockRunning = false;
+      this.chaserFinalRemainingMs = 0;
+      this.activeTimer = null;
+      this.dispatch({ type: "finalChaserTimeout" });
+    });
   }
 
   /** Delivers a message to only the non-Chaser seats — used for the team-side

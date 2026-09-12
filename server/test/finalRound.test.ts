@@ -927,3 +927,136 @@ describe("Phase 5 integration — full final round end-to-end (ticket 082)", () 
         await waitForPhase(room, GamePhase.GameEnd, 3000);
     });
 });
+
+describe("final round — Chaser clock pause/resume (ticket 094)", () => {
+    let colyseus: ColyseusTestServer<typeof appConfig>;
+
+    beforeEach(async () => {
+        colyseus = await getTestServer();
+        await cleanup();
+    });
+
+    /** Short-circuits to a ChaserFinal with a live question and both clients
+     * seated (reuses the ticket 082 chase-escape driver). */
+    async function madeToChaserFinal(colyseus: ColyseusTestServer<typeof appConfig>, room: any) {
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+        const driven = await driveToChaseEscape(colyseus, room);
+        await driven.teamFinalQuestion;
+        await waitForPhase(room, GamePhase.ChaserFinal);
+        const chaserMessage = await driven.chaserFinalQuestion;
+        return { ...driven, chaserMessage };
+    }
+
+    const fastMotionOptions = {
+        cashBuilderDurationMs: 80,
+        chaserSelectionDurationMs: 80,
+        chaserRevealDurationMs: 80,
+        chaserCharacterRevealDurationMs: 80,
+        revealReadyCooldownMs: 80,
+        lineupDurationMs: 80,
+        teamFinalDurationMs: 80
+    };
+
+    it("a Chaser miss freezes the clock — the round does not time out while the steal is open", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", {
+            ...fastMotionOptions,
+            chaserFinalDurationMs: 1500,
+            stealWindowMs: 2000
+        });
+        const { contestantClient, chaserClient, chaserMessage } = await madeToChaserFinal(colyseus, room);
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+        assert.strictEqual(room.finalStealActive, true);
+        assert.strictEqual(room.chaserFinalClockRunning, false, "the clock must be paused while the steal is open");
+        const frozenRemaining = room.chaserFinalRemainingMs;
+        assert.ok(
+            frozenRemaining > 0 && frozenRemaining <= 1500,
+            `remaining ${frozenRemaining} should be the budget minus the pre-miss elapsed time`
+        );
+
+        // Stay inside the steal for longer than the frozen remainder would have
+        // taken to run out — the paused clock must never fire.
+        await sleep(frozenRemaining + 300);
+        assert.strictEqual(room.state.currentPhase, GamePhase.ChaserFinal, "the round must not time out during the steal");
+        assert.strictEqual(room.chaserFinalRemainingMs, frozenRemaining, "the frozen remainder must not drain during the steal");
+    });
+
+    it("resuming after a resolved steal runs out the frozen remainder — the team wins by timeout", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", {
+            ...fastMotionOptions,
+            chaserFinalDurationMs: 1500,
+            stealWindowMs: 2000
+        });
+        const { contestantClient, chaserClient, chaserMessage } = await madeToChaserFinal(colyseus, room);
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+        const frozenRemaining = room.chaserFinalRemainingMs;
+        assert.strictEqual(room.chaserFinalClockRunning, false);
+
+        contestantClient.send("submitFinalStealAnswer", {
+            questionId: chaserMessage.questionId,
+            answer: `Answer ${chaserMessage.questionId}`
+        });
+        await sleep(50);
+        assert.strictEqual(room.chaserFinalClockRunning, true, "the clock must resume after a resolved steal");
+        assert.ok(room.chaserFinalRemainingMs <= frozenRemaining);
+
+        await waitForPhase(room, GamePhase.GameEnd, 4000);
+        assert.strictEqual(room.state.currentPhase, GamePhase.GameEnd);
+    });
+
+    it("resuming after an unclaimed expiry runs out the frozen remainder — the team wins by timeout", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", {
+            ...fastMotionOptions,
+            chaserFinalDurationMs: 1500,
+            stealWindowMs: 120
+        });
+        const { contestantClient, chaserClient, chaserMessage } = await madeToChaserFinal(colyseus, room);
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+        assert.strictEqual(room.chaserFinalClockRunning, false);
+
+        // Nobody steals — the window expires on its own and resumes the clock.
+        const resumeDeadline = Date.now() + 1000;
+        while (Date.now() < resumeDeadline && !room.chaserFinalClockRunning) {
+            await sleep(20);
+        }
+        assert.strictEqual(room.chaserFinalClockRunning, true, "an unclaimed expiry must resume the clock");
+
+        await waitForPhase(room, GamePhase.GameEnd, 4000);
+        assert.strictEqual(room.state.currentPhase, GamePhase.GameEnd);
+    });
+
+    it("resuming with an already-exhausted remainder ends the game immediately — the team wins", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", {
+            ...fastMotionOptions,
+            chaserFinalDurationMs: 10000,
+            stealWindowMs: 2000
+        });
+        const { contestantClient, chaserClient, chaserMessage } = await madeToChaserFinal(colyseus, room);
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+        assert.strictEqual(room.chaserFinalClockRunning, false);
+
+        // White-box: zero the frozen remainder so the resume must end the round.
+        room.chaserFinalRemainingMs = 0;
+
+        const endGame = contestantClient.waitForMessage("endGame");
+        contestantClient.send("submitFinalStealAnswer", {
+            questionId: chaserMessage.questionId,
+            answer: `Answer ${chaserMessage.questionId}`
+        });
+        const end = await endGame;
+        assert.strictEqual(end.winner, "team");
+        await waitForPhase(room, GamePhase.GameEnd);
+    });
+});
