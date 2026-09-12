@@ -396,7 +396,10 @@ export function submitFinalChaserAnswer(client: any, message: any, room: any) {
     console.log("Chaser answered incorrectly — opening the steal window for the team");
     room.finalStealActive = true;
     room.pauseChaserFinalClock();
-    room.sendToTeam("finalSteal", {
+    // Whole-room broadcast (ticket 095): the payload only carries the Chaser's
+    // own question id/prompt + the window length, never the answer — the Chaser
+    // needs this to render the steal and its countdown just like the team does.
+    room.broadcast("finalSteal", {
         questionId: currentQuestion.id,
         prompt: currentQuestion.question,
         windowMs: room.stealWindowMs
@@ -408,10 +411,7 @@ export function submitFinalChaserAnswer(client: any, message: any, room: any) {
         }
         room.finalStealActive = false;
         console.log("Steal window expired unclaimed — the Chaser advances");
-        room.resumeChaserFinalClock();
-        if (room.state.currentPhase === GamePhase.ChaserFinal) {
-            room.advanceFinalChaserQuestion();
-        }
+        room.finishFinalSteal();
     });
 }
 
@@ -449,6 +449,16 @@ export function submitFinalStealAnswer(client: any, message: any, room: any) {
         room.finalStealTimer = null;
     }
 
+    // The typed guess is against a prompt already shown to the whole team — safe
+    // to broadcast to everyone (Chaser included) the instant it lands so the
+    // answer bubble can pop from the submitter's seat on every client (ticket
+    // 095). Never includes the correct answer.
+    room.broadcast("finalStealAnswer", {
+        questionId: currentQuestion.id,
+        seatId,
+        answer: message.answer.trim()
+    });
+
     const isCorrect = checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])]);
     let pushedBack = false;
     if (isCorrect) {
@@ -468,13 +478,19 @@ export function submitFinalStealAnswer(client: any, message: any, room: any) {
         correctAnswer: currentQuestion.answer,
         questionId: currentQuestion.id
     });
-    if (isCorrect) {
-        room.sendToTeam("finalStealResolved", { pushedBack });
-    }
-    room.resumeChaserFinalClock();
-    if (room.state.currentPhase === GamePhase.ChaserFinal) {
-        room.advanceFinalChaserQuestion();
-    }
+    // The resolve/reveal moment — broadcasting the canonical answer now is the
+    // reveal itself and goes to both sides, correct or wrong (ticket 095), so
+    // the Chaser and every contestant render the same outcome.
+    room.broadcast("finalStealResolved", {
+        questionId: currentQuestion.id,
+        seatId,
+        correct: isCorrect,
+        correctAnswer: currentQuestion.answer,
+        pushedBack
+    });
+    // Outcome-beat hold before the next question; the frozen clock stays paused
+    // through it (ticket 095, on top of 094's resume seam).
+    room.finishFinalSteal();
 }
 
 export function sendChaserQuip(client: any, message: any, room: any) {

@@ -92,6 +92,13 @@ export function clampRoomOptions(room: TriviaRoom, options: any): void {
             FINAL_ROUND.stealWindowMaxMs
         );
     }
+    if (typeof options?.stealResolveHoldMs === "number") {
+        room.stealResolveHoldMs = clamp(
+            options.stealResolveHoldMs,
+            FINAL_ROUND.stealResolveHoldMinMs,
+            FINAL_ROUND.stealResolveHoldMaxMs
+        );
+    }
     if (typeof options?.chaseAnswerWindowMs === "number") {
         room.chaseAnswerWindowMs = clamp(
             options.chaseAnswerWindowMs,

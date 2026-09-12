@@ -602,7 +602,8 @@ describe("final round — Chaser answer engine and steal (ticket 079)", () => {
         lineupDurationMs: 80,
         teamFinalDurationMs: 80,
         chaserFinalDurationMs: 10000,
-        stealWindowMs: 150
+        stealWindowMs: 150,
+        stealResolveHoldMs: 80
     };
 
     async function toChaserFinal(colyseus: ColyseusTestServer<typeof appConfig>, room: any) {
@@ -815,7 +816,8 @@ describe("Phase 5 integration — full final round end-to-end (ticket 082)", () 
         teamFinalDurationMs: 10000,
         chaserFinalDurationMs: 10000,
         finalWrongAnswerRevealMs: 60,
-        stealWindowMs: 2000
+        stealWindowMs: 2000,
+        stealResolveHoldMs: 80
     };
 
     it("a buzz race between two team contestants: only the first buzzer's submit is accepted", async () => {
@@ -955,7 +957,8 @@ describe("final round — Chaser clock pause/resume (ticket 094)", () => {
         chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80,
-        teamFinalDurationMs: 80
+        teamFinalDurationMs: 80,
+        stealResolveHoldMs: 80
     };
 
     it("a Chaser miss freezes the clock — the round does not time out while the steal is open", async () => {
@@ -1002,8 +1005,13 @@ describe("final round — Chaser clock pause/resume (ticket 094)", () => {
             questionId: chaserMessage.questionId,
             answer: `Answer ${chaserMessage.questionId}`
         });
-        await sleep(50);
-        assert.strictEqual(room.chaserFinalClockRunning, true, "the clock must resume after a resolved steal");
+        // The outcome hold (ticket 095) keeps the clock frozen past the resolve
+        // before the resume seam hands the remainder back to the countdown.
+        const resumeDeadline = Date.now() + 1000;
+        while (Date.now() < resumeDeadline && !room.chaserFinalClockRunning) {
+            await sleep(20);
+        }
+        assert.strictEqual(room.chaserFinalClockRunning, true, "the clock must resume after the resolved steal's outcome hold");
         assert.ok(room.chaserFinalRemainingMs <= frozenRemaining);
 
         await waitForPhase(room, GamePhase.GameEnd, 4000);
@@ -1058,5 +1066,213 @@ describe("final round — Chaser clock pause/resume (ticket 094)", () => {
         const end = await endGame;
         assert.strictEqual(end.winner, "team");
         await waitForPhase(room, GamePhase.GameEnd);
+    });
+});
+
+describe("final round — steal transport and outcome hold (ticket 095)", () => {
+    let colyseus: ColyseusTestServer<typeof appConfig>;
+
+    beforeEach(async () => {
+        colyseus = await getTestServer();
+        await cleanup();
+    });
+
+    /** The hold is deliberately larger than the fast-motion phases so the delay
+     * can be measured — the 100ms clamp would swallow a tiny hold value. */
+    const holdRoomOptions = {
+        cashBuilderDurationMs: 80,
+        chaserSelectionDurationMs: 80,
+        chaserRevealDurationMs: 80,
+        chaserCharacterRevealDurationMs: 80,
+        revealReadyCooldownMs: 80,
+        lineupDurationMs: 80,
+        teamFinalDurationMs: 80,
+        chaserFinalDurationMs: 10000,
+        stealWindowMs: 300,
+        stealResolveHoldMs: 400
+    };
+
+    async function toChaserFinal(colyseus: ColyseusTestServer<typeof appConfig>, room: any) {
+        const driven = await driveToChaseEscape(colyseus, room);
+        await driven.teamFinalQuestion;
+        await waitForPhase(room, GamePhase.ChaserFinal);
+        const chaserMessage = await driven.chaserFinalQuestion;
+        return { ...driven, chaserMessage };
+    }
+
+    it("the Chaser receives finalSteal too — it is a whole-room broadcast", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", holdRoomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
+
+        const teamSteal = contestantClient.waitForMessage("finalSteal");
+        const chaserSteal = chaserClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+
+        const teamMsg = await teamSteal;
+        const chaserMsg = await chaserSteal;
+        assert.strictEqual(chaserMsg.questionId, chaserMessage.questionId);
+        assert.strictEqual(chaserMsg.windowMs, room.stealWindowMs);
+        assert.deepStrictEqual(chaserMsg, teamMsg, "the Chaser and the team must see the same steal payload");
+        assert.ok(!("answer" in chaserMsg), "finalSteal must never carry the answer");
+    });
+
+    it("the winning steal answer broadcasts finalStealAnswer { seatId, answer, questionId } to all clients", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", holdRoomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, chaserMessage, contestantSeatId } = await toChaserFinal(colyseus, room);
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+
+        const teamBubble = contestantClient.waitForMessage("finalStealAnswer");
+        const chaserBubble = chaserClient.waitForMessage("finalStealAnswer");
+        contestantClient.send("submitFinalStealAnswer", {
+            questionId: chaserMessage.questionId,
+            answer: "a desperate wrong guess"
+        });
+
+        const teamMsg = await teamBubble;
+        const chaserMsg = await chaserBubble;
+        assert.strictEqual(teamMsg.seatId, contestantSeatId);
+        assert.strictEqual(teamMsg.answer, "a desperate wrong guess");
+        assert.strictEqual(teamMsg.questionId, chaserMessage.questionId);
+        assert.deepStrictEqual(chaserMsg, teamMsg, "the answer bubble must reach the Chaser's client too");
+        assert.ok(!("correctAnswer" in teamMsg), "the broadcast guess must never leak the canonical answer");
+    });
+
+    it("finalStealResolved reaches both sides on a correct steal with seatId/correct/correctAnswer/pushedBack", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", holdRoomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, chaserMessage, contestantSeatId } = await toChaserFinal(colyseus, room);
+        room.state.chaserScore = 2;
+        const canonical = `Answer ${chaserMessage.questionId}`;
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+
+        const resolvedTeam = contestantClient.waitForMessage("finalStealResolved");
+        const resolvedChaser = chaserClient.waitForMessage("finalStealResolved");
+        contestantClient.send("submitFinalStealAnswer", {
+            questionId: chaserMessage.questionId,
+            answer: canonical
+        });
+
+        const teamMsg = await resolvedTeam;
+        const chaserMsg = await resolvedChaser;
+        assert.strictEqual(teamMsg.seatId, contestantSeatId);
+        assert.strictEqual(teamMsg.correct, true);
+        assert.strictEqual(teamMsg.correctAnswer, canonical);
+        assert.strictEqual(teamMsg.pushedBack, true);
+        assert.deepStrictEqual(chaserMsg, teamMsg, "the Chaser must render the same outcome");
+        assert.strictEqual(room.state.chaserScore, 1, "a correct steal above 0 pushes the Chaser back");
+    });
+
+    it("a wrong steal also broadcasts finalStealResolved to both sides (correct=false, canonical answer)", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", holdRoomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, chaserMessage, contestantSeatId } = await toChaserFinal(colyseus, room);
+        room.state.chaserScore = 3;
+        const canonical = `Answer ${chaserMessage.questionId}`;
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+
+        const resolvedTeam = contestantClient.waitForMessage("finalStealResolved");
+        const resolvedChaser = chaserClient.waitForMessage("finalStealResolved");
+        contestantClient.send("submitFinalStealAnswer", {
+            questionId: chaserMessage.questionId,
+            answer: "not the right answer either"
+        });
+
+        const teamMsg = await resolvedTeam;
+        const chaserMsg = await resolvedChaser;
+        assert.strictEqual(teamMsg.seatId, contestantSeatId);
+        assert.strictEqual(teamMsg.correct, false);
+        assert.strictEqual(teamMsg.correctAnswer, canonical, "the reveal still names the right answer on a wrong steal");
+        assert.strictEqual(teamMsg.pushedBack, false);
+        assert.deepStrictEqual(chaserMsg, teamMsg, "a wrong steal's outcome must reach the Chaser too");
+        assert.strictEqual(room.state.chaserScore, 3, "a wrong steal moves nobody");
+    });
+
+    it("the next chaser question waits for stealResolveHoldMs after a resolved steal", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", holdRoomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+
+        // Listener in place before the steal resolves, so a raced advance would
+        // win the promise below and fail the "hold" assertion.
+        const nextChaserQuestion = chaserClient.waitForMessage("finalQuestion");
+        const NOTHING = Symbol("next question raced the resolve hold");
+        const earlyOutcome = Promise.race([
+            nextChaserQuestion.then((q: any) => ({ q })),
+            sleep(150).then(() => NOTHING)
+        ]);
+
+        contestantClient.send("submitFinalStealAnswer", {
+            questionId: chaserMessage.questionId,
+            answer: `Answer ${chaserMessage.questionId}`
+        });
+
+        assert.strictEqual(
+            room.chaserFinalClockRunning,
+            false,
+            "the frozen clock stays paused through the outcome hold (ticket 094 seam)"
+        );
+        assert.strictEqual(await earlyOutcome, NOTHING, "the next question must not arrive before the hold elapses");
+
+        const next = await nextChaserQuestion;
+        assert.notStrictEqual(next.questionId, chaserMessage.questionId, "the advance must land after the outcome hold");
+    });
+
+    it("the next chaser question waits for stealResolveHoldMs after an unclaimed expiry", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", {
+            ...holdRoomOptions,
+            stealWindowMs: 150
+        });
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+        assert.strictEqual(room.finalStealActive, true);
+
+        // Nobody steals — wait for the window to expire and the hold to arm.
+        const expireDeadline = Date.now() + 2000;
+        while (Date.now() < expireDeadline && room.finalStealActive) {
+            await sleep(20);
+        }
+        assert.strictEqual(room.finalStealActive, false, "the window must expire on its own");
+
+        const nextChaserQuestion = chaserClient.waitForMessage("finalQuestion");
+        const NOTHING = Symbol("next question raced the expiry hold");
+        const earlyOutcome = Promise.race([
+            nextChaserQuestion.then((q: any) => ({ q })),
+            sleep(150).then(() => NOTHING)
+        ]);
+        assert.strictEqual(await earlyOutcome, NOTHING, "no question may arrive within the hold of an unclaimed expiry");
+
+        const next = await nextChaserQuestion;
+        assert.notStrictEqual(next.questionId, chaserMessage.questionId, "the advance must land after the expiry hold");
     });
 });

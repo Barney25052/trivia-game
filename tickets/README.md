@@ -141,7 +141,7 @@ The first in-game path to adding open-ended questions (the editor stretch goal);
 The "it just hangs" steal interaction plus the final-round choreography the user pulled forward from the 067 pass.
 | 093 | Client — Team Final target/steps row, parity with the Chaser Final's (shared row, box per `teamScore` point; starts at survivors, +1 per right answer) | backlog |
 | 094 | Server — pause the Chaser's final clock during a steal window (resumable countdown) | done |
-| 095 | Server — steal transport: broadcast the winning steal answer (`seatId`, text), send `finalSteal` to the Chaser too, reveal outcome to both sides, hold `stealResolveHoldMs` (~3s) before the next chaser question | backlog |
+| 095 | Server — steal transport: broadcast the winning steal answer (`seatId`, text), send `finalSteal` to the Chaser too, reveal outcome to both sides, hold `stealResolveHoldMs` (~3s) before the next chaser question | done |
 | 096 | Client — steal-table interaction on the Chaser Final: answer pops from the submitter's seat on all clients, outcome + 3s countdown, and the Chaser sees the team table during a pushback (depends 095; UI sign-off required) | backlog |
 | 097 | Client — no quip/message box for the Chaser on the Chaser Final (panel + bubble stay) | backlog |
 | 098 | Client — Chaser's final-chase answers pop from the Chaser's speech bubble (their own client only) | backlog |

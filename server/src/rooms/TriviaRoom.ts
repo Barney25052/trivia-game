@@ -85,6 +85,7 @@ export class TriviaRoom extends Room {
   chaserFinalDurationMs: number = FINAL_ROUND.chaserDurationMs;
   finalWrongAnswerRevealMs: number = FINAL_ROUND.wrongAnswerRevealMs;
   stealWindowMs: number = FINAL_ROUND.stealWindowMs;
+  stealResolveHoldMs: number = FINAL_ROUND.stealResolveHoldMs;
   rateLimitMaxMessages: number = RATE_LIMIT.maxMessages;
   rateLimitWindowMs: number = RATE_LIMIT.windowMs;
   chaseAnswerWindowMs: number = CHASE_QUESTION.answerWindowMs;
@@ -104,6 +105,10 @@ export class TriviaRoom extends Room {
    * 079) — the first `submitFinalStealAnswer` closes it. */
   finalStealActive = false;
   finalStealTimer: TimerHandle | null = null;
+  /** Outcome-beat hold after a steal resolves or expires unclaimed (ticket
+   * 095): the `stealResolveHoldMs` window between resolution and the Chaser's
+   * next question, cancelled by any dispatch via `clearFinalStealTimer`. */
+  finalStealHoldTimer: TimerHandle | null = null;
 
   /** Resumable Chaser-final clock (ticket 094). `chaserFinalRemainingMs` holds
    * either the full budget while the countdown runs or the frozen remainder
@@ -222,6 +227,10 @@ export class TriviaRoom extends Room {
       this.finalStealTimer.cancel();
       this.finalStealTimer = null;
     }
+    if (this.finalStealHoldTimer !== null) {
+      this.finalStealHoldTimer.cancel();
+      this.finalStealHoldTimer = null;
+    }
     this.finalStealActive = false;
   }
 
@@ -276,17 +285,6 @@ export class TriviaRoom extends Room {
     });
   }
 
-  /** Delivers a message to only the non-Chaser seats — used for the team-side
-   * final-round messages (ticket 078/079) that must never reach the Chaser. */
-  private sendToTeam(type: string, payload: any) {
-    for (const client of this.clients) {
-      const seatId = this.seatIdForClient(client);
-      if (seatId && seatId !== this.state.chaserSeatId) {
-        client.send(type, payload);
-      }
-    }
-  }
-
   /** Draws the next team-final question (or null on exhaustion) and reopens
    * the buzz for it (ticket 078). */
   advanceFinalTeamQuestion() {
@@ -301,6 +299,27 @@ export class TriviaRoom extends Room {
     const next = this.finalRoundQuestions.drawNext(this.questionBank, "chaser");
     this.sendFinalQuestion("chaser", next);
     this.finalChaserQuestionResolved = false;
+  }
+
+  /** Holds the outcome beat after a steal resolves or expires unclaimed
+   * (ticket 095): the frozen Chaser-final clock (094) stays paused through the
+   * `stealResolveHoldMs` window so the winning answer + resolved outcome have
+   * air time without burning the Chaser's budget, then the remainder resumes
+   * and the Chaser stream advances. Safe to call while a steal window is open
+   * (idempotent — it closes the window and re-arms the hold) or after one has
+   * just expired. */
+  finishFinalSteal() {
+    this.clearFinalStealTimer();
+    this.finalStealHoldTimer = this.scheduleTimer(this.stealResolveHoldMs, () => {
+      this.finalStealHoldTimer = null;
+      if (this.state.currentPhase !== GamePhase.ChaserFinal) {
+        return;
+      }
+      this.resumeChaserFinalClock();
+      if (this.state.currentPhase === GamePhase.ChaserFinal) {
+        this.advanceFinalChaserQuestion();
+      }
+    });
   }
 
   /** Draws the next MC question for the chase and broadcasts it — the option

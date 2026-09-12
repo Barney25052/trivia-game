@@ -7,6 +7,7 @@ const TEAM_FINAL_DURATION_MS = 120_000;
 const CHASER_FINAL_DURATION_MS = 120_000;
 const FINAL_WRONG_ANSWER_REVEAL_MS = 1_000;
 const FINAL_STEAL_WINDOW_MS = 20_000;
+const FINAL_STEAL_RESOLVE_HOLD_MS = 3_000;
 const REVEAL_READY_COOLDOWN_MS = 5_000;
 const LINEUP_DURATION_MS = 7_000;
 
@@ -166,7 +167,14 @@ export const FINAL_ROUND = {
     /** How long the team has to steal after a Chaser miss (ticket 079). */
     stealWindowMs: FINAL_STEAL_WINDOW_MS,
     stealWindowMinMs: TIMER_CLAMP.minMs,
-    stealWindowMaxMs: FINAL_STEAL_WINDOW_MS * TIMER_CLAMP.maxFactor
+    stealWindowMaxMs: FINAL_STEAL_WINDOW_MS * TIMER_CLAMP.maxFactor,
+    /** How long the outcome beat holds before the Chaser's next question after a
+     * steal resolves or expires unclaimed (ticket 095) — the frozen clock stays
+     * paused through the hold so neither the reveal nor the next question races
+     * away, and the pause never eats into the Chaser's budget. */
+    stealResolveHoldMs: FINAL_STEAL_RESOLVE_HOLD_MS,
+    stealResolveHoldMinMs: TIMER_CLAMP.minMs,
+    stealResolveHoldMaxMs: FINAL_STEAL_RESOLVE_HOLD_MS * TIMER_CLAMP.maxFactor
 } as const;
 
 export const REVEAL_READY = {
