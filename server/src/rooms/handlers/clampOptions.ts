@@ -78,6 +78,20 @@ export function clampRoomOptions(room: TriviaRoom, options: any): void {
             FINAL_ROUND.maxMs
         );
     }
+    if (typeof options?.finalWrongAnswerRevealMs === "number") {
+        room.finalWrongAnswerRevealMs = clamp(
+            options.finalWrongAnswerRevealMs,
+            FINAL_ROUND.wrongAnswerRevealMinMs,
+            FINAL_ROUND.wrongAnswerRevealMaxMs
+        );
+    }
+    if (typeof options?.stealWindowMs === "number") {
+        room.stealWindowMs = clamp(
+            options.stealWindowMs,
+            FINAL_ROUND.stealWindowMinMs,
+            FINAL_ROUND.stealWindowMaxMs
+        );
+    }
     if (typeof options?.chaseAnswerWindowMs === "number") {
         room.chaseAnswerWindowMs = clamp(
             options.chaseAnswerWindowMs,

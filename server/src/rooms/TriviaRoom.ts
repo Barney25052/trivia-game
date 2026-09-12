@@ -38,7 +38,10 @@ import {
   setChaserHighOffer,
   offerChoice,
   submitChaseAnswer,
-  finalChaserScore,
+  buzzIn,
+  submitFinalAnswer,
+  submitFinalChaserAnswer,
+  submitFinalStealAnswer,
   submitAnswer,
   sendChaserQuip,
 } from "./handlers/messageHandlers.js";
@@ -80,9 +83,27 @@ export class TriviaRoom extends Room {
   lineupDurationMs: number = LINEUP.durationMs;
   teamFinalDurationMs: number = FINAL_ROUND.teamDurationMs;
   chaserFinalDurationMs: number = FINAL_ROUND.chaserDurationMs;
+  finalWrongAnswerRevealMs: number = FINAL_ROUND.wrongAnswerRevealMs;
+  stealWindowMs: number = FINAL_ROUND.stealWindowMs;
   rateLimitMaxMessages: number = RATE_LIMIT.maxMessages;
   rateLimitWindowMs: number = RATE_LIMIT.windowMs;
   chaseAnswerWindowMs: number = CHASE_QUESTION.answerWindowMs;
+
+  /** Per-question buzz lock for the team final (ticket 078): the seatId that
+   * won the right to answer the current team question, cleared once the
+   * stream advances to a fresh question. */
+  currentFinalTeamBuzzer: string | null = null;
+  /** True once the current team question's answer has been submitted — guards
+   * against a second submission for the same question while its reveal hold
+   * is still pending. */
+  finalTeamQuestionResolved = false;
+  /** True once the Chaser has answered the current Chaser-final question — the
+   * Chaser answers directly (no buzz), one submission per question. */
+  finalChaserQuestionResolved = false;
+  /** True while the team's steal window is open after a Chaser miss (ticket
+   * 079) — the first `submitFinalStealAnswer` closes it. */
+  finalStealActive = false;
+  finalStealTimer: TimerHandle | null = null;
 
   activeTimer: TimerHandle | null = null;
   currentOffer: OfferAmounts | null = null;
@@ -186,6 +207,41 @@ export class TriviaRoom extends Room {
     }
     this.currentChaseQuestion = null;
     this.chaseAnswers = {};
+  }
+
+  private clearFinalStealTimer() {
+    if (this.finalStealTimer !== null) {
+      this.finalStealTimer.cancel();
+      this.finalStealTimer = null;
+    }
+    this.finalStealActive = false;
+  }
+
+  /** Delivers a message to only the non-Chaser seats — used for the team-side
+   * final-round messages (ticket 078/079) that must never reach the Chaser. */
+  private sendToTeam(type: string, payload: any) {
+    for (const client of this.clients) {
+      const seatId = this.seatIdForClient(client);
+      if (seatId && seatId !== this.state.chaserSeatId) {
+        client.send(type, payload);
+      }
+    }
+  }
+
+  /** Draws the next team-final question (or null on exhaustion) and reopens
+   * the buzz for it (ticket 078). */
+  advanceFinalTeamQuestion() {
+    const next = this.finalRoundQuestions.drawNext(this.questionBank, "team");
+    this.sendFinalQuestion("team", next);
+    this.currentFinalTeamBuzzer = null;
+    this.finalTeamQuestionResolved = false;
+  }
+
+  /** Draws the next Chaser-final question (or null on exhaustion) (ticket 079). */
+  advanceFinalChaserQuestion() {
+    const next = this.finalRoundQuestions.drawNext(this.questionBank, "chaser");
+    this.sendFinalQuestion("chaser", next);
+    this.finalChaserQuestionResolved = false;
   }
 
   /** Draws the next MC question for the chase and broadcasts it — the option
@@ -319,6 +375,7 @@ export class TriviaRoom extends Room {
       const result = transition(event, context);
       this.clearTimer();
       this.clearChaseAnswerTimer();
+      this.clearFinalStealTimer();
       applyEffects(result.effects, this, context);
       this.setPhase(result.nextPhase);
     } catch (error) {
@@ -383,9 +440,21 @@ export class TriviaRoom extends Room {
       if (!this.checkRateLimit(client)) return;
       submitChaseAnswer(client, message, this);
     },
-    finalChaserScore: (client: Client, message: any) => {
+    buzzIn: (client: Client, message: any) => {
       if (!this.checkRateLimit(client)) return;
-      finalChaserScore(client, message, this);
+      buzzIn(client, message, this);
+    },
+    submitFinalAnswer: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      submitFinalAnswer(client, message, this);
+    },
+    submitFinalChaserAnswer: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      submitFinalChaserAnswer(client, message, this);
+    },
+    submitFinalStealAnswer: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      submitFinalStealAnswer(client, message, this);
     },
     submitAnswer: (client: Client, message: any) => {
       if (!this.checkRateLimit(client)) return;
@@ -463,6 +532,18 @@ export class TriviaRoom extends Room {
     }
 
     const phase = this.state.currentPhase;
+    if (
+      phase === GamePhase.TeamFinal &&
+      seatId &&
+      this.currentFinalTeamBuzzer === seatId &&
+      !this.finalTeamQuestionResolved
+    ) {
+      // The buzzed-in contestant left before submitting: release the lock so
+      // any other non-Chaser can buzz in on the same question (ticket 078).
+      console.log(`Buzzed contestant ${seatId} left before answering — releasing the buzz`);
+      this.currentFinalTeamBuzzer = null;
+    }
+
     if (
       seatId &&
       this.state.activeContestantSeatId === seatId &&

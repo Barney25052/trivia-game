@@ -273,17 +273,201 @@ export function submitChaseAnswer(client: any, message: any, room: any) {
     }
 }
 
-export function finalChaserScore(client: any, message: any, room: any) {
+/** First non-Chaser to buzz wins the right to answer the current team-final
+ * question (ticket 078) — only their `submitFinalAnswer` is then accepted. */
+export function buzzIn(client: any, message: any, room: any) {
+    if (room.state.currentPhase !== GamePhase.TeamFinal) {
+        console.log(client.sessionId, "Can not buzz in outside TeamFinal!");
+        return;
+    }
+    const seatId = room.seatIdForClient(client);
+    if (!seatId || seatId === room.state.chaserSeatId) {
+        console.log(client.sessionId, "Can not buzz in — the Chaser does not buzz!");
+        return;
+    }
+    const currentQuestion = room.finalRoundQuestions.getCurrentQuestion("team");
+    if (
+        !currentQuestion ||
+        typeof message?.questionId !== "number" ||
+        currentQuestion.id !== message.questionId
+    ) {
+        console.log(client.sessionId, "Buzz does not match the current team question");
+        return;
+    }
+    if (room.currentFinalTeamBuzzer !== null) {
+        console.log(client.sessionId, "Someone already buzzed in for this question");
+        return;
+    }
+    room.currentFinalTeamBuzzer = seatId;
+    console.log(`${seatId} buzzed in first for team question ${currentQuestion.id}`);
+    room.broadcast("finalBuzz", { questionId: currentQuestion.id, seatId });
+}
+
+/** Only the seat that won the buzz may answer the current team-final question
+ * (ticket 078). Correct advances immediately; wrong holds for the reveal
+ * window before the next question opens a fresh buzz. */
+export function submitFinalAnswer(client: any, message: any, room: any) {
+    if (room.state.currentPhase !== GamePhase.TeamFinal) {
+        console.log(client.sessionId, "Can not submit a final answer outside TeamFinal!");
+        return;
+    }
+    const seatId = room.seatIdForClient(client);
+    if (!seatId || seatId === room.state.chaserSeatId) {
+        console.log(client.sessionId, "Can not submit a final answer — the Chaser does not answer for the team!");
+        return;
+    }
+    if (typeof message?.answer !== "string" || typeof message?.questionId !== "number") {
+        console.log(client.sessionId, "Ignoring malformed submitFinalAnswer payload:", message);
+        return;
+    }
+    const currentQuestion = room.finalRoundQuestions.getCurrentQuestion("team");
+    if (!currentQuestion || currentQuestion.id !== message.questionId) {
+        console.log(client.sessionId, "Final answer does not match the current team question");
+        return;
+    }
+    if (room.finalTeamQuestionResolved || room.currentFinalTeamBuzzer !== seatId) {
+        console.log(client.sessionId, "Can not submit a final answer — not the current buzzer");
+        return;
+    }
+
+    room.finalTeamQuestionResolved = true;
+    const isCorrect = checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])]);
+    if (isCorrect) {
+        room.state.teamScore += 1;
+    }
+    client.send("answerResult", {
+        correct: isCorrect,
+        correctAnswer: currentQuestion.answer,
+        questionId: currentQuestion.id
+    });
+
+    if (isCorrect) {
+        room.advanceFinalTeamQuestion();
+    } else {
+        room.scheduleTimer(room.finalWrongAnswerRevealMs, () => room.advanceFinalTeamQuestion());
+    }
+}
+
+/** The Chaser answers directly, no buzz-in (ticket 079). Correct advances the
+ * target or wins outright on reach; wrong opens a steal window for the team. */
+export function submitFinalChaserAnswer(client: any, message: any, room: any) {
+    if (room.state.currentPhase !== GamePhase.ChaserFinal) {
+        console.log(client.sessionId, "Can not submit a chaser final answer outside ChaserFinal!");
+        return;
+    }
     const seatId = room.seatIdForClient(client);
     if (seatId !== room.state.chaserSeatId) {
-        console.log(client.sessionId, "Can not finish the final — only the Chaser can!");
+        console.log(client.sessionId, "Can not submit a chaser final answer — only the Chaser can!");
         return;
     }
+    if (typeof message?.answer !== "string" || typeof message?.questionId !== "number") {
+        console.log(client.sessionId, "Ignoring malformed submitFinalChaserAnswer payload:", message);
+        return;
+    }
+    const currentQuestion = room.finalRoundQuestions.getCurrentQuestion("chaser");
+    if (!currentQuestion || currentQuestion.id !== message.questionId) {
+        console.log(client.sessionId, "Chaser final answer does not match the current question");
+        return;
+    }
+    if (room.finalChaserQuestionResolved) {
+        console.log(client.sessionId, "Already answered this chaser final question");
+        return;
+    }
+
+    room.finalChaserQuestionResolved = true;
+    const isCorrect = checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])]);
+    client.send("answerResult", {
+        correct: isCorrect,
+        correctAnswer: currentQuestion.answer,
+        questionId: currentQuestion.id
+    });
+
+    if (isCorrect) {
+        room.state.chaserScore += 1;
+        console.log(`Chaser answered correctly — chaserScore ${room.state.chaserScore}/${room.state.teamScore}`);
+        if (room.state.chaserScore >= room.state.teamScore) {
+            room.dispatch({ type: "finalChaserReachedScore" });
+            return;
+        }
+        room.advanceFinalChaserQuestion();
+        return;
+    }
+
+    console.log("Chaser answered incorrectly — opening the steal window for the team");
+    room.finalStealActive = true;
+    room.sendToTeam("finalSteal", {
+        questionId: currentQuestion.id,
+        prompt: currentQuestion.question,
+        windowMs: room.stealWindowMs
+    });
+    room.finalStealTimer = room.scheduleTimer(room.stealWindowMs, () => {
+        room.finalStealTimer = null;
+        if (!room.finalStealActive || room.state.currentPhase !== GamePhase.ChaserFinal) {
+            return;
+        }
+        room.finalStealActive = false;
+        console.log("Steal window expired unclaimed — the Chaser advances");
+        room.advanceFinalChaserQuestion();
+    });
+}
+
+/** The first non-Chaser to submit resolves the steal, correct or wrong — no
+ * buzz gate (ticket 079). A correct steal pushes the Chaser back while above
+ * 0, or raises the team's target once the Chaser is already at 0. */
+export function submitFinalStealAnswer(client: any, message: any, room: any) {
     if (room.state.currentPhase !== GamePhase.ChaserFinal) {
-        console.log(client.sessionId, "Can not finish the final outside ChaserFinal!");
+        console.log(client.sessionId, "Can not submit a steal answer outside ChaserFinal!");
         return;
     }
-    room.dispatch({ type: "finalChaserReachedScore" });
+    const seatId = room.seatIdForClient(client);
+    if (!seatId || seatId === room.state.chaserSeatId) {
+        console.log(client.sessionId, "Can not submit a steal answer — the Chaser can not steal from itself!");
+        return;
+    }
+    if (!room.finalStealActive) {
+        console.log(client.sessionId, "No steal window is open (already resolved or expired)");
+        return;
+    }
+    if (typeof message?.answer !== "string" || typeof message?.questionId !== "number") {
+        console.log(client.sessionId, "Ignoring malformed submitFinalStealAnswer payload:", message);
+        return;
+    }
+    const currentQuestion = room.finalRoundQuestions.getCurrentQuestion("chaser");
+    if (!currentQuestion || currentQuestion.id !== message.questionId) {
+        console.log(client.sessionId, "Steal answer does not match the current chaser question");
+        return;
+    }
+
+    // First submission wins and closes the window immediately, right or wrong.
+    room.finalStealActive = false;
+    if (room.finalStealTimer !== null) {
+        room.finalStealTimer.cancel();
+        room.finalStealTimer = null;
+    }
+
+    const isCorrect = checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])]);
+    let pushedBack = false;
+    if (isCorrect) {
+        if (room.state.chaserScore > 0) {
+            room.state.chaserScore -= 1;
+            pushedBack = true;
+        } else {
+            room.state.teamScore += 1;
+        }
+    }
+    console.log(
+        `${seatId} attempted the steal: ${isCorrect ? "correct" : "wrong"}` +
+        (isCorrect ? ` (${pushedBack ? "chaser pushed back" : "team target raised"})` : "")
+    );
+    client.send("answerResult", {
+        correct: isCorrect,
+        correctAnswer: currentQuestion.answer,
+        questionId: currentQuestion.id
+    });
+    if (isCorrect) {
+        room.sendToTeam("finalStealResolved", { pushedBack });
+    }
+    room.advanceFinalChaserQuestion();
 }
 
 export function sendChaserQuip(client: any, message: any, room: any) {

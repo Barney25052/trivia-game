@@ -272,3 +272,658 @@ describe("final round question delivery (ticket 077)", () => {
         await waitForPhase(room, GamePhase.ChaserFinal);
     });
 });
+
+/**
+ * Connects every named player, starts the game, clears the roles-reveal gate,
+ * then drives every contestant's cash builder/offer/chase to an escape
+ * (chaser always wrong) until the room reaches TeamFinal. Generalizes
+ * `driveToChaseEscape` to any number of contestants (ticket 082's multi-buzz
+ * scenarios need at least two team seats).
+ */
+async function driveAllToTeamFinal(
+    colyseus: ColyseusTestServer<typeof appConfig>,
+    room: any,
+    playerNames: string[]
+): Promise<{ clients: any[]; chaserClient: any; chaserSeatId: string; contestantClients: any[] }> {
+    const clients = [];
+    for (const name of playerNames) {
+        clients.push(await colyseus.connectTo(room, { playerName: name }));
+    }
+    await sleep(100);
+
+    clients[0].send("startGame");
+    await waitForPhase(room, GamePhase.RolesReveal);
+
+    const chaserSeatId = room.state.chaserSeatId;
+    const chaserClient = clients.find((c: any) => seatIdOf(room, c) === chaserSeatId);
+    const contestantClients = clients.filter((c: any) => c !== chaserClient);
+
+    chaserClient.send("revealReady", { characterId: "bezos" });
+    for (const c of contestantClients) {
+        c.send("revealReady", {});
+    }
+    await waitForPhase(room, GamePhase.CashBuilder);
+
+    while (room.state.currentPhase !== GamePhase.TeamFinal) {
+        if (room.state.currentPhase === GamePhase.CashBuilder) {
+            const activeSeatId = room.state.activeContestantSeatId;
+            room.state.players.get(activeSeatId).cashBuilderMoney = 1000;
+            await waitForPhase(room, GamePhase.Offer);
+            continue;
+        }
+        if (room.state.currentPhase === GamePhase.Offer) {
+            const activeSeatId = room.state.activeContestantSeatId;
+            const activeClient = contestantClients.find((c: any) => seatIdOf(room, c) === activeSeatId);
+            chaserClient.send("setChaserLowOffer", { amount: 0 });
+            await sleep(30);
+            chaserClient.send("setChaserHighOffer", { amount: 2000 });
+            await sleep(30);
+            const firstQuestionMessage = activeClient.waitForMessage("question");
+            activeClient.send("offerChoice", { offer: "low" });
+            let question = await firstQuestionMessage;
+            for (let round = 0; round < 6 && room.state.currentPhase === GamePhase.Chase; round += 1) {
+                const correctIndex = question.options.indexOf("Correct Answer");
+                const wrongIndex = (correctIndex + 1) % question.options.length;
+                const nextQuestionOrPhase = Promise.race([
+                    activeClient.waitForMessage("question").then((q: any) => ({ q })),
+                    (async () => {
+                        while (room.state.currentPhase === GamePhase.Chase) {
+                            await sleep(10);
+                        }
+                        return { q: null };
+                    })()
+                ]);
+                activeClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+                chaserClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: wrongIndex });
+                const { q } = await nextQuestionOrPhase;
+                question = q;
+            }
+            continue;
+        }
+        await sleep(10);
+    }
+
+    return { clients, chaserClient, chaserSeatId, contestantClients };
+}
+
+describe("final round — team buzz-in and answers (ticket 078)", () => {
+    let colyseus: ColyseusTestServer<typeof appConfig>;
+
+    beforeEach(async () => {
+        colyseus = await getTestServer();
+        await cleanup();
+    });
+
+    const roomOptions = {
+        cashBuilderDurationMs: 80,
+        chaserSelectionDurationMs: 80,
+        chaserRevealDurationMs: 80,
+        chaserCharacterRevealDurationMs: 80,
+        revealReadyCooldownMs: 80,
+        lineupDurationMs: 80,
+        teamFinalDurationMs: 10000,
+        chaserFinalDurationMs: 10000,
+        finalWrongAnswerRevealMs: 100
+    };
+
+    it("first buzzIn locks the question; a second buzz is rejected; finalBuzz broadcasts the winner", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        const teamMessage = await teamFinalQuestion;
+
+        const buzzBroadcast = contestantClient.waitForMessage("finalBuzz");
+        contestantClient.send("buzzIn", { questionId: teamMessage.questionId });
+        const buzz = await buzzBroadcast;
+        assert.strictEqual(buzz.questionId, teamMessage.questionId);
+        assert.strictEqual(buzz.seatId, seatIdOf(room, contestantClient));
+        assert.strictEqual(room.currentFinalTeamBuzzer, seatIdOf(room, contestantClient));
+
+        // A second buzz (even from the Chaser, who shouldn't be buzzing anyway) is ignored.
+        chaserClient.send("buzzIn", { questionId: teamMessage.questionId });
+        await sleep(100);
+        assert.strictEqual(room.currentFinalTeamBuzzer, seatIdOf(room, contestantClient));
+    });
+
+    it("only the buzzer's submitFinalAnswer is accepted", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        const teamMessage = await teamFinalQuestion;
+
+        // The Chaser never buzzes, so it never becomes the buzzer — its submit is rejected
+        // and must not touch the score.
+        const scoreBefore = room.state.teamScore;
+        chaserClient.send("submitFinalAnswer", { questionId: teamMessage.questionId, answer: "wrong on purpose" });
+        await sleep(100);
+        assert.strictEqual(room.state.teamScore, scoreBefore);
+
+        contestantClient.send("buzzIn", { questionId: teamMessage.questionId });
+        await sleep(50);
+
+        chaserClient.send("submitFinalAnswer", { questionId: teamMessage.questionId, answer: "irrelevant" });
+        await sleep(100);
+        assert.strictEqual(room.state.teamScore, scoreBefore, "a non-buzzer's answer must not resolve the question");
+    });
+
+    it("correct answer advances teamScore and delivers the next finalQuestion immediately", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        const teamMessage = await teamFinalQuestion;
+        const scoreBefore = room.state.teamScore;
+
+        contestantClient.send("buzzIn", { questionId: teamMessage.questionId });
+        await sleep(50);
+
+        const nextQuestion = contestantClient.waitForMessage("finalQuestion");
+        const answerResult = contestantClient.waitForMessage("answerResult");
+        // The fixture's canonical answer is "Answer <id>".
+        contestantClient.send("submitFinalAnswer", { questionId: teamMessage.questionId, answer: `Answer ${teamMessage.questionId}` });
+
+        const result = await answerResult;
+        assert.strictEqual(result.correct, true);
+        assert.strictEqual(room.state.teamScore, scoreBefore + 1);
+
+        const next = await nextQuestion;
+        assert.strictEqual(next.side, "team");
+        assert.notStrictEqual(next.questionId, teamMessage.questionId);
+        assert.strictEqual(room.currentFinalTeamBuzzer, null, "the new question reopens the buzz");
+    });
+
+    it("wrong answer holds the reveal before the next question, and rejects anything for the resolved question", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", { ...roomOptions, finalWrongAnswerRevealMs: 150 });
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        const teamMessage = await teamFinalQuestion;
+        const scoreBefore = room.state.teamScore;
+
+        contestantClient.send("buzzIn", { questionId: teamMessage.questionId });
+        await sleep(50);
+
+        const answerResult = contestantClient.waitForMessage("answerResult");
+        contestantClient.send("submitFinalAnswer", { questionId: teamMessage.questionId, answer: "definitely not it" });
+        const result = await answerResult;
+        assert.strictEqual(result.correct, false);
+        assert.strictEqual(room.state.teamScore, scoreBefore);
+
+        // Immediately after: the question is resolved but not yet advanced — a
+        // second buzz/submit for it must be rejected.
+        const NOTHING = Symbol("no finalBuzz");
+        const staleOutcome = Promise.race([
+            contestantClient.waitForMessage("finalBuzz"),
+            sleep(50).then(() => NOTHING)
+        ]);
+        contestantClient.send("buzzIn", { questionId: teamMessage.questionId });
+        assert.strictEqual(await staleOutcome, NOTHING, "a resolved question must not accept a fresh buzz");
+
+        const nextQuestion = await contestantClient.waitForMessage("finalQuestion");
+        assert.notStrictEqual(nextQuestion.questionId, teamMessage.questionId);
+    });
+
+    it("an eliminated contestant can still buzz and answer, and it counts", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, contestantSeatId, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        room.state.players.get(contestantSeatId).isEliminated = true;
+        const teamMessage = await teamFinalQuestion;
+        const scoreBefore = room.state.teamScore;
+
+        contestantClient.send("buzzIn", { questionId: teamMessage.questionId });
+        await sleep(50);
+        assert.strictEqual(room.currentFinalTeamBuzzer, contestantSeatId);
+
+        const answerResult = contestantClient.waitForMessage("answerResult");
+        contestantClient.send("submitFinalAnswer", { questionId: teamMessage.questionId, answer: `Answer ${teamMessage.questionId}` });
+        await answerResult;
+        assert.strictEqual(room.state.teamScore, scoreBefore + 1);
+    });
+
+    it("the Chaser's buzzIn and submitFinalAnswer are rejected", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { chaserClient, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        const teamMessage = await teamFinalQuestion;
+
+        chaserClient.send("buzzIn", { questionId: teamMessage.questionId });
+        await sleep(80);
+        assert.strictEqual(room.currentFinalTeamBuzzer, null);
+
+        chaserClient.send("submitFinalAnswer", { questionId: teamMessage.questionId, answer: `Answer ${teamMessage.questionId}` });
+        await sleep(80);
+        assert.strictEqual(room.state.teamScore, 1, "team started at 1 survivor; the Chaser's answer must not change it");
+    });
+
+    it("buzzIn/submitFinalAnswer outside TeamFinal, malformed, or with a stale questionId are rejected", async () => {
+        // Outside TeamFinal (still in Lobby): both are ignored — a separate
+        // room, since the driveToChaseEscape below needs its own fresh host.
+        const lobbyRoom = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        const solo = await colyseus.connectTo(lobbyRoom, { playerName: "Solo" });
+        await sleep(100);
+        solo.send("buzzIn", { questionId: 1 });
+        solo.send("submitFinalAnswer", { questionId: 1, answer: "x" });
+        await sleep(50);
+        assert.strictEqual(lobbyRoom.state.currentPhase, GamePhase.Lobby);
+
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        const teamMessage = await teamFinalQuestion;
+
+        // Malformed payloads.
+        contestantClient.send("buzzIn", {});
+        contestantClient.send("buzzIn", { questionId: "not-a-number" });
+        await sleep(50);
+        assert.strictEqual(room.currentFinalTeamBuzzer, null);
+
+        // Stale questionId.
+        contestantClient.send("buzzIn", { questionId: teamMessage.questionId + 999 });
+        await sleep(50);
+        assert.strictEqual(room.currentFinalTeamBuzzer, null);
+
+        contestantClient.send("buzzIn", { questionId: teamMessage.questionId });
+        await sleep(50);
+        contestantClient.send("submitFinalAnswer", { questionId: teamMessage.questionId + 999, answer: "x" });
+        await sleep(50);
+        assert.strictEqual(room.state.teamScore, 1, "a stale-questionId submit must not resolve anything");
+    });
+
+    it("the buzzer leaving before answering releases the buzz for a later buzzer", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", { ...roomOptions, teamFinalDurationMs: 5000 });
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        // Four players guarantees at least two non-host contestants regardless
+        // of who is picked as chaser — leaving the host would disconnect the
+        // whole room (unrelated onLeave behavior), which isn't what this test
+        // is exercising.
+        const { contestantClients } = await driveAllToTeamFinal(colyseus, room, ["Alice", "Bob", "Charlie", "Dave"]);
+        const nonHostContestants = contestantClients.filter(
+            (c: any) => room.state.players.get(seatIdOf(room, c))?.isHost !== true
+        );
+        assert.ok(nonHostContestants.length >= 2, "need two non-host contestants for this scenario");
+
+        const [firstContestant, secondContestant] = nonHostContestants;
+        const question = room.finalRoundQuestions.getCurrentQuestion("team");
+        assert.ok(question, "team should have a live final question");
+
+        firstContestant.send("buzzIn", { questionId: question!.id });
+        await sleep(50);
+        assert.strictEqual(room.currentFinalTeamBuzzer, seatIdOf(room, firstContestant));
+
+        firstContestant.leave();
+        await sleep(150);
+        assert.strictEqual(room.currentFinalTeamBuzzer, null, "the departed buzzer's lock must be released");
+
+        secondContestant.send("buzzIn", { questionId: question!.id });
+        await sleep(50);
+        assert.strictEqual(room.currentFinalTeamBuzzer, seatIdOf(room, secondContestant));
+    });
+
+    it("no buzz at all: the question stays available and the round still ends on finalTeamTimeout", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", { ...roomOptions, teamFinalDurationMs: 150 });
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        await driveToChaseEscape(colyseus, room);
+        await waitForPhase(room, GamePhase.ChaserFinal);
+        assert.strictEqual(room.state.teamScore, 1, "no one buzzed, so the score never moved off the survivor count");
+    });
+});
+
+describe("final round — Chaser answer engine and steal (ticket 079)", () => {
+    let colyseus: ColyseusTestServer<typeof appConfig>;
+
+    beforeEach(async () => {
+        colyseus = await getTestServer();
+        await cleanup();
+    });
+
+    const roomOptions = {
+        cashBuilderDurationMs: 80,
+        chaserSelectionDurationMs: 80,
+        chaserRevealDurationMs: 80,
+        chaserCharacterRevealDurationMs: 80,
+        revealReadyCooldownMs: 80,
+        lineupDurationMs: 80,
+        teamFinalDurationMs: 80,
+        chaserFinalDurationMs: 10000,
+        stealWindowMs: 150
+    };
+
+    async function toChaserFinal(colyseus: ColyseusTestServer<typeof appConfig>, room: any) {
+        const driven = await driveToChaseEscape(colyseus, room);
+        await driven.teamFinalQuestion;
+        await waitForPhase(room, GamePhase.ChaserFinal);
+        const chaserMessage = await driven.chaserFinalQuestion;
+        return { ...driven, chaserMessage };
+    }
+
+    it("correct Chaser answers advance chaserScore and reaching the team's score (a tie) wins", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
+        assert.strictEqual(room.state.teamScore, 1);
+
+        const endGame = chaserClient.waitForMessage("endGame");
+        const result = chaserClient.waitForMessage("answerResult");
+        chaserClient.send("submitFinalChaserAnswer", {
+            questionId: chaserMessage.questionId,
+            answer: `Answer ${chaserMessage.questionId}`
+        });
+        assert.strictEqual((await result).correct, true);
+        assert.strictEqual(room.state.chaserScore, 1);
+        const end = await endGame;
+        assert.strictEqual(end.winner, "chaser");
+        await waitForPhase(room, GamePhase.GameEnd);
+    });
+
+    it("the Chaser never buzzes: a buzzIn from the Chaser during ChaserFinal is rejected", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
+        chaserClient.send("buzzIn", { questionId: chaserMessage.questionId });
+        await sleep(80);
+        assert.strictEqual(room.currentFinalTeamBuzzer, null);
+        assert.strictEqual(room.state.currentPhase, GamePhase.ChaserFinal);
+    });
+
+    it("a wrong Chaser answer opens a steal window; a correct steal pushes the Chaser back while above 0", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", { ...roomOptions, teamFinalDurationMs: 80 });
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
+        room.state.chaserScore = 2;
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        const stealMessage = await steal;
+        assert.strictEqual(stealMessage.questionId, chaserMessage.questionId);
+        assert.strictEqual(stealMessage.windowMs, room.stealWindowMs);
+        assert.ok(!("answer" in stealMessage));
+
+        const resolved = contestantClient.waitForMessage("finalStealResolved");
+        contestantClient.send("submitFinalStealAnswer", {
+            questionId: chaserMessage.questionId,
+            answer: `Answer ${chaserMessage.questionId}`
+        });
+        const resolvedMessage = await resolved;
+        assert.strictEqual(resolvedMessage.pushedBack, true);
+        assert.strictEqual(room.state.chaserScore, 1);
+    });
+
+    it("a correct steal while chaserScore is 0 raises the team's target instead", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", { ...roomOptions, teamFinalDurationMs: 80 });
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
+        assert.strictEqual(room.state.chaserScore, 0);
+        const teamScoreBefore = room.state.teamScore;
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+
+        contestantClient.send("submitFinalStealAnswer", {
+            questionId: chaserMessage.questionId,
+            answer: `Answer ${chaserMessage.questionId}`
+        });
+        await sleep(80);
+        assert.strictEqual(room.state.chaserScore, 0);
+        assert.strictEqual(room.state.teamScore, teamScoreBefore + 1);
+    });
+
+    it("a wrong first steal answer closes the window with no effect, and a second answer is rejected as stale", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", { ...roomOptions, teamFinalDurationMs: 80 });
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
+        room.state.chaserScore = 3;
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+
+        contestantClient.send("submitFinalStealAnswer", { questionId: chaserMessage.questionId, answer: "wrong steal guess" });
+        await sleep(80);
+        assert.strictEqual(room.state.chaserScore, 3, "a wrong steal must not move the score");
+        assert.strictEqual(room.finalStealActive, false, "the window closes after the first attempt");
+
+        contestantClient.send("submitFinalStealAnswer", {
+            questionId: chaserMessage.questionId,
+            answer: `Answer ${chaserMessage.questionId}`
+        });
+        await sleep(80);
+        assert.strictEqual(room.state.chaserScore, 3, "a second steal attempt must be rejected as stale");
+    });
+
+    it("an unclaimed steal (window expires) advances the Chaser with no score change", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", { ...roomOptions, teamFinalDurationMs: 80, stealWindowMs: 100 });
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
+        room.state.chaserScore = 3;
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        const nextChaserQuestion = chaserClient.waitForMessage("finalQuestion");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+
+        const next = await nextChaserQuestion;
+        assert.notStrictEqual(next.questionId, chaserMessage.questionId);
+        assert.strictEqual(room.state.chaserScore, 3);
+        assert.strictEqual(room.state.teamScore, room.state.teamScore);
+    });
+
+    it("only the Chaser can submitFinalChaserAnswer; only non-Chasers can submitFinalStealAnswer", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", { ...roomOptions, teamFinalDurationMs: 80, stealWindowMs: 2000 });
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
+
+        contestantClient.send("submitFinalChaserAnswer", {
+            questionId: chaserMessage.questionId,
+            answer: `Answer ${chaserMessage.questionId}`
+        });
+        await sleep(80);
+        assert.strictEqual(room.state.chaserScore, 0, "a non-Chaser must not be able to answer for the Chaser");
+
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await sleep(80);
+        assert.strictEqual(room.finalStealActive, true);
+
+        chaserClient.send("submitFinalStealAnswer", {
+            questionId: chaserMessage.questionId,
+            answer: `Answer ${chaserMessage.questionId}`
+        });
+        await sleep(80);
+        assert.strictEqual(room.finalStealActive, true, "the Chaser must not be able to steal from itself");
+    });
+
+    it("malformed and out-of-phase submissions are rejected", async () => {
+        // Out-of-phase check on its own room — a separate host from the one
+        // driveToChaseEscape below connects.
+        const lobbyRoom = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        const solo = await colyseus.connectTo(lobbyRoom, { playerName: "Solo" });
+        await sleep(100);
+        solo.send("submitFinalChaserAnswer", { questionId: 1, answer: "x" });
+        solo.send("submitFinalStealAnswer", { questionId: 1, answer: "x" });
+        await sleep(50);
+        assert.strictEqual(lobbyRoom.state.currentPhase, GamePhase.Lobby);
+
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
+        chaserClient.send("submitFinalChaserAnswer", {});
+        chaserClient.send("submitFinalChaserAnswer", { questionId: "nope", answer: 5 });
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId + 999, answer: "x" });
+        await sleep(80);
+        assert.strictEqual(room.state.chaserScore, 0);
+        assert.strictEqual(room.finalStealActive, false);
+    });
+
+    it("finalChaserTimeout still ends the game with the team winning", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", { ...roomOptions, chaserFinalDurationMs: 150 });
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        await toChaserFinal(colyseus, room);
+        await waitForPhase(room, GamePhase.GameEnd);
+    });
+});
+
+describe("Phase 5 integration — full final round end-to-end (ticket 082)", () => {
+    let colyseus: ColyseusTestServer<typeof appConfig>;
+
+    beforeEach(async () => {
+        colyseus = await getTestServer();
+        await cleanup();
+    });
+
+    const roomOptions = {
+        cashBuilderDurationMs: 80,
+        chaserSelectionDurationMs: 80,
+        chaserRevealDurationMs: 80,
+        chaserCharacterRevealDurationMs: 80,
+        revealReadyCooldownMs: 80,
+        lineupDurationMs: 80,
+        teamFinalDurationMs: 10000,
+        chaserFinalDurationMs: 10000,
+        finalWrongAnswerRevealMs: 60,
+        stealWindowMs: 2000
+    };
+
+    it("a buzz race between two team contestants: only the first buzzer's submit is accepted", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClients } = await driveAllToTeamFinal(colyseus, room, ["Alice", "Bob", "Charlie"]);
+        const [racerA, racerB] = contestantClients;
+        const question = room.finalRoundQuestions.getCurrentQuestion("team");
+        assert.ok(question, "team should have a live final question");
+
+        const buzzBroadcastA = racerA.waitForMessage("finalBuzz");
+        racerA.send("buzzIn", { questionId: question!.id });
+        racerB.send("buzzIn", { questionId: question!.id });
+        const winningBuzz = await buzzBroadcastA;
+        assert.strictEqual(winningBuzz.seatId, seatIdOf(room, racerA));
+        assert.strictEqual(room.currentFinalTeamBuzzer, seatIdOf(room, racerA));
+
+        const scoreBefore = room.state.teamScore;
+        racerB.send("submitFinalAnswer", { questionId: question!.id, answer: `Answer ${question!.id}` });
+        await sleep(80);
+        assert.strictEqual(room.state.teamScore, scoreBefore, "the second buzzer's answer must not resolve the question");
+
+        const answerResult = racerA.waitForMessage("answerResult");
+        racerA.send("submitFinalAnswer", { questionId: question!.id, answer: `Answer ${question!.id}` });
+        assert.strictEqual((await answerResult).correct, true);
+        assert.strictEqual(room.state.teamScore, scoreBefore + 1, "only the winning buzzer's answer counts");
+    });
+
+    it("full walk: team buzzing, eliminated players counting, a Chaser steal, then a Chaser win by reaching the team score", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(30);
+
+        const { contestantClients, chaserClient } = await driveAllToTeamFinal(colyseus, room, ["Alice", "Bob", "Charlie"]);
+        // Everyone escaped the chase, so nobody is actually eliminated — flip one
+        // seat's flag directly to exercise "an eliminated contestant still counts".
+        const eliminatedSeatId = seatIdOf(room, contestantClients[0]);
+        room.state.players.get(eliminatedSeatId).isEliminated = true;
+
+        let teamQuestion = room.finalRoundQuestions.getCurrentQuestion("team");
+        assert.ok(teamQuestion, "team should have a live final question");
+
+        // Round 1: the eliminated contestant buzzes and answers correctly.
+        // Polling `room` directly (rather than waiting on a client message)
+        // sidesteps the two-listener race of "who gets notified first" —
+        // `advanceFinalTeamQuestion` runs synchronously server-side, so the
+        // draw is already reflected in room state as soon as the send lands.
+        let beforeRound = room.state.teamScore;
+        contestantClients[0].send("buzzIn", { questionId: teamQuestion!.id });
+        await sleep(50);
+        contestantClients[0].send("submitFinalAnswer", { questionId: teamQuestion!.id, answer: `Answer ${teamQuestion!.id}` });
+        await sleep(80);
+        assert.strictEqual(room.state.teamScore, beforeRound + 1, "the eliminated player's correct answer still counts");
+        teamQuestion = room.finalRoundQuestions.getCurrentQuestion("team");
+        assert.ok(teamQuestion, "team should have a fresh final question after round 1");
+
+        // Round 2: a different contestant buzzes and answers correctly.
+        beforeRound = room.state.teamScore;
+        contestantClients[1].send("buzzIn", { questionId: teamQuestion!.id });
+        await sleep(50);
+        contestantClients[1].send("submitFinalAnswer", { questionId: teamQuestion!.id, answer: `Answer ${teamQuestion!.id}` });
+        await sleep(80);
+        assert.strictEqual(room.state.teamScore, beforeRound + 1);
+
+        room.dispatch({ type: "finalTeamTimeout" });
+        await waitForPhase(room, GamePhase.ChaserFinal);
+        const target = room.state.teamScore;
+
+        // Chaser misses once — the team steals correctly, pushing the Chaser back.
+        let chaserQuestion = room.finalRoundQuestions.getCurrentQuestion("chaser");
+        assert.ok(chaserQuestion, "chaser should have a live final question");
+        room.state.chaserScore = 1;
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserQuestion!.id, answer: "not it at all" });
+        await sleep(50);
+        assert.strictEqual(room.finalStealActive, true, "a Chaser miss opens the steal window");
+        contestantClients[0].send("submitFinalStealAnswer", {
+            questionId: chaserQuestion!.id,
+            answer: `Answer ${chaserQuestion!.id}`
+        });
+        await sleep(80);
+        assert.strictEqual(room.state.chaserScore, 0, "a correct steal above 0 pushes the Chaser back");
+        assert.strictEqual(room.state.teamScore, target, "the target is unaffected once the Chaser was still above 0 pre-steal");
+        chaserQuestion = room.finalRoundQuestions.getCurrentQuestion("chaser");
+
+        // Chaser now climbs correct-answer by correct-answer to reach the target exactly.
+        const endGame = chaserClient.waitForMessage("endGame");
+        while (room.state.chaserScore < target) {
+            assert.ok(chaserQuestion, "chaser should always have a live question while below the target");
+            chaserClient.send("submitFinalChaserAnswer", { questionId: chaserQuestion!.id, answer: chaserQuestion!.answer });
+            await sleep(60);
+            chaserQuestion = room.finalRoundQuestions.getCurrentQuestion("chaser");
+        }
+
+        const end = await endGame;
+        assert.strictEqual(end.winner, "chaser");
+        await waitForPhase(room, GamePhase.GameEnd);
+        assert.strictEqual(room.state.chaserScore, target, "the Chaser won by reaching the team's score exactly");
+    });
+
+    it("the full game runs from Lobby through GameEnd with no hang", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", { ...roomOptions, teamFinalDurationMs: 150, chaserFinalDurationMs: 150 });
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        await driveAllToTeamFinal(colyseus, room, ["Alice", "Bob"]);
+        await waitForPhase(room, GamePhase.ChaserFinal);
+        await waitForPhase(room, GamePhase.GameEnd, 3000);
+    });
+});

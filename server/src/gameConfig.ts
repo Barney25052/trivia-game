@@ -5,6 +5,8 @@ const CHASER_REVEAL_DURATION_MS = 5_000;
 const CHASER_CHARACTER_REVEAL_DURATION_MS = 6_000;
 const TEAM_FINAL_DURATION_MS = 120_000;
 const CHASER_FINAL_DURATION_MS = 120_000;
+const FINAL_WRONG_ANSWER_REVEAL_MS = 1_000;
+const FINAL_STEAL_WINDOW_MS = 20_000;
 const REVEAL_READY_COOLDOWN_MS = 5_000;
 const LINEUP_DURATION_MS = 7_000;
 
@@ -155,7 +157,16 @@ export const FINAL_ROUND = {
     teamDurationMs: TEAM_FINAL_DURATION_MS,
     chaserDurationMs: CHASER_FINAL_DURATION_MS,
     minMs: TIMER_CLAMP.minMs,
-    maxMs: CHASER_FINAL_DURATION_MS * TIMER_CLAMP.maxFactor
+    maxMs: CHASER_FINAL_DURATION_MS * TIMER_CLAMP.maxFactor,
+    /** How long a wrong team answer's reveal stays up before the next question
+     * (mirrors CASH_BUILDER.wrongAnswerRevealMs, ticket 078). */
+    wrongAnswerRevealMs: FINAL_WRONG_ANSWER_REVEAL_MS,
+    wrongAnswerRevealMinMs: 0,
+    wrongAnswerRevealMaxMs: FINAL_WRONG_ANSWER_REVEAL_MS * TIMER_CLAMP.maxFactor,
+    /** How long the team has to steal after a Chaser miss (ticket 079). */
+    stealWindowMs: FINAL_STEAL_WINDOW_MS,
+    stealWindowMinMs: TIMER_CLAMP.minMs,
+    stealWindowMaxMs: FINAL_STEAL_WINDOW_MS * TIMER_CLAMP.maxFactor
 } as const;
 
 export const REVEAL_READY = {

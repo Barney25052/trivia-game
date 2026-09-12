@@ -474,8 +474,14 @@ alice.send("startGame");
     // Team final timer -> chaser final
     await waitForPhase(room, GamePhase.ChaserFinal);
 
-    // Stub handler: the Chaser reaches the team score -> game end
-    chaserClient.send("finalChaserScore");
+    // The Chaser answers the final question correctly, reaching the team's
+    // score (1) -> game end (ticket 079).
+    const chaserQuestion = room.finalRoundQuestions.getCurrentQuestion("chaser");
+    assert.ok(chaserQuestion, "the chaser final should have a live question");
+    chaserClient.send("submitFinalChaserAnswer", {
+      questionId: chaserQuestion.id,
+      answer: chaserQuestion.answer
+    });
     const endGame = await endGameMessage;
     assert.strictEqual(room.state.currentPhase, GamePhase.GameEnd);
     assert.strictEqual(endGame.winner, "chaser");
@@ -610,7 +616,7 @@ alice.send("startGame");
     assert.strictEqual(room.state.players.get(activeSeatId).madeItBack, true);
   });
 
-  it("finalChaserScore is guarded: rejected in the lobby and by a contestant; the Chaser's call still transitions", async () => {
+  it("submitFinalChaserAnswer is guarded: rejected in the lobby and by a contestant; the Chaser's correct answer still transitions", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
@@ -625,7 +631,7 @@ alice.send("startGame");
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
     await sleep(100);
 
-    alice.send("finalChaserScore");
+    alice.send("submitFinalChaserAnswer", { questionId: 1, answer: "x" });
     await sleep(50);
     assert.strictEqual(room.state.currentPhase, GamePhase.Lobby);
 
@@ -648,11 +654,15 @@ alice.send("startGame");
     await waitForChaseResolved(room);
     await waitForPhase(room, GamePhase.ChaserFinal);
 
-    activeClient.send("finalChaserScore");
+    const chaserQuestion = room.finalRoundQuestions.getCurrentQuestion("chaser");
+    assert.ok(chaserQuestion, "the chaser final should have a live question");
+
+    activeClient.send("submitFinalChaserAnswer", { questionId: chaserQuestion.id, answer: chaserQuestion.answer });
     await sleep(50);
     assert.strictEqual(room.state.currentPhase, GamePhase.ChaserFinal);
+    assert.strictEqual(room.state.chaserScore, 0, "a contestant's answer must not score for the Chaser");
 
-    chaserClient.send("finalChaserScore");
+    chaserClient.send("submitFinalChaserAnswer", { questionId: chaserQuestion.id, answer: chaserQuestion.answer });
     await waitForPhase(room, GamePhase.GameEnd);
   });
 
