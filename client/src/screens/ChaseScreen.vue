@@ -1,6 +1,18 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import ChaserPanel from "../components/ChaserPanel.vue";
+import face1 from "../assets/images/face-1.png";
+import face2 from "../assets/images/face-2.png";
+import face3 from "../assets/images/face-3.png";
+import hair1 from "../assets/images/hair-1.png";
+import hair2 from "../assets/images/hair-2.png";
+import hair3 from "../assets/images/hair-3.png";
+import hair4 from "../assets/images/hair-4.png";
+import hair5 from "../assets/images/hair-5.png";
+import hair6 from "../assets/images/hair-6.png";
+import eyesNeutral1 from "../assets/images/eyes-1.png";
+import eyesNeutral2 from "../assets/images/eyes-2.png";
+import mouthNeutral from "../assets/images/mouth.png";
 
 const props = defineProps({
     players: { type: Array, default: () => [] },
@@ -52,6 +64,33 @@ const activeContestantName = computed(
     () => props.players.find((p) => p.seatId === props.activeContestantSeatId)?.name ?? "the contestant"
 );
 const chaserIsOnBoard = computed(() => chaserPos.value <= ON_BOARD_MAX);
+
+// Mirrors OfferScreen's layered-face composition, keyed off the active
+// contestant's seat id so the same player shows the same face across screens.
+const faceImages = [face1, face2, face3];
+const hairImages = [hair1, hair2, hair3, hair4, hair5, hair6];
+const neutralEyesImages = [eyesNeutral1, eyesNeutral2];
+
+function seatSeed(text) {
+    let hash = 0;
+    for (const char of text) {
+        hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+    }
+    return hash;
+}
+
+const faceImg = computed(() => {
+    if (!props.activeContestantSeatId) return face1;
+    return faceImages[seatSeed(props.activeContestantSeatId) % faceImages.length];
+});
+const hairImg = computed(() => {
+    if (!props.activeContestantSeatId) return hair1;
+    return hairImages[seatSeed(`${props.activeContestantSeatId}-hair`) % hairImages.length];
+});
+const eyesImg = computed(() => {
+    if (!props.activeContestantSeatId) return eyesNeutral1;
+    return neutralEyesImages[seatSeed(`${props.activeContestantSeatId}-eyes`) % neutralEyesImages.length];
+});
 
 function isPlayerSpace(space) {
     return contestantPos.value === space;
@@ -171,20 +210,20 @@ onUnmounted(() => stopLockoutTicker());
 </script>
 
 <template>
-  <div class="chaserSideLayout">
-    <ChaserPanel
-        :character-id="chaserCharacterId"
-        :quip-text="chaserQuipText"
-        :quip-key="chaserQuipKey"
-        :is-chaser="isChaser"
-        @send-quip="emit('send-quip', $event)"
-    />
-    <div class="lobby chaseScreen">
-      <h2 class="lobbyTitle">The Chase</h2>
+  <div class="chaseTable">
+    <h2 class="lobbyTitle chaseTableTitle">The Chase</h2>
+    <p v-if="!chaserIsOnBoard" class="playerName chaseOffboardNote">
+      The Chaser is off the board — one correct answer to enter.
+    </p>
 
-      <p v-if="!chaserIsOnBoard" class="playerName chaseOffboardNote">
-        The Chaser is off the board — one correct answer to enter.
-      </p>
+    <div class="chaseTableRow">
+      <ChaserPanel
+          :character-id="chaserCharacterId"
+          :quip-text="chaserQuipText"
+          :quip-key="chaserQuipKey"
+          :is-chaser="isChaser"
+          @send-quip="emit('send-quip', $event)"
+      />
 
       <div class="board">
         <div
@@ -201,50 +240,65 @@ onUnmounted(() => stopLockoutTicker());
         <div class="chaseEscapeSpace">ESCAPE</div>
       </div>
 
-      <div class="chaseQuestionArea" :class="{ 'chaseQuestionArea-lockout': lockoutActive }">
-        <template v-if="currentQuestion">
-          <p class="chaseQuestion">{{ currentQuestion.prompt }}</p>
-          <div class="chaseOptions">
-            <button
-              v-for="(option, index) in currentQuestion.options"
-              :key="index"
-              class="startButton chaseOptionButton"
-              :class="[
-                {
-                  'chaseOptionButton-picked': myAnswerIndex === index,
-                  'chaseOptionButton-correct': revealed && resultForCurrentQuestion.correctIndex === index,
-                  'chaseOptionButton-wrong': revealed && myAnswerIndex === index && resultForCurrentQuestion.correctIndex !== index,
-                  'chaseOptionButton-lockout': lockoutActive
-                },
-                optionFontClass
-              ]"
-              :disabled="!isParticipant || hasAnswered || revealed"
-              @click="selectOption(index)"
-            >{{ option }}</button>
+      <div class="offerContestantBox">
+        <div class="offerContestantMaskBox">
+          <div class="offerFaceWrap">
+            <div class="offerShoulders"></div>
+            <img :src="faceImg" class="offerFaceLayer" alt="" />
+            <img :src="hairImg" class="offerFaceLayer" alt="" />
+            <img :src="eyesImg" class="offerFaceLayer" alt="" />
+            <img :src="mouthNeutral" class="offerFaceLayer" alt="" />
           </div>
-
-          <p v-if="isParticipant && hasAnswered && !revealed" class="playerName chaseWaitingStatus">
-            Locked in<span v-if="lockoutActive"> — waiting ({{ answerWindowLeft }}s)</span>…
-          </p>
-          <p v-else-if="isParticipant && !hasAnswered && !revealed" class="playerName chaseWaitingStatus">
-            Pick your answer!<span v-if="lockoutActive"> — {{ answerWindowLeft }}s left</span>
-          </p>
-          <p v-else-if="!isParticipant && !revealed" class="playerName chaseWaitingStatus">
-            {{ activeContestantName }} and the Chaser are answering…<span v-if="lockoutActive"> ({{ answerWindowLeft }}s)</span>
-          </p>
-        </template>
-        <p v-else class="playerName">Waiting for the next question…</p>
-      </div>
-
-      <Transition name="chase-outcome-pop">
-        <div
-          v-if="chaseOutcome"
-          class="chaseOutcomeBanner"
-          :class="chaseOutcome === 'escaped' ? 'chaseOutcomeBanner-escaped' : 'chaseOutcomeBanner-caught'"
-        >
-          {{ chaseOutcome === "escaped" ? "ESCAPED!" : "CAUGHT!" }}
         </div>
-      </Transition>
+        <p class="playerName offerChaserName">{{ activeContestantName }}</p>
+      </div>
     </div>
+
+    <div v-if="lockoutActive" class="chaseLockoutFlash"></div>
+
+    <div class="chaseQuestionArea">
+      <template v-if="currentQuestion">
+        <p class="chaseQuestion">{{ currentQuestion.prompt }}</p>
+        <div class="chaseOptions chaseOptions-row">
+          <button
+            v-for="(option, index) in currentQuestion.options"
+            :key="index"
+            class="startButton chaseOptionButton"
+            :class="[
+              {
+                'chaseOptionButton-picked': myAnswerIndex === index,
+                'chaseOptionButton-correct': revealed && resultForCurrentQuestion.correctIndex === index,
+                'chaseOptionButton-wrong': revealed && myAnswerIndex === index && resultForCurrentQuestion.correctIndex !== index,
+                'chaseOptionButton-lockout': lockoutActive
+              },
+              optionFontClass
+            ]"
+            :disabled="!isParticipant || hasAnswered || revealed"
+            @click="selectOption(index)"
+          >{{ option }}</button>
+        </div>
+
+        <p v-if="isParticipant && hasAnswered && !revealed" class="playerName chaseWaitingStatus">
+          Locked in<span v-if="lockoutActive"> — waiting ({{ answerWindowLeft }}s)</span>…
+        </p>
+        <p v-else-if="isParticipant && !hasAnswered && !revealed" class="playerName chaseWaitingStatus">
+          Pick your answer!<span v-if="lockoutActive"> — {{ answerWindowLeft }}s left</span>
+        </p>
+        <p v-else-if="!isParticipant && !revealed" class="playerName chaseWaitingStatus">
+          {{ activeContestantName }} and the Chaser are answering…<span v-if="lockoutActive"> ({{ answerWindowLeft }}s)</span>
+        </p>
+      </template>
+      <p v-else class="playerName">Waiting for the next question…</p>
+    </div>
+
+    <Transition name="chase-outcome-pop">
+      <div
+        v-if="chaseOutcome"
+        class="chaseOutcomeBanner"
+        :class="chaseOutcome === 'escaped' ? 'chaseOutcomeBanner-escaped' : 'chaseOutcomeBanner-caught'"
+      >
+        {{ chaseOutcome === "escaped" ? "ESCAPED!" : "CAUGHT!" }}
+      </div>
+    </Transition>
   </div>
 </template>

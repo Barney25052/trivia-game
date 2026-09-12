@@ -506,12 +506,13 @@ function sendChaserQuip(text) {
       :contestants="lineupContestants"
       :mySeatId="mySeatId"
     />
-    <CashBuilderScreen 
+    <CashBuilderScreen
       v-if="currentScreen=='cashBuilder'"
       :getReadyCooldownMs="getReadyCooldownMs"
       :currentQuestion="currentRoundQuestion"
       :isActiveContestant="isActiveContestant"
       :activeContestantName="activeContestantName"
+      :activeContestantSeatId="activeContestantSeatId"
       :cashBuilderMoney="activeContestantMoney"
       :cashBuilderCorrectAnswers="activeContestantCorrectAnswers"
       :answerResult="answerResult"

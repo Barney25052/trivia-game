@@ -226,6 +226,8 @@ describe("chase flow (ticket 064)", () => {
         chaserClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
         const result = await resultPromise;
 
+        assert.strictEqual(result.questionId, firstQuestion.questionId);
+        assert.strictEqual(result.correctIndex, correctIndex, "chaseQuestionResult carries the correct option index so clients can highlight it");
         assert.strictEqual(result.contestantCorrect, true);
         assert.strictEqual(result.chaserCorrect, true);
         assert.strictEqual(

@@ -125,12 +125,12 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 
 ### User-reported polish & bugs (084–089, from 2026-09-12 review)
 These pulled the Chase/CashBuilder/palette items out of the 067 whole-app pass early by direct user direction.
-| 084 | Chaser character reveal — name text flashes black/white-outline before white (`bug-011`) | backlog |
-| 085 | Chase screen redesign — 16:9 table layout: Chaser left, board centre, contestant profile right (visible all round), question + horizontal answer buttons bottom (supersedes the 070 wrap) | backlog |
-| 086 | Cash builder — active contestant's profile on the right + answers pop out of a speech bubble, visible to all | backlog |
-| 087 | Chase lockout pulse — full-screen dark-blue background instead of a black question-area flash | backlog |
-| 088 | Colour system — tokenise every colour in `style.css` into `:root` CSS custom properties; brighten the contestant blue | backlog |
-| 089 | Bug — correct MC answer not highlighted on the chase reveal (`bug-012`) | backlog |
+| 084 | Chaser character reveal — name text flashes black/white-outline before white (`bug-011`) | done |
+| 085 | Chase screen redesign — 16:9 table layout: Chaser left, board centre, contestant profile right (visible all round), question + horizontal answer buttons bottom (supersedes the 070 wrap) | done |
+| 086 | Cash builder — active contestant's profile on the right + answers pop out of a speech bubble, visible to all | done |
+| 087 | Chase lockout pulse — full-screen dark-blue background instead of a black question-area flash | done |
+| 088 | Colour system — tokenise every colour in `style.css` into `:root` CSS custom properties; brighten the contestant blue | done |
+| 089 | Bug — correct MC answer not highlighted on the chase reveal (`bug-012`) | done |
 
 ### Whole-app polish
 | 067 | Full layout/design pass across all screens once every phase is implemented (discussion, not a solo build) | backlog |
