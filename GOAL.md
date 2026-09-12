@@ -48,13 +48,13 @@ Repeat cash builder + offer + chase for every contestant.
 - **If no one made it back** (X = 0), the team still plays the Final for a nominal pot — everyone buzzes in, the Chaser is just X ahead where X=0 until the team catches up.
 - Then the **Chaser** gets **2 minutes** of open-ended questions — the Chaser answers **directly, with no buzz-in** (the prompt is shown and they just type, like the cash builder):
   - Correct answer → Chaser **+1**.
-  - Wrong answer → the team gets a **20-second steal window — no buzz-in**: the missed question opens up to all contestants, anyone can type an answer, and the **first submitted answer is taken, even if it's wrong**. A correct steal **pushes the Chaser back** one; a wrong one — or nobody answering in time — just moves the Chaser on (the visible correct answer is shown, the same free-answer policy as the cash builder).
-- If the Chaser **reaches/passes the team's score** → Chaser wins. If the Chaser **runs out of time first** → the team wins.
+  - Wrong answer → the team gets a **20-second steal window — no buzz-in**: the missed question opens up to all contestants, anyone can type an answer, and the **first submitted answer is taken, even if it's wrong**. A correct steal **pushes the Chaser back** one — unless the Chaser is already at **0**, in which case the steal **raises the team's target by 1** instead (the steal always moves the goalposts); a wrong one — or nobody answering in time — just moves the Chaser on (the visible correct answer is shown, the same free-answer policy as the cash builder).
+- If the Chaser reaches the team's score → **Chaser wins, the game is over then and there** — no further questions, and a Chaser at exactly `teamScore` counts as reaching it. If the Chaser runs out of time first → the team wins.
 
 ### Question bank
 - **Open-ended** questions (cash builder + final) come from a **custom free-text question bank** we maintain (a `server/data/questions.json`-style file loaded by the server; server checks typed answers — see the **lenient** policy under Open questions #2, decided).
-- **Multiple-choice** (board chase) comes from the **OpenTDB API at runtime** — decided. In Phase 4 the board chase drops our bank entirely for MC and draws `type=multiple` questions from OpenTDB instead, showing **3 of 4 options** with the **server holding the correct index until the moment of resolution** (the AGENTS.md "never broadcast the correct answer before reveal" invariant). The fetch sits behind a thin get-questions interface so the source can swap later.
-- **Storage**: file-based (JSON) for now — applies to the **open-ended bank only** (MC comes from OpenTDB at runtime and is never stored locally). If a DB is ever warranted (large curated set, admin editing, stats), **SQLite** is the planned path — a single file, zero ops, PM2-friendly, and the JSON stays the seed/export format. Not decided, parked with the question-bank-editor stretch goal.
+- **Multiple-choice** (board chase) comes from the **OpenTDB API at runtime** — decided. In Phase 4 the board chase drops our bank entirely for MC and draws `type=multiple` questions from OpenTDB instead, showing **3 of 4 options** with the **server holding the correct index until the moment of resolution** (the AGENTS.md "never broadcast the correct answer before reveal" invariant). The fetch sits behind a thin get-questions interface so the source can swap later. **Fallback (decided, ticket 074/090)**: if OpenTDB is unreachable or returns nothing after bounded retries, the chase draws from a **small local ~100-question MC backup pool** (`server/data/mc-backup.json`, same `type=multiple` shape) delivered through the same get-questions interface — so a network blip can't stall or wrongly end a round; only if the backup itself runs out does the round resolve as caught.
+- **Storage**: file-based (JSON) for now — applies to the **open-ended bank** and the **local MC backup pool** (live questions come from OpenTDB at runtime; only the fallback pool is stored locally). If a DB is ever warranted (large curated set, admin editing, stats), **SQLite** is the planned path — a single file, zero ops, PM2-friendly, and the JSON stays the seed/export format. Not decided, parked with the question-bank-editor stretch goal.
 - **No category support (decided)**: the `category` field the bank JSON still carries is **legacy and unused** — it is ignored by the loader and present nowhere in the code (`BankQuestion` has no `category`; the `"question"` payload has no `category`; the client never renders it). It stays in `server/data/questions.json` for historical reasons only and must not be reintroduced into types, payloads, or UI. Question-bank tooling (e.g. the editor stretch goal) should skip it.
 
 ### Compared to the TV show (reference)
@@ -139,16 +139,26 @@ Granular agent tasks drafted in the Phase 3 review, tracked in `tickets/README.m
 - [x] Real client chase screen replacing the current placeholder (065)
 - [x] Phase 4 integration tests (066)
 - [x] Phase 4 polish verified in review: board current-space highlighting (069), side-by-side answer buttons (070), prompt font (071), synced lockout pulse (072), answer-reveal hold so the reveal actually renders (073)
-- [ ] Chase must not hang when the MC source fails or returns nothing — bounded retry, then resolve as caught (074)
+- [ ] Local ~100-question MC backup pool (`server/data/mc-backup.json`, OpenTDB `type=multiple` shape) loaded through the get-questions interface as the chase's fallback source (090)
+- [ ] Chase must not hang when the MC source fails or returns nothing — bounded retry, then draw from the local MC backup pool (090); resolve as caught only if the backup runs out (074)
 
 ### Phase 5 — Final round
 Granular agent tasks drafted in the Phase 4 review, tracked in `tickets/README.md` (077–083).
 - [ ] Server: per-side final-round question delivery — team and Chaser streams from the same bank, non-repeating, never broadcast to the wrong side, answers never on the wire (077)
 - [ ] Team: 2-min open-ended **buzz-in** round starting at X (survivors count); first to buzz owns the question, a correct answer bumps `teamScore + 1` (078)
-- [ ] Chaser: 2-min round — Chaser answers **directly, no buzz**; correct answers chase the target; a wrong answer opens a **20s team steal — first submitted answer wins (no buzz), correct steals push the Chaser back** (079) — win/lose resolution on reach ("reaches/passes") vs timeout
+- [ ] Chaser: 2-min round — Chaser answers **directly, no buzz**; correct answers chase the target; a wrong answer opens a **20s team steal — first submitted answer wins (no buzz), correct steals push the Chaser back while above 0, or raise the team target by 1 when the Chaser is at 0** (079) — game ends the moment the Chaser reaches the target (tie counts), no extra questions
 - [ ] Client: real Team Final screen — buzz button + space, buzzer types the answer (080, UI sign-off); Chaser Final screen — Chaser types with no buzz, plus steal prompts (081, UI sign-off)
 - [ ] Phase 5 integration tests (082)
 - [ ] Game-end results from real scores; drop the dead `GamePlayer.score` (083, UI sign-off)
+
+### Polish & UX follow-ups (084–089, user-reported 2026-09-12 review)
+These are the Chase/CashBuilder/palette items the user asked to pull forward from the 067 whole-app pass, tracked in `tickets/README.md`.
+- [ ] Chaser character reveal — fix the reveal name flashing black with a white outline before settling white (084, `bug-011`)
+- [ ] Chase screen redesign — 16:9 table layout: Chaser left, board centre, active contestant's profile right and visible all round, question + horizontal answer buttons bottom; not responsive (085, supersedes 070's wrap)
+- [ ] Cash builder — active contestant's profile on the right for every player + typed answers pop out of a speech bubble from them (086)
+- [ ] Chase lockout pulse — full-screen dark-blue background instead of a black question-area flash (087)
+- [ ] Colour system — tokenise every colour in `style.css` into `:root` CSS custom properties so the whole program can be re-themed in one place; brighten the contestant blue so it stands out (088)
+- [ ] Bug — correct multiple-choice answer is not highlighted on the chase reveal (089, `bug-012`)
 
 ### Phase 6 — Hardening & config
 - [ ] Configurable values (durations, money, offer multipliers), SERVER_URL not hardcoded

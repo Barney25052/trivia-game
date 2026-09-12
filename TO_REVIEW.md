@@ -43,14 +43,17 @@ Add entries like so:
 18. WHAT: Chaser-final edge rules baked into 079 as defaults: push-back floors `chaserScore` at 0 (no negative), and a Chaser reaching *exactly* `teamScore` wins ("reaches/passes" ⇒ `>=`).
     WHERE: tickets/079-final-round-chaser-engine.md
     WHY: Consequences, not bugs — a negative chaser score is meaningless display and a strict `>` would change the show's "reaches/passes" wording into "beats". Both are cheap to flip if the user wants otherwise.
-    STATUS: open
+    STATUS: decided
+    DECISION: Decided by the user (2026-09-12). A correct steal **pushes the Chaser back** (`chaserScore - 1`) while `chaserScore > 0`, **but if the Chaser sits at 0 the steal instead raises the team's target by 1** (`teamScore + 1`) so the steal always has teeth. The game ends the moment the Chaser **reaches** `teamScore` (`>=` — a tie counts as caught) — no further questions, no need to exceed it. Tickets 079/082 and GOAL.md's final-round rules updated to match.
 
 19. WHAT: Chase recovery policy when the MC source keeps failing — 074's default is "bounded retries, then resolve the round as caught" (the Chaser "wins" a broken API, the flow never hangs).
     WHERE: tickets/074-chase-stalls-on-question-source-failure.md
     WHY: An alternative is "abort the whole room to GameEnd" on source failure — arguably more honest, but it kills a friends' game on a network blip. The chosen default keeps the room alive; weigh it once.
-    STATUS: open
+    STATUS: decided
+    DECISION: Decided by the user (2026-09-12). OpenTDB failure → bounded retries, then **fall back to a small local ~100-question MC backup pool in the same JSON format** (new ticket 090) drawn through the same get-questions interface; only if the backup itself is exhausted does the round resolve as caught (last resort, no hang). Ticket 074 + GOAL.md "Question bank" section updated to match.
 
 20. WHAT: Chaser-leave policy — 075's default is "game over, team wins" the moment a selected Chaser disconnects (mirrors host-leave, no promotion mechanic).
     WHERE: tickets/075-chaser-leave-mid-game-recovery.md
     WHY: Promoting a remaining contestant to Chaser mid-room would preserve the game but conflicts with the chaser-character and chaser-pot identity the seat already carries, and would need offer/chase re-wiring — a real feature, not a fix. Parked unless wanted.
-    STATUS: open
+    STATUS: decided
+    DECISION: Decided by the user (2026-09-12): keep the default — a Chaser disconnect ends the game with the team winning. Ticket 075 is unchanged; promotion is parked.

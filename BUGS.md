@@ -75,3 +75,17 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: a Chaser disconnect mid-round resolves the game forward the same way an active-contestant disconnect does today, rather than leaving the room in a state nothing can advance out of.
 - Repro steps: reach `Chase` (or any active round) as the Chaser, then have the Chaser's client disconnect; observe `chaserSeatId` still references the departed seat and the phase never advances on its own.
 - Status: triaged — ticket 075
+
+## `bug-011` — Chaser character reveal: name text flashes black with a white outline before settling white
+- Found: 2026-09-12 · user report · `client/src/screens/ChaserCharacterRevealScreen.vue`, `client/src/style.css` (`.ccrName`, `@keyframes chaser-character-name-in`)
+- What you saw: on the ChaserCharacterReveal screen (059) the character's name first renders as black text with a white outline, then snaps to the intended white — looks bad during the reveal.
+- Expected: the name is clean and legible from the first frame of the reveal.
+- Repro steps: 1. Run `server` + `client` dev. 2. Walk a game to `ChaserCharacterReveal` (after the first cash builder). 3. Watch the name text appear.
+- Status: triaged — ticket 084
+
+## `bug-012` — Chase: correct multiple-choice answer is not highlighted on the answer reveal
+- Found: 2026-09-12 · user report · `client/src/App.vue` (`chaseQuestionResult`, `CHASE_REVEAL_HOLD_MS`), `client/src/screens/ChaseScreen.vue` (`chaseOptionButton-correct`/`-wrong`)
+- What you saw: after a chase question resolves, the correct option never visibly turns green (and/or a wrong picked option doesn't turn red), despite the ticket 073 reveal-hold mechanism.
+- Expected: for the reveal beat the correct index highlights green and a wrong picked index highlights red, on every client.
+- Repro steps: 1. Run `server` + `client` dev. 2. Reach a Chase. 3. Both sides answer (or let the 5s lockout expire). 4. Watch the answer rows for the green/red highlight.
+- Status: triaged — ticket 089

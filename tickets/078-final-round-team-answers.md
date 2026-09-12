@@ -12,6 +12,7 @@ Make the team's 2-minute final round a real buzzer race: a question is shown to 
   - No one has buzzed this question yet.
 - Server keeps a per-question buzz holder (`currentFinalTeamBuzzer` seatId, cleared when the question advances). On the first valid buzz: store it and broadcast `finalBuzz { questionId, seatId }` to every client so each screen locks its buzz button and shows who is answering.
 - `submitFinalAnswer` (`{ questionId, answer }`) requires the sender to **be** the current buzzer — no other non-Chaser may submit for that question. Correct → `teamScore + 1`; wrong → no change. Either way send the cash-builder-shaped `answerResult { correct, correctAnswer }` to the buzzer and advance the team stream (077) — the next question opens a fresh buzz.
+- **Reveal → next question (the buzz-in decision's sequencing, TO_REVIEW #17):** after a **wrong** answer, hold the next team question back so the correct-answer reveal actually renders before the stream advances — mirror the cash builder's `wrongAnswerRevealMs` hold (ticket 053) with a `FINAL_ROUND.wrongAnswerRevealMs` tunable; the 2-min clock keeps running through the hold. A correct answer advances immediately (the green flash is brief, same as the cash builder).
 - If nobody buzzes, the question stays up and the round keeps running; the existing `finalTeamTimeout` timer is the only bound (no per-question buzz window — the 2-minute clock is the pressure).
 - Buzzer leaves/disconnects before submitting: release the buzz lock back to open (any non-Chaser may buzz again) — add an `onLeave` branch for `TeamFinal` in `TriviaRoom.ts`.
 - Never broadcast the expected answer; `teamScore` is synced in state (scores are not secret).
@@ -21,7 +22,8 @@ Make the team's 2-minute final round a real buzzer race: a question is shown to 
 - New `server/test/finalRound.test.ts` (extend the file from 077):
   - First `buzzIn` from a non-Chaser locks the question; a second `buzzIn` for the same question (from anyone) is rejected; `finalBuzz` broadcasts the winning `seatId`.
   - Only the buzzer's `submitFinalAnswer` is accepted — a different non-Chaser sending the correct answer is rejected (no score change, no advance).
-  - Correct answer → `teamScore + 1` and the next `finalQuestion` arrives; wrong → `teamScore` unchanged, reveal fires, stream advances.
+  - Correct answer → `teamScore + 1` and the next `finalQuestion` arrives immediately.
+- Wrong answer → `teamScore` unchanged, reveal fires, and the next `finalQuestion` is held back for the reveal window (`FINAL_ROUND.wrongAnswerRevealMs`) before the stream advances — nothing submitted for that held question is accepted until it's sent.
   - An **eliminated** contestant can buzz and answer, and it counts.
   - The **Chaser's** `buzzIn` and `submitFinalAnswer` are rejected.
   - `buzzIn`/`submitFinalAnswer` outside `TeamFinal`, malformed, or with a stale `questionId` are rejected.
