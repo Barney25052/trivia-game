@@ -218,6 +218,14 @@ export const CHASER_QUIP = {
     maxLength: 140
 } as const;
 
+/** Contestant character codec ranges (ticket 101) — `[hairStyle][hairColour]
+ * [faceStyle][faceColour][shirtColour]`, each a single 0-based digit. */
+export const CHARACTER = {
+    hairStyles: 5,
+    faceStyles: 3,
+    colours: 9
+} as const;
+
 export const RATE_LIMIT = {
     maxMessages: 20,
     windowMs: 10_000,

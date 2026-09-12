@@ -150,7 +150,7 @@ The "it just hangs" steal interaction plus the final-round choreography the user
 
 ### Custom contestant characters (drafted 2026-09-12)
 Custom-pickable contestant avatars (5 hairstyles, 3 faces, hair/face/shirt colour × 9); contestants only — the Chaser keeps the roster portraits. Codec `[hairStyle][hairColour][faceStyle][faceColour][shirtColour]`. Colours = grayscale art tinted via CSS. Reactions: neutral default, correct → smile, wrong → frown, two wrong in a row → teary; flashes ~3s then neutral.
-| 101 | Server — character codec + `GamePlayer.character` + validated `setCharacter` | backlog |
+| 101 | Server — character codec + `GamePlayer.character` + validated `setCharacter` | done |
 | 102 | Client — lobby character picker + shared `CharacterFace` component + greyscale-tint palette (UI sign-off required) | backlog |
 | 103 | Contestant reactions — server `reaction` cues + flash/revert face expressions (UI sign-off required) | backlog |
 

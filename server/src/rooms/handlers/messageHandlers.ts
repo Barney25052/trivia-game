@@ -2,6 +2,7 @@ import { GamePhase, PlayerRole } from "../../TriviaTypes.js";
 import { allPlayersReady, allPlayersVoted, tallyChaserVotes } from "./chaserSelection.js";
 import { checkAnswer } from "../../questions/answerChecker.js";
 import { pickOfferQuip } from "../../offerQuips.js";
+import { isValidCharacter } from "../../character.js";
 import { CASH_BUILDER, CHASER_CHARACTERS, CHASER_QUIP, OFFER } from "../../gameConfig.js";
 
 export function startGame(client: any, message: any, room: any) {
@@ -98,6 +99,23 @@ export function revealReady(client: any, message: any, room: any) {
     if (allPlayersReady(room)) {
         room.dispatch({ type: "revealAllReady" });
     }
+}
+
+/** Self-only, phase-agnostic character pick (ticket 101) — the lobby is the
+ * real UI (102), but validated + idempotent so it can be called any time. */
+export function setCharacter(client: any, message: any, room: any) {
+    const seatId = room.seatIdForClient(client);
+    const player = room.state.players.get(seatId ?? "");
+    if (!player) {
+        return;
+    }
+    const character = message?.character;
+    if (!isValidCharacter(character)) {
+        console.log(seatId, "Ignoring invalid character code:", character);
+        return;
+    }
+    player.character = character;
+    console.log(`${seatId} set character to ${character}`);
 }
 
 export function setChaserLowOffer(client: any, message: any, room: any) {

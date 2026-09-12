@@ -15,6 +15,7 @@ import { loadBank, BankQuestion } from "../questions/bank.js";
 import { createOpenTdbQuestionSource, McQuestion, McQuestionSource } from "../questions/opentdb.js";
 import { createMcBackupQuestionSource } from "../questions/mcBackup.js";
 import { pickChaseOptions } from "../questions/chaseOptions.js";
+import { randomCharacter } from "../character.js";
 import {
   BOARD,
   CASH_BUILDER,
@@ -44,6 +45,7 @@ import {
   submitFinalStealAnswer,
   submitAnswer,
   sendChaserQuip,
+  setCharacter,
 } from "./handlers/messageHandlers.js";
 import { applyEffects } from "./handlers/effects.js";
 import { clampRoomOptions } from "./handlers/clampOptions.js";
@@ -542,6 +544,10 @@ export class TriviaRoom extends Room {
       if (!this.checkRateLimit(client)) return;
       sendChaserQuip(client, message, this);
     },
+    setCharacter: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      setCharacter(client, message, this);
+    },
     whoami: (client: Client) => {
       if (!this.checkRateLimit(client)) return;
       const seatId = this.seatIdForClient(client);
@@ -567,6 +573,7 @@ export class TriviaRoom extends Room {
     const newPlayer = new GamePlayer();
     newPlayer.name = name;
     newPlayer.seatId = seatId;
+    newPlayer.character = randomCharacter();
     if (this.state.players.size === 0) {
       newPlayer.isHost = true;
     }

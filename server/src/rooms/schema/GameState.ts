@@ -17,6 +17,7 @@ export class GamePlayer extends Schema {
     @type("number") score: number = 0;
     @type("string") seatState: string = "waiting";
     @type("string") chaserCharacterId: string = "";
+    @type("string") character: string = "";
 }
 
 export class GameState extends Schema {
