@@ -115,6 +115,10 @@ export const ANSWER_CHECK = {
     editDistanceRatio: 0.3
 } as const;
 
+export const CHASER_QUIP = {
+    maxLength: 140
+} as const;
+
 export const RATE_LIMIT = {
     maxMessages: 20,
     windowMs: 10_000,

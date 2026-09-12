@@ -32,6 +32,7 @@ import {
   chaseResult,
   finalChaserScore,
   submitAnswer,
+  sendChaserQuip,
 } from "./handlers/messageHandlers.js";
 import { applyEffects } from "./handlers/effects.js";
 import { clampRoomOptions } from "./handlers/clampOptions.js";
@@ -209,6 +210,10 @@ export class TriviaRoom extends Room {
     submitAnswer: (client: Client, message: any) => {
       if (!this.checkRateLimit(client)) return;
       submitAnswer(client, message, this);
+    },
+    sendChaserQuip: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      sendChaserQuip(client, message, this);
     },
     whoami: (client: Client) => {
       if (!this.checkRateLimit(client)) return;

@@ -1,7 +1,7 @@
 import { GamePhase, PlayerRole } from "../../TriviaTypes.js";
 import { allPlayersReady, allPlayersVoted, tallyChaserVotes } from "./chaserSelection.js";
 import { checkAnswer } from "../../questions/answerChecker.js";
-import { CASH_BUILDER, CHASER_CHARACTERS, OFFER } from "../../gameConfig.js";
+import { CASH_BUILDER, CHASER_CHARACTERS, CHASER_QUIP, OFFER } from "../../gameConfig.js";
 
 export function startGame(client: any, message: any, room: any) {
     if (!room.isHost(client)) {
@@ -229,6 +229,20 @@ export function finalChaserScore(client: any, message: any, room: any) {
         return;
     }
     room.dispatch({ type: "finalChaserReachedScore" });
+}
+
+export function sendChaserQuip(client: any, message: any, room: any) {
+    const seatId = room.seatIdForClient(client);
+    if (seatId !== room.state.chaserSeatId) {
+        console.log(client.sessionId, "Can not send a chaser quip — only the Chaser can!");
+        return;
+    }
+    const text = typeof message?.text === "string" ? message.text.trim() : "";
+    if (text.length === 0 || text.length > CHASER_QUIP.maxLength) {
+        console.log(client.sessionId, "Ignoring malformed chaser quip:", message?.text);
+        return;
+    }
+    room.broadcast("chaserQuip", { text, at: Date.now() });
 }
 
 export function submitAnswer(client: any, message: any, room: any) {
