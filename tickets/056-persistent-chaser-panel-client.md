@@ -1,7 +1,7 @@
 # 056: Persistent Chaser panel — box, portrait, and quip bubble across every phase (client)
 
 ## Goal
-Make the Chaser a visible, "always there" presence for the whole game, not just during the Offer: a masked portrait box with a speech bubble, mounted once in `App.vue` so it survives phase changes. Consumes the quip channel from 055 (chaser-typed text) and keeps the auto-generated quips 052 already ships for Offer-specific beats.
+Make the Chaser a visible, "always there" presence for the whole game (after the first cash builder, there will be a whole reveal after first cash builder), the chaser will also not be there during the teams final round, not just during the Offer: a masked portrait box with a speech bubble, mounted once in `App.vue` so it survives phase changes. Consumes the quip channel from 055 (chaser-typed text) and keeps the auto-generated quips 052 already ships for Offer-specific beats.
 
 ## Scope
 - **UI sign-off first (AGENTS.md rule)**: confirm placement/sizing once other screens' layouts (post-052) are visible — this panel has to coexist with every phase screen without overlapping their content, which is easier to judge once 052 has landed.
