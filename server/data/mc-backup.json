@@ -1,0 +1,1204 @@
+{
+    "questions": [
+        {
+            "category": "science",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What force causes objects to fall toward Earth and keeps planets in orbit?",
+            "correct_answer": "Gravity",
+            "incorrect_answers": [
+                "Magnetism",
+                "Friction",
+                "Inertia"
+            ]
+        },
+        {
+            "category": "literature",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Russian novelist wrote about Raskolnikov in Crime and Punishment?",
+            "correct_answer": "Dostoevsky",
+            "incorrect_answers": [
+                "Leo Tolstoy",
+                "Anton Chekhov",
+                "Ivan Turgenev"
+            ]
+        },
+        {
+            "category": "geography",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which desert covers much of northern Africa and is the largest hot desert on Earth?",
+            "correct_answer": "Sahara",
+            "incorrect_answers": [
+                "Kalahari",
+                "Gobi",
+                "Arabian Desert"
+            ]
+        },
+        {
+            "category": "history",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which ancient city was buried by the eruption of Mount Vesuvius in 79 CE?",
+            "correct_answer": "Pompeii",
+            "incorrect_answers": [
+                "Herculaneum",
+                "Rome",
+                "Naples"
+            ]
+        },
+        {
+            "category": "art",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Dutch painter cut off part of his own ear, according to famous legend?",
+            "correct_answer": "Van Gogh",
+            "incorrect_answers": [
+                "Paul Gauguin",
+                "Claude Monet",
+                "Edvard Munch"
+            ]
+        },
+        {
+            "category": "mythology",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "This Greek god is associated with thunder and kingly rule on Mount Olympus?",
+            "correct_answer": "Zeus",
+            "incorrect_answers": [
+                "Poseidon",
+                "Hades",
+                "Ares"
+            ]
+        },
+        {
+            "category": "food/drink",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What Japanese dish consists of vinegared rice usually topped with fish or vegetables?",
+            "correct_answer": "Sushi",
+            "incorrect_answers": [
+                "Sashimi",
+                "Tempura",
+                "Ramen"
+            ]
+        },
+        {
+            "category": "language",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What do you call a word that means the opposite of another word?",
+            "correct_answer": "Antonym",
+            "incorrect_answers": [
+                "Synonym",
+                "Homonym",
+                "Acronym"
+            ]
+        },
+        {
+            "category": "general trivia",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the common name for H2O?",
+            "correct_answer": "Water",
+            "incorrect_answers": [
+                "Hydrogen peroxide",
+                "Ice",
+                "Steam"
+            ]
+        },
+        {
+            "category": "religion",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which sacred text is central to Islam?",
+            "correct_answer": "Quran",
+            "incorrect_answers": [
+                "Torah",
+                "Bible",
+                "Talmud"
+            ]
+        },
+        {
+            "category": "architecture",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the name for the pointed arch and ornate style seen in many medieval cathedrals?",
+            "correct_answer": "Gothic",
+            "incorrect_answers": [
+                "Baroque",
+                "Romanesque",
+                "Byzantine"
+            ]
+        },
+        {
+            "category": "fashion",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Italian fashion house is known for its Medusa logo and bold luxury designs?",
+            "correct_answer": "Versace",
+            "incorrect_answers": [
+                "Gucci",
+                "Armani",
+                "Prada"
+            ]
+        },
+        {
+            "category": "science",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the basic unit of life in all living organisms?",
+            "correct_answer": "Cell",
+            "incorrect_answers": [
+                "Atom",
+                "Molecule",
+                "Organ"
+            ]
+        },
+        {
+            "category": "geography",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which strait separates Europe from Africa at the mouth of the Mediterranean?",
+            "correct_answer": "Gibraltar",
+            "incorrect_answers": [
+                "Strait of Hormuz",
+                "Bosphorus",
+                "Bering Strait"
+            ]
+        },
+        {
+            "category": "history",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which wall divided a European city for most of the Cold War and fell in 1989?",
+            "correct_answer": "Berlin Wall",
+            "incorrect_answers": [
+                "Iron Curtain",
+                "Great Wall of China",
+                "Hadrian's Wall"
+            ]
+        },
+        {
+            "category": "music",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Beatles member wrote and sang Imagine as a solo artist?",
+            "correct_answer": "John Lennon",
+            "incorrect_answers": [
+                "Paul McCartney",
+                "George Harrison",
+                "Ringo Starr"
+            ]
+        },
+        {
+            "category": "literature",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which epic poem begins with the phrase Sing, O goddess, the anger of Achilles?",
+            "correct_answer": "Iliad",
+            "incorrect_answers": [
+                "The Odyssey",
+                "Aeneid",
+                "Metamorphoses"
+            ]
+        },
+        {
+            "category": "sport",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "In golf, what term is used for one stroke under par on a hole?",
+            "correct_answer": "Birdie",
+            "incorrect_answers": [
+                "Eagle",
+                "Bogey",
+                "Par"
+            ]
+        },
+        {
+            "category": "movies/TV",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which HBO fantasy series features the Iron Throne and houses like Stark and Lannister?",
+            "correct_answer": "Game of Thrones",
+            "incorrect_answers": [
+                "The Witcher",
+                "Vikings",
+                "House of the Dragon"
+            ]
+        },
+        {
+            "category": "language",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the name for a figure of speech that uses exaggerated language for effect?",
+            "correct_answer": "Hyperbole",
+            "incorrect_answers": [
+                "Metaphor",
+                "Simile",
+                "Irony"
+            ]
+        },
+        {
+            "category": "general trivia",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What metal is liquid at room temperature and often used in old thermometers?",
+            "correct_answer": "Mercury",
+            "incorrect_answers": [
+                "Lead",
+                "Tin",
+                "Bismuth"
+            ]
+        },
+        {
+            "category": "politics",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the term for a country governed by a monarch such as a king or queen?",
+            "correct_answer": "Monarchy",
+            "incorrect_answers": [
+                "Republic",
+                "Oligarchy",
+                "Democracy"
+            ]
+        },
+        {
+            "category": "religion",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which religion is centered on the teachings of the Buddha?",
+            "correct_answer": "Buddhism",
+            "incorrect_answers": [
+                "Hinduism",
+                "Jainism",
+                "Taoism"
+            ]
+        },
+        {
+            "category": "fashion",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which item of clothing is traditionally associated with Scottish highland dress?",
+            "correct_answer": "Kilt",
+            "incorrect_answers": [
+                "Sporran",
+                "Tartan cloak",
+                "Sash"
+            ]
+        },
+        {
+            "category": "science",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What gas do plants absorb from the air for photosynthesis?",
+            "correct_answer": "Carbon dioxide",
+            "incorrect_answers": [
+                "Oxygen",
+                "Nitrogen",
+                "Methane"
+            ]
+        },
+        {
+            "category": "geography",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which mountain range forms a natural border between Europe and Asia in Russia?",
+            "correct_answer": "Ural Mountains",
+            "incorrect_answers": [
+                "Caucasus Mountains",
+                "Carpathian Mountains",
+                "Altai Mountains"
+            ]
+        },
+        {
+            "category": "history",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Roman leader is commonly associated with the phrase Veni, vidi, vici?",
+            "correct_answer": "Caesar",
+            "incorrect_answers": [
+                "Augustus",
+                "Mark Antony",
+                "Pompey"
+            ]
+        },
+        {
+            "category": "literature",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which author created James Moriarty?",
+            "correct_answer": "Arthur Conan Doyle",
+            "incorrect_answers": [
+                "Agatha Christie",
+                "Charles Dickens",
+                "Wilkie Collins"
+            ]
+        },
+        {
+            "category": "art",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Italian artist painted the ceiling of the Sistine Chapel?",
+            "correct_answer": "Michelangelo",
+            "incorrect_answers": [
+                "Leonardo da Vinci",
+                "Raphael",
+                "Donatello"
+            ]
+        },
+        {
+            "category": "technology",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the name for malicious software that demands payment to restore access?",
+            "correct_answer": "Ransomware",
+            "incorrect_answers": [
+                "Spyware",
+                "Adware",
+                "Trojan horse"
+            ]
+        },
+        {
+            "category": "mythology",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which underworld river must souls cross in Greek myth?",
+            "correct_answer": "Styx",
+            "incorrect_answers": [
+                "Lethe",
+                "Acheron",
+                "Phlegethon"
+            ]
+        },
+        {
+            "category": "sport",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which country won the FIFA World Cup in 1982?",
+            "correct_answer": "Italy",
+            "incorrect_answers": [
+                "Brazil",
+                "West Germany",
+                "Argentina"
+            ]
+        },
+        {
+            "category": "language",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What term describes a word that sounds like its meaning, such as buzz or hiss?",
+            "correct_answer": "Onomatopoeia",
+            "incorrect_answers": [
+                "Alliteration",
+                "Assonance",
+                "Personification"
+            ]
+        },
+        {
+            "category": "general trivia",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the largest mammal in the world?",
+            "correct_answer": "Blue whale",
+            "incorrect_answers": [
+                "African elephant",
+                "Sperm whale",
+                "Giraffe"
+            ]
+        },
+        {
+            "category": "religion",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Jewish festival commemorates the Exodus from Egypt?",
+            "correct_answer": "Passover",
+            "incorrect_answers": [
+                "Hanukkah",
+                "Yom Kippur",
+                "Purim"
+            ]
+        },
+        {
+            "category": "architecture",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which famous Paris landmark is a wrought-iron lattice tower completed in 1889?",
+            "correct_answer": "Eiffel Tower",
+            "incorrect_answers": [
+                "Arc de Triomphe",
+                "Notre-Dame",
+                "The Louvre Pyramid"
+            ]
+        },
+        {
+            "category": "science",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What subatomic particle carries a negative electric charge?",
+            "correct_answer": "Electron",
+            "incorrect_answers": [
+                "Proton",
+                "Neutron",
+                "Positron"
+            ]
+        },
+        {
+            "category": "music",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which musical term describes a lively, quick tempo often used for the first movement of a symphony?",
+            "correct_answer": "Allegro",
+            "incorrect_answers": [
+                "Adagio",
+                "Andante",
+                "Largo"
+            ]
+        },
+        {
+            "category": "sport",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "In tennis, what is the score called when both players reach 40-all?",
+            "correct_answer": "Deuce",
+            "incorrect_answers": [
+                "Advantage",
+                "Love",
+                "Match point"
+            ]
+        },
+        {
+            "category": "food/drink",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Italian cheese is the classic hard, grated topping for pasta carbonara and cacio e pepe?",
+            "correct_answer": "Pecorino",
+            "incorrect_answers": [
+                "Parmesan",
+                "Mozzarella",
+                "Ricotta"
+            ]
+        },
+        {
+            "category": "technology",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the open-source operating system kernel that powers Android and many servers?",
+            "correct_answer": "Linux",
+            "incorrect_answers": [
+                "Windows",
+                "macOS",
+                "Unix"
+            ]
+        },
+        {
+            "category": "mythology",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which goddess of wisdom and warfare sprang fully formed from the head of Zeus?",
+            "correct_answer": "Athena",
+            "incorrect_answers": [
+                "Hera",
+                "Aphrodite",
+                "Artemis"
+            ]
+        },
+        {
+            "category": "geography",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which river flows through Budapest and has major cities including Vienna and Bratislava on its banks?",
+            "correct_answer": "Danube",
+            "incorrect_answers": [
+                "Rhine",
+                "Volga",
+                "Elbe"
+            ]
+        },
+        {
+            "category": "general trivia",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What color do you get when you mix blue and yellow pigments?",
+            "correct_answer": "Green",
+            "incorrect_answers": [
+                "Purple",
+                "Orange",
+                "Brown"
+            ]
+        },
+        {
+            "category": "religion",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Christian festival celebrates Jesus rising from the dead?",
+            "correct_answer": "Easter",
+            "incorrect_answers": [
+                "Christmas",
+                "Pentecost",
+                "Lent"
+            ]
+        },
+        {
+            "category": "games",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which board game features rooks, bishops, and knights on an 8-by-8 board?",
+            "correct_answer": "Chess",
+            "incorrect_answers": [
+                "Checkers",
+                "Backgammon",
+                "Shogi"
+            ]
+        },
+        {
+            "category": "science",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which planet is famous for its prominent ring system in the Solar system?",
+            "correct_answer": "Saturn",
+            "incorrect_answers": [
+                "Jupiter",
+                "Uranus",
+                "Neptune"
+            ]
+        },
+        {
+            "category": "music",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which British band released the album Sgt Pepper's Lonely Hearts Club Band?",
+            "correct_answer": "The Beatles",
+            "incorrect_answers": [
+                "The Rolling Stones",
+                "The Who",
+                "Pink Floyd"
+            ]
+        },
+        {
+            "category": "sport",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the term for three strikes in a row in bowling?",
+            "correct_answer": "Turkey",
+            "incorrect_answers": [
+                "Strike",
+                "Spare",
+                "Split"
+            ]
+        },
+        {
+            "category": "science",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What force resists motion between two surfaces in contact?",
+            "correct_answer": "Friction",
+            "incorrect_answers": [
+                "Gravity",
+                "Tension",
+                "Momentum"
+            ]
+        },
+        {
+            "category": "general trivia",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the name for a seven-day period?",
+            "correct_answer": "Week",
+            "incorrect_answers": [
+                "Fortnight",
+                "Decade",
+                "Month"
+            ]
+        },
+        {
+            "category": "politics",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the title of the head of government in Germany?",
+            "correct_answer": "Chancellor",
+            "incorrect_answers": [
+                "President",
+                "Prime Minister",
+                "Chairman"
+            ]
+        },
+        {
+            "category": "music",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which stage name belongs to the singer born Stefani Germanotta?",
+            "correct_answer": "Lady Gaga",
+            "incorrect_answers": [
+                "Katy Perry",
+                "Madonna",
+                "Ariana Grande"
+            ]
+        },
+        {
+            "category": "literature",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Call me Ishmael is the first line from which classic novel about a whale?",
+            "correct_answer": "Moby-Dick",
+            "incorrect_answers": [
+                "The Old Man and the Sea",
+                "Treasure Island",
+                "20,000 Leagues Under the Sea"
+            ]
+        },
+        {
+            "category": "geography",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which African country is almost entirely surrounded by South Africa?",
+            "correct_answer": "Lesotho",
+            "incorrect_answers": [
+                "Eswatini",
+                "Botswana",
+                "Namibia"
+            ]
+        },
+        {
+            "category": "general trivia",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the study of coins and currency called?",
+            "correct_answer": "Numismatics",
+            "incorrect_answers": [
+                "Philately",
+                "Etymology",
+                "Cartography"
+            ]
+        },
+        {
+            "category": "history",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which 14th-century plague devastated Europe and drastically reduced the population?",
+            "correct_answer": "Black Death",
+            "incorrect_answers": [
+                "Spanish Flu",
+                "Cholera epidemic",
+                "The Great Plague of London"
+            ]
+        },
+        {
+            "category": "mythology",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Greek hero is known for completing twelve labors, including the Nemean lion?",
+            "correct_answer": "Heracles",
+            "incorrect_answers": [
+                "Achilles",
+                "Theseus",
+                "Perseus"
+            ]
+        },
+        {
+            "category": "food/drink",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which alcoholic drink is distilled from fermented grapes and often aged in oak barrels?",
+            "correct_answer": "Brandy",
+            "incorrect_answers": [
+                "Whisky",
+                "Vodka",
+                "Rum"
+            ]
+        },
+        {
+            "category": "science",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What name is given to the process by which plants lose water vapor through their leaves?",
+            "correct_answer": "Transpiration",
+            "incorrect_answers": [
+                "Photosynthesis",
+                "Respiration",
+                "Osmosis"
+            ]
+        },
+        {
+            "category": "geography",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which desert, stretching across much of southern Africa, is often called the world's oldest?",
+            "correct_answer": "Namib",
+            "incorrect_answers": [
+                "Kalahari",
+                "Sahara",
+                "Atacama"
+            ]
+        },
+        {
+            "category": "music",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which musical key has no sharps or flats and is often associated with a bright, simple sound?",
+            "correct_answer": "C major",
+            "incorrect_answers": [
+                "G major",
+                "D major",
+                "A minor"
+            ]
+        },
+        {
+            "category": "literature",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which novel by George Orwell portrays a state where surveillance is constant and truth is controlled?",
+            "correct_answer": "1984",
+            "incorrect_answers": [
+                "Brave New World",
+                "Fahrenheit 451",
+                "Animal Farm"
+            ]
+        },
+        {
+            "category": "sport",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "In tennis, what do you call a point won immediately by a serve that the opponent cannot touch?",
+            "correct_answer": "Ace",
+            "incorrect_answers": [
+                "Fault",
+                "Let",
+                "Rally"
+            ]
+        },
+        {
+            "category": "food/drink",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Japanese broth, made from fermented soybean paste, is a common base for soups?",
+            "correct_answer": "Miso",
+            "incorrect_answers": [
+                "Dashi",
+                "Tofu",
+                "Soy sauce"
+            ]
+        },
+        {
+            "category": "technology",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What programming term describes a reusable block of code that performs a specific task?",
+            "correct_answer": "Function",
+            "incorrect_answers": [
+                "Variable",
+                "Loop",
+                "Array"
+            ]
+        },
+        {
+            "category": "general trivia",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What common name is given to the largest moon of Saturn?",
+            "correct_answer": "Titan",
+            "incorrect_answers": [
+                "Europa",
+                "Ganymede",
+                "Enceladus"
+            ]
+        },
+        {
+            "category": "science",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the term for a change in a species over generations through natural selection?",
+            "correct_answer": "Evolution",
+            "incorrect_answers": [
+                "Adaptation",
+                "Mutation",
+                "Domestication"
+            ]
+        },
+        {
+            "category": "geography",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which island group lies between the North Atlantic and the Norwegian Sea, west of Scotland?",
+            "correct_answer": "Faroe Islands",
+            "incorrect_answers": [
+                "Shetland Islands",
+                "Orkney Islands",
+                "Aland Islands"
+            ]
+        },
+        {
+            "category": "sport",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What term is used in baseball and cricket for the best possible batting result on a single ball or pitch?",
+            "correct_answer": "Home run",
+            "incorrect_answers": [
+                "Grand slam",
+                "Six",
+                "Strike"
+            ]
+        },
+        {
+            "category": "technology",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the name of the worldwide system of interconnected computer networks?",
+            "correct_answer": "Internet",
+            "incorrect_answers": [
+                "Intranet",
+                "World Wide Web",
+                "Ethernet"
+            ]
+        },
+        {
+            "category": "geography",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which African capital sits on the Blue and White Nile and was long divided by a famous river bend?",
+            "correct_answer": "Khartoum",
+            "incorrect_answers": [
+                "Cairo",
+                "Addis Ababa",
+                "Nairobi"
+            ]
+        },
+        {
+            "category": "history",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which medieval trade league dominated commerce in the Baltic and North Sea regions?",
+            "correct_answer": "Hanseatic League",
+            "incorrect_answers": [
+                "East India Company",
+                "Silk Road",
+                "Holy Roman Empire"
+            ]
+        },
+        {
+            "category": "music",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which classical composer wrote the Fifth Symphony with its famous four-note opening motif?",
+            "correct_answer": "Beethoven",
+            "incorrect_answers": [
+                "Mozart",
+                "Brahms",
+                "Haydn"
+            ]
+        },
+        {
+            "category": "food/drink",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which asian fermented tea drink is made using a culture often called a SCOBY?",
+            "correct_answer": "Kombucha",
+            "incorrect_answers": [
+                "Kimchi",
+                "Kefir",
+                "Miso"
+            ]
+        },
+        {
+            "category": "geography",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which mountain range forms a natural border between Spain and France?",
+            "correct_answer": "Pyrenees",
+            "incorrect_answers": [
+                "Alps",
+                "Apennines",
+                "Sierra Nevada"
+            ]
+        },
+        {
+            "category": "literature",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Shakespeare tragedy features the line 'Out, out, brief candle!'?",
+            "correct_answer": "Macbeth",
+            "incorrect_answers": [
+                "Hamlet",
+                "King Lear",
+                "Othello"
+            ]
+        },
+        {
+            "category": "music",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the name of the vocal range between soprano and alto?",
+            "correct_answer": "Mezzo-soprano",
+            "incorrect_answers": [
+                "Contralto",
+                "Tenor",
+                "Baritone"
+            ]
+        },
+        {
+            "category": "technology",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What does the 'WWW' in a web address stand for?",
+            "correct_answer": "World Wide Web",
+            "incorrect_answers": [
+                "World Web Wide",
+                "Wide World Web",
+                "World Wireless Web"
+            ]
+        },
+        {
+            "category": "movies/TV",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Harrison Ford plays an snake-fearing adventurer in which film series?",
+            "correct_answer": "Indiana Jones",
+            "incorrect_answers": [
+                "The Mummy",
+                "Tomb Raider",
+                "National Treasure"
+            ]
+        },
+        {
+            "category": "literature",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which epic poem features a bag of wind and a cylcops?",
+            "correct_answer": "The Odyssey",
+            "incorrect_answers": [
+                "The Iliad",
+                "The Aeneid",
+                "Argonautica"
+            ]
+        },
+        {
+            "category": "technology",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the tiny removable memory card commonly used in phones and cameras?",
+            "correct_answer": "SD card",
+            "incorrect_answers": [
+                "USB drive",
+                "CD-ROM",
+                "Hard disk"
+            ]
+        },
+        {
+            "category": "general trivia",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is the smallest prime number?",
+            "correct_answer": "Two",
+            "incorrect_answers": [
+                "One",
+                "Three",
+                "Zero"
+            ]
+        },
+        {
+            "category": "language",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What is a five-line Japanese poem with a 5-7-5-7-7 syllable pattern called?",
+            "correct_answer": "Tanka",
+            "incorrect_answers": [
+                "Haiku",
+                "Senryu",
+                "Renga"
+            ]
+        },
+        {
+            "category": "politics",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which international organization uses a Security Council and General Assembly?",
+            "correct_answer": "United Nations",
+            "incorrect_answers": [
+                "NATO",
+                "European Union",
+                "World Health Organization"
+            ]
+        },
+        {
+            "category": "movies/TV",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Alfred Hitchcock thriller is set in the Bates Motel?",
+            "correct_answer": "Psycho",
+            "incorrect_answers": [
+                "Vertigo",
+                "Rear Window",
+                "The Birds"
+            ]
+        },
+        {
+            "category": "art",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which painter is famous for the mural 'Guernica'?",
+            "correct_answer": "Pablo Picasso",
+            "incorrect_answers": [
+                "Salvador Dali",
+                "Joan Miro",
+                "Diego Rivera"
+            ]
+        },
+        {
+            "category": "geography",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which river forms much of the border between France and Germany before joining the North Sea?",
+            "correct_answer": "Rhine",
+            "incorrect_answers": [
+                "Danube",
+                "Elbe",
+                "Seine"
+            ]
+        },
+        {
+            "category": "music",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which instrument family includes the oboe, which needs a double reed to sound?",
+            "correct_answer": "Woodwind",
+            "incorrect_answers": [
+                "Brass",
+                "Percussion",
+                "String"
+            ]
+        },
+        {
+            "category": "movies/TV",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which space saga begins with a princess hiding plans inside a droid?",
+            "correct_answer": "Star Wars",
+            "incorrect_answers": [
+                "Star Trek",
+                "Dune",
+                "Guardians of the Galaxy"
+            ]
+        },
+        {
+            "category": "geography",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which river is the longest in Europe?",
+            "correct_answer": "Volga",
+            "incorrect_answers": [
+                "Danube",
+                "Rhine",
+                "Ural River"
+            ]
+        },
+        {
+            "category": "language",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What do you call a word or phrase that reads the same backward and forward?",
+            "correct_answer": "Palindrome",
+            "incorrect_answers": [
+                "Anagram",
+                "Acronym",
+                "Oxymoron"
+            ]
+        },
+        {
+            "category": "biology",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What life-cycle transformation turns a caterpillar into a butterfly?",
+            "correct_answer": "Metamorphosis",
+            "incorrect_answers": [
+                "Molting",
+                "Germination",
+                "Hibernation"
+            ]
+        },
+        {
+            "category": "science",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which gas makes up the largest share of Earth's atmosphere?",
+            "correct_answer": "Nitrogen",
+            "incorrect_answers": [
+                "Oxygen",
+                "Carbon dioxide",
+                "Argon"
+            ]
+        },
+        {
+            "category": "literature",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Russian classic novel features Count Alexei Kirillovich Vronsky?",
+            "correct_answer": "Anna Karenina",
+            "incorrect_answers": [
+                "War and Peace",
+                "Crime and Punishment",
+                "Doctor Zhivago"
+            ]
+        },
+        {
+            "category": "literature",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Shakespeare tragedy features the Moor of Venice and the handkerchief as a key plot device?",
+            "correct_answer": "Othello",
+            "incorrect_answers": [
+                "Hamlet",
+                "Macbeth",
+                "King Lear"
+            ]
+        },
+        {
+            "category": "music",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What Italian term means at a moderately slow walking pace?",
+            "correct_answer": "Andante",
+            "incorrect_answers": [
+                "Allegro",
+                "Presto",
+                "Adagio"
+            ]
+        },
+        {
+            "category": "science",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "What process allows a substance to change directly from solid to gas without becoming liquid first?",
+            "correct_answer": "Sublimation",
+            "incorrect_answers": [
+                "Evaporation",
+                "Condensation",
+                "Deposition"
+            ]
+        },
+        {
+            "category": "geography",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which European country is divided into cantons and has Bern as its de facto capital?",
+            "correct_answer": "Switzerland",
+            "incorrect_answers": [
+                "Austria",
+                "Liechtenstein",
+                "Germany"
+            ]
+        },
+        {
+            "category": "music",
+            "type": "multiple",
+            "difficulty": "medium",
+            "question": "Which Baroque composer wrote The Four Seasons?",
+            "correct_answer": "Vivaldi",
+            "incorrect_answers": [
+                "Bach",
+                "Handel",
+                "Mozart"
+            ]
+        }
+    ]
+}
