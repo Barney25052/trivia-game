@@ -186,6 +186,30 @@ describe("chase flow (ticket 064)", () => {
         assert.strictEqual(room.state.players.get(contestantSeatId).boardPos, BOARD.startHigh - 1);
     });
 
+    it("broadcasts chaseLockoutStarted to every client the moment one side answers first — with no role or answer info (ticket 072)", async () => {
+        const windowMs = 500;
+        const { contestantClient, chaserClient, firstQuestion } =
+            await reachChase(colyseus, { offer: "high", chaseAnswerWindowMs: windowMs });
+
+        const correctIndex = firstQuestion.options.indexOf("Correct Answer");
+        const contestantLockout = contestantClient.waitForMessage("chaseLockoutStarted");
+        const chaserLockout = chaserClient.waitForMessage("chaseLockoutStarted");
+        // Only the contestant answers — the Chaser is the side still deciding,
+        // which must still see that a clock is running.
+        contestantClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+        const chaserMessage = await chaserLockout;
+        const contestantMessage = await contestantLockout;
+
+        assert.strictEqual(chaserMessage.questionId, firstQuestion.questionId);
+        assert.strictEqual(chaserMessage.windowMs, windowMs);
+        assert.strictEqual(contestantMessage.questionId, firstQuestion.questionId);
+        assert.strictEqual(contestantMessage.windowMs, windowMs);
+        assert.ok(
+            !("role" in chaserMessage) && !("answerIndex" in chaserMessage),
+            "the lockout signal must not leak which side answered or what they picked"
+        );
+    });
+
     it("resolves immediately once both sides have answered, without waiting for the lockout window", async () => {
         const windowMs = 2000;
         const { contestantClient, chaserClient, firstQuestion } =

@@ -257,6 +257,16 @@ export function submitChaseAnswer(client: any, message: any, room: any) {
     if (Object.keys(room.chaseAnswers).length === 2) {
         room.resolveChaseQuestion();
     } else if (wasFirstAnswer) {
+        // Kick off the lockout countdown everywhere at once (ticket 072): both
+        // sides must see "the clock is running" from the same signal, so the
+        // pulse and countdown are synced from this broadcast — not from each
+        // client's own submission. Deliberately carries no role or answer
+        // index, so the side still deciding never learns who answered or what
+        // they picked (AGENTS.md "never broadcast before reveal").
+        room.broadcast("chaseLockoutStarted", {
+            questionId: question.id,
+            windowMs: room.chaseAnswerWindowMs
+        });
         room.chaseAnswerTimer = room.scheduleTimer(room.chaseAnswerWindowMs, () => {
             room.resolveChaseQuestion();
         });

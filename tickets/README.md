@@ -105,6 +105,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 069 | Highlight the contestant's and Chaser's *current* board space | done |
 | 070 | Lay out chase answer buttons side-by-side instead of stacked | done |
 | 071 | Chase question prompt is using the wrong font | done |
+| 072 | Chase lockout — strong, shared pulsing cue (background + buttons) synced from a `chaseLockoutStarted` broadcast | done |
 
 ### Whole-app polish
 | 067 | Full layout/design pass across all screens once every phase is implemented (discussion, not a solo build) | backlog |

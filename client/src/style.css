@@ -1334,6 +1334,28 @@ ul {
   max-width: 340px;
   margin: 10px auto;
   text-align: center;
+  box-sizing: border-box;
+  padding: 14px;
+  border-radius: 16px;
+}
+
+.chaseQuestionArea-lockout {
+  animation: chase-lockout-bg 0.5s ease-in-out infinite;
+}
+
+.chaseOptionButton-lockout {
+  animation: chase-lockout-scale 0.5s ease-in-out infinite;
+}
+
+@keyframes chase-lockout-bg {
+  0%, 100%  { background-color: rgba(0, 0, 0, 0); }
+  50%       { background-color: rgba(0, 0, 0, 0.5); }
+}
+
+@keyframes chase-lockout-scale {
+  0%   { transform: scale(0.98); }
+  50%  { transform: scale(1.02); }
+  100% { transform: scale(0.98); }
 }
 
 .chaseQuestion {

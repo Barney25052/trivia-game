@@ -47,6 +47,7 @@ const CHASER_QUIP_DISPLAY_MS = 6000;
 const chaseWagerAmount = ref(0);
 const chaseQuestionResult = ref(null);
 const chaseOutcome = ref(null);
+const chaseLockout = ref(null);
 // A frozen {activeContestantSeatId, chaserSeatId, players} snapshot shown on
 // the Chase screen during the result hold below — server state moves on to
 // the next contestant (or clears) in the same dispatch as chaseEscape/
@@ -128,6 +129,9 @@ function applyPhase(phase) {
   if (phase !== GamePhase.Offer) {
     currentOffer.value = null;
   }
+  if (phase !== GamePhase.Chase) {
+    chaseLockout.value = null;
+  }
 }
 
 function setPhaseFromServer(phase) {
@@ -194,6 +198,15 @@ async function joinLobby(playerName, roomCode) {
     room.value.onMessage("question", (message) => {
       currentQuestion.value = message;
       chaseQuestionResult.value = null;
+      chaseLockout.value = null;
+    });
+
+    room.value.onMessage("chaseLockoutStarted", (message) => {
+      chaseLockout.value = {
+        questionId: message.questionId,
+        windowMs: message.windowMs,
+        startedAt: Date.now()
+      };
     });
 
     room.value.onMessage("answerResult", (message) => {
@@ -374,6 +387,7 @@ function handleLeave() {
   pendingPhase = null;
   chaseOutcome.value = null;
   chaseFreeze.value = null;
+  chaseLockout.value = null;
 }
 
 function revealReady({ characterId } = {}) {
@@ -485,6 +499,7 @@ function sendChaserQuip(text) {
       :currentQuestion="currentRoundQuestion"
       :chaseQuestionResult="chaseQuestionResult"
       :chaseOutcome="chaseOutcome"
+      :chaseLockout="chaseLockout"
       :chaseWagerAmount="chaseWagerAmount"
       @submit-chase-answer="sendChaseAnswer"
       @auto-quip="showChaserQuip"

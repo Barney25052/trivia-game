@@ -13,6 +13,7 @@ const props = defineProps({
     currentQuestion: { type: Object, default: null },
     chaseQuestionResult: { type: Object, default: null },
     chaseOutcome: { type: String, default: null },
+    chaseLockout: { type: Object, default: null },
     chaseWagerAmount: { type: Number, default: 0 }
 });
 const emit = defineEmits(["submit-chase-answer", "auto-quip", "send-quip"]);
@@ -24,7 +25,6 @@ const BOARD_SPACES = [7, 6, 5, 4, 3, 2, 1];
 const ESCAPE_SPACE = 0;
 const ON_BOARD_MAX = 7;
 const CHASER_OFFBOARD = 8;
-const ANSWER_WINDOW_MS = 5000;
 
 const START_QUIPS = [
     "Let's see if you can escape.",
@@ -76,26 +76,6 @@ function formatAmount(amount) {
 }
 
 const myAnswerIndex = ref(null);
-const answerWindowLeft = ref(0);
-let answerWindowInterval = null;
-
-function clearAnswerWindow() {
-    if (answerWindowInterval) {
-        clearInterval(answerWindowInterval);
-        answerWindowInterval = null;
-    }
-}
-
-function startAnswerWindow() {
-    clearAnswerWindow();
-    answerWindowLeft.value = Math.ceil(ANSWER_WINDOW_MS / 1000);
-    answerWindowInterval = setInterval(() => {
-        answerWindowLeft.value -= 1;
-        if (answerWindowLeft.value <= 0) {
-            clearAnswerWindow();
-        }
-    }, 1000);
-}
 
 const resultForCurrentQuestion = computed(() => {
     if (!props.chaseQuestionResult || !props.currentQuestion) return null;
@@ -104,6 +84,59 @@ const resultForCurrentQuestion = computed(() => {
 });
 const revealed = computed(() => resultForCurrentQuestion.value !== null);
 const hasAnswered = computed(() => myAnswerIndex.value !== null);
+
+// The 5s lockout pulse + countdown (ticket 072) are not self-reported: they're
+// driven by the shared `chaseLockout` signal the server broadcasts the moment
+// either side answers first, so the contestant, the Chaser, and spectators all
+// see the same clock start from the same event. `windowMs` comes off the
+// server, not a client-side constant.
+const nowTick = ref(0);
+let lockoutInterval = null;
+
+const lockoutActive = computed(() => {
+    if (!props.chaseLockout || !props.currentQuestion) return false;
+    if (props.chaseLockout.questionId !== props.currentQuestion.questionId) return false;
+    if (revealed.value) return false;
+    return Date.now() < props.chaseLockout.startedAt + props.chaseLockout.windowMs;
+});
+
+const answerWindowLeft = computed(() => {
+    if (!lockoutActive.value) return 0;
+    return Math.max(0, Math.ceil(
+        (props.chaseLockout.startedAt + props.chaseLockout.windowMs - nowTick.value) / 1000
+    ));
+});
+
+function stopLockoutTicker() {
+    if (lockoutInterval) {
+        clearInterval(lockoutInterval);
+        lockoutInterval = null;
+    }
+    nowTick.value = 0;
+}
+
+function startLockoutTicker() {
+    stopLockoutTicker();
+    nowTick.value = Date.now();
+    lockoutInterval = setInterval(() => {
+        nowTick.value = Date.now();
+        if (!lockoutActive.value) {
+            stopLockoutTicker();
+        }
+    }, 250);
+}
+
+watch(
+    [() => props.chaseLockout, () => revealed.value],
+    () => {
+        if (lockoutActive.value) {
+            startLockoutTicker();
+        } else {
+            stopLockoutTicker();
+        }
+    },
+    { immediate: true }
+);
 
 // Long options shrink so they fit the fixed 190px button width without
 // overflowing (the shortest-size tier is applied when even the longest
@@ -119,12 +152,11 @@ function selectOption(index) {
     if (!isParticipant.value || hasAnswered.value || revealed.value || !props.currentQuestion) return;
     myAnswerIndex.value = index;
     emit("submit-chase-answer", { answerIndex: index, questionId: props.currentQuestion.questionId });
-    startAnswerWindow();
 }
 
 watch(() => props.currentQuestion, () => {
     myAnswerIndex.value = null;
-    clearAnswerWindow();
+    stopLockoutTicker();
 });
 
 watch(() => props.chaseOutcome, (outcome) => {
@@ -135,7 +167,7 @@ watch(() => props.chaseOutcome, (outcome) => {
     }
 });
 
-onUnmounted(() => clearAnswerWindow());
+onUnmounted(() => stopLockoutTicker());
 </script>
 
 <template>
@@ -169,7 +201,7 @@ onUnmounted(() => clearAnswerWindow());
         <div class="chaseEscapeSpace">ESCAPE</div>
       </div>
 
-      <div class="chaseQuestionArea">
+      <div class="chaseQuestionArea" :class="{ 'chaseQuestionArea-lockout': lockoutActive }">
         <template v-if="currentQuestion">
           <p class="chaseQuestion">{{ currentQuestion.prompt }}</p>
           <div class="chaseOptions">
@@ -181,7 +213,8 @@ onUnmounted(() => clearAnswerWindow());
                 {
                   'chaseOptionButton-picked': myAnswerIndex === index,
                   'chaseOptionButton-correct': revealed && resultForCurrentQuestion.correctIndex === index,
-                  'chaseOptionButton-wrong': revealed && myAnswerIndex === index && resultForCurrentQuestion.correctIndex !== index
+                  'chaseOptionButton-wrong': revealed && myAnswerIndex === index && resultForCurrentQuestion.correctIndex !== index,
+                  'chaseOptionButton-lockout': lockoutActive
                 },
                 optionFontClass
               ]"
@@ -191,13 +224,13 @@ onUnmounted(() => clearAnswerWindow());
           </div>
 
           <p v-if="isParticipant && hasAnswered && !revealed" class="playerName chaseWaitingStatus">
-            Locked in<span v-if="answerWindowLeft > 0"> — waiting ({{ answerWindowLeft }}s)</span>…
+            Locked in<span v-if="lockoutActive"> — waiting ({{ answerWindowLeft }}s)</span>…
           </p>
           <p v-else-if="isParticipant && !hasAnswered && !revealed" class="playerName chaseWaitingStatus">
-            Pick your answer!
+            Pick your answer!<span v-if="lockoutActive"> — {{ answerWindowLeft }}s left</span>
           </p>
           <p v-else-if="!isParticipant && !revealed" class="playerName chaseWaitingStatus">
-            {{ activeContestantName }} and the Chaser are answering…
+            {{ activeContestantName }} and the Chaser are answering…<span v-if="lockoutActive"> ({{ answerWindowLeft }}s)</span>
           </p>
         </template>
         <p v-else class="playerName">Waiting for the next question…</p>
