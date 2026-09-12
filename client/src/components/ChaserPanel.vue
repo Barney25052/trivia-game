@@ -14,7 +14,11 @@ const props = defineProps({
     characterId: { type: String, default: "" },
     quipText: { type: String, default: "" },
     quipKey: { type: Number, default: 0 },
-    isChaser: { type: Boolean, default: false }
+    isChaser: { type: Boolean, default: false },
+    // Hides the composable "Say something..." input row (ticket 097) — the
+    // Chaser Final passes false so the Chaser only tabs into the answer
+    // input. The bubble and broadcast quips still render either way.
+    quipInput: { type: Boolean, default: true }
 });
 const emit = defineEmits(["send-quip"]);
 
@@ -32,20 +36,20 @@ const names = {
 const portrait = computed(() => portraits[props.characterId] ?? null);
 const displayName = computed(() => names[props.characterId] ?? "");
 
-const quipInput = ref("");
+const quipDraft = ref("");
 const onCooldown = ref(false);
 let cooldownTimeout = null;
 
 const sendDisabled = computed(() => {
-    const trimmed = quipInput.value.trim();
+    const trimmed = quipDraft.value.trim();
     return onCooldown.value || trimmed.length === 0 || trimmed.length > MAX_QUIP_LENGTH;
 });
 
 function submitQuip() {
-    const text = quipInput.value.trim();
+    const text = quipDraft.value.trim();
     if (onCooldown.value || text.length === 0 || text.length > MAX_QUIP_LENGTH) return;
     emit("send-quip", text);
-    quipInput.value = "";
+    quipDraft.value = "";
     onCooldown.value = true;
     if (cooldownTimeout) clearTimeout(cooldownTimeout);
     cooldownTimeout = setTimeout(() => {
@@ -69,9 +73,9 @@ function submitQuip() {
         </Transition>
         <p v-if="displayName" class="playerName chaserPanelName">{{ displayName }}</p>
 
-        <div v-if="isChaser" class="chaserPanelInputRow">
+        <div v-if="isChaser && quipInput" class="chaserPanelInputRow">
             <input
-                v-model="quipInput"
+                v-model="quipDraft"
                 type="text"
                 class="chaserPanelInput"
                 placeholder="Say something..."

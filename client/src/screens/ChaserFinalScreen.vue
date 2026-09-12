@@ -229,6 +229,7 @@ function submitSteal() {
           :quip-text="chaserQuipText"
           :quip-key="chaserQuipKey"
           :is-chaser="isChaser"
+          :quip-input="false"
           @send-quip="emit('send-quip', $event)"
       />
     </div>
