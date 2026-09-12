@@ -64,7 +64,7 @@ function submitQuip() {
                 class="chaserPanelPortrait"
             />
         </div>
-        <Transition name="offer-pop">
+        <Transition name="chaser-bubble-pop">
             <div v-if="quipText" :key="quipKey" class="chaserPanelBubble">{{ quipText }}</div>
         </Transition>
         <p v-if="displayName" class="playerName chaserPanelName">{{ displayName }}</p>

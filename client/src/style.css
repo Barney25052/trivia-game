@@ -941,6 +941,16 @@ ul {
   border-top: 8px solid #ffffff;
 }
 
+.chaser-bubble-pop-enter-active {
+  animation: chaser-bubble-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes chaser-bubble-pop {
+  0%   { transform: translateX(-50%) scale(0.3); }
+  60%  { transform: translateX(-50%) scale(1.15); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
 .chaserPanelInputRow {
   display: flex;
   align-items: center;
