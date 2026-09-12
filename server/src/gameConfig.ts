@@ -131,6 +131,22 @@ export const OPEN_TDB = {
     maxRetries: 5
 } as const;
 
+/** Bounded recovery around a single chase question draw (ticket 074): the
+ * live OpenTDB source already retries at the fetch level (OPEN_TDB.retries),
+ * but a whole draw can still fail or come back empty. This governs the outer
+ * retry loop before the room falls back to the local MC backup pool
+ * (ticket 090), and only resolves the round as caught if that pool is itself
+ * exhausted — the room must never simply hang. */
+export const MC_SOURCE = {
+    /** Extra draw attempts against the live source beyond the first. */
+    retries: 2,
+    maxRetries: 5,
+    /** Delay between draw attempts. */
+    retryDelayMs: 200,
+    minRetryDelayMs: 0,
+    maxRetryDelayMs: 5_000
+} as const;
+
 export const ROOM_SETTINGS = {
     max_clients: 6
 } as const;

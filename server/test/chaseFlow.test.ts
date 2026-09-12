@@ -3,7 +3,7 @@ import { ColyseusTestServer } from "@colyseus/testing";
 import appConfig from "../src/app.config.js";
 import { GameState } from "../src/rooms/schema/GameState.js";
 import { GamePhase } from "../src/TriviaTypes.js";
-import { BOARD, CHASE_QUESTION } from "../src/gameConfig.js";
+import { BOARD, CHASE_QUESTION, CHASER_POT } from "../src/gameConfig.js";
 import { cleanup, getTestServer } from "./testServer.js";
 import { seatIdOf } from "./seatIdHelper.js";
 
@@ -48,19 +48,18 @@ function stubChaseSource() {
     };
 }
 
-/** Two players (one contestant, one Chaser) walked into Chase with a stub MC
- * source and a test-friendly answer window; returns the first question's
- * broadcast payload alongside the room and clients. */
-async function reachChase(
+/** Two players walked all the way up to (but not including) the offer choice
+ * that triggers startChase — lets a test swap in its own mcQuestionSource /
+ * mcBackupSource before the first chase question is drawn (ticket 074). */
+async function reachOfferReady(
     colyseus: ColyseusTestServer<typeof appConfig>,
-    opts?: { chaseAnswerWindowMs?: number; offer?: "low" | "middle" | "high" }
+    opts?: { chaseAnswerWindowMs?: number }
 ): Promise<{
     room: any;
     contestantClient: any;
     chaserClient: any;
     contestantSeatId: string;
     chaserSeatId: string;
-    firstQuestion: any;
 }> {
     const room = await colyseus.createRoom<GameState>("trivia", {
         cashBuilderDurationMs: 80,
@@ -94,6 +93,26 @@ async function reachChase(
     await sleep(30);
     chaserClient.send("setChaserHighOffer", { amount: 2000 });
     await sleep(30);
+
+    return { room, contestantClient, chaserClient, contestantSeatId, chaserSeatId };
+}
+
+/** Two players (one contestant, one Chaser) walked into Chase with a stub MC
+ * source and a test-friendly answer window; returns the first question's
+ * broadcast payload alongside the room and clients. */
+async function reachChase(
+    colyseus: ColyseusTestServer<typeof appConfig>,
+    opts?: { chaseAnswerWindowMs?: number; offer?: "low" | "middle" | "high" }
+): Promise<{
+    room: any;
+    contestantClient: any;
+    chaserClient: any;
+    contestantSeatId: string;
+    chaserSeatId: string;
+    firstQuestion: any;
+}> {
+    const { room, contestantClient, chaserClient, contestantSeatId, chaserSeatId } =
+        await reachOfferReady(colyseus, opts);
 
     const questionMessage = contestantClient.waitForMessage("question");
     contestantClient.send("offerChoice", { offer: opts?.offer ?? "middle" });
@@ -421,5 +440,154 @@ describe("chase flow (ticket 064)", () => {
             "a stray answer from a non-participant must not move the board"
         );
         assert.strictEqual(room.state.currentPhase, GamePhase.Chase, "the round must still be answerable");
+    });
+});
+
+/** A stub `McQuestionSource` whose behaviour is scripted call-by-call: each
+ * entry in `plan` is either "throw" or "empty" for that call, or a fixed
+ * question payload; once `plan` is exhausted it repeats the last entry. */
+function scriptedSource(plan: Array<"throw" | "empty" | { count?: number }>) {
+    let call = 0;
+    return {
+        async getQuestions(amount: number) {
+            const step = plan[Math.min(call, plan.length - 1)];
+            call += 1;
+            if (step === "throw") {
+                throw new Error("stub source failure");
+            }
+            if (step === "empty") {
+                return [];
+            }
+            const out = [];
+            for (let i = 0; i < amount; i += 1) {
+                out.push({
+                    id: `scripted-${call}-${i}`,
+                    question: `Scripted question ${call}-${i}?`,
+                    category: "Stub",
+                    options: ["Correct Answer", "Wrong A", "Wrong B", "Wrong C"],
+                    correctIndex: 0
+                });
+            }
+            return out;
+        }
+    };
+}
+
+/** A stub backup pool: a small fixed list of questions, or an empty one to
+ * simulate the backup itself being exhausted. */
+function stubBackupSource(count: number) {
+    let served = 0;
+    return {
+        async getQuestions(amount: number) {
+            const out = [];
+            for (let i = 0; i < amount && served < count; i += 1) {
+                served += 1;
+                out.push({
+                    id: `backup-${served}`,
+                    question: `Backup question ${served}?`,
+                    category: "Backup",
+                    options: ["Correct Answer", "Wrong A", "Wrong B", "Wrong C"],
+                    correctIndex: 0
+                });
+            }
+            return out;
+        }
+    };
+}
+
+describe("chase question-source recovery (ticket 074)", () => {
+    let colyseus: ColyseusTestServer<typeof appConfig>;
+
+    beforeEach(async () => {
+        colyseus = await getTestServer();
+        await cleanup();
+    });
+
+    it("live source failing every attempt falls back to the MC backup pool and the chase plays normally", async () => {
+        const { room, contestantClient, chaserClient, contestantSeatId } = await reachOfferReady(colyseus);
+        room.mcQuestionSource = scriptedSource(["throw"]);
+        room.mcBackupSource = stubBackupSource(10);
+
+        const questionMessage = contestantClient.waitForMessage("question");
+        contestantClient.send("offerChoice", { offer: "middle" });
+        const question = await questionMessage;
+
+        assert.strictEqual(question.kind, "mc");
+        assert.ok(question.options.includes("Correct Answer"));
+
+        const correctIndex = question.options.indexOf("Correct Answer");
+        const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
+        contestantClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+        chaserClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+        const result = await resultPromise;
+
+        assert.strictEqual(result.contestantCorrect, true);
+        assert.strictEqual(
+            room.state.players.get(contestantSeatId).boardPos,
+            BOARD.startMiddle - 1,
+            "the chase continues to play normally once served from the backup pool"
+        );
+    });
+
+    it("a source that throws once then succeeds keeps playing from the live source, no backup used", async () => {
+        const { room, contestantClient, chaserClient } = await reachOfferReady(colyseus);
+        room.mcQuestionSource = scriptedSource(["throw", { count: 1 }]);
+        room.mcBackupSource = stubBackupSource(0);
+
+        const questionMessage = contestantClient.waitForMessage("question");
+        contestantClient.send("offerChoice", { offer: "middle" });
+        const question = await questionMessage;
+
+        assert.ok(
+            question.questionId.startsWith("scripted-"),
+            "the recovered question came from the live source, not an empty backup pool"
+        );
+
+        const correctIndex = question.options.indexOf("Correct Answer");
+        const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
+        contestantClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+        chaserClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+        const result = await resultPromise;
+        assert.strictEqual(result.contestantCorrect, true);
+    });
+
+    it("an empty draw (no error, just no questions) falls back to the backup pool the same way", async () => {
+        const { room, contestantClient, chaserClient } = await reachOfferReady(colyseus);
+        room.mcQuestionSource = scriptedSource(["empty"]);
+        room.mcBackupSource = stubBackupSource(10);
+
+        const questionMessage = contestantClient.waitForMessage("question");
+        contestantClient.send("offerChoice", { offer: "middle" });
+        const question = await questionMessage;
+
+        assert.ok(question.questionId.startsWith("backup-"));
+
+        const correctIndex = question.options.indexOf("Correct Answer");
+        const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
+        contestantClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+        chaserClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+        const result = await resultPromise;
+        assert.strictEqual(result.contestantCorrect, true);
+    });
+
+    it("live source failing and the backup pool exhausted resolves the round as caught instead of hanging", async () => {
+        const { room, contestantClient, contestantSeatId } = await reachOfferReady(colyseus);
+        room.mcQuestionSource = scriptedSource(["throw"]);
+        room.mcBackupSource = stubBackupSource(0);
+        const chaserPotBefore = room.state.chaserPot;
+
+        contestantClient.send("offerChoice", { offer: "middle" });
+        await waitForPhase(room, GamePhase.TeamFinal, 3000);
+
+        assert.strictEqual(
+            room.state.players.get(contestantSeatId).isEliminated,
+            true,
+            "the contestant is resolved as caught when no question source can serve one"
+        );
+        assert.strictEqual(
+            room.state.chaserPot,
+            chaserPotBefore + CHASER_POT.perRound,
+            "a caught contestant still grows the chaser pot"
+        );
     });
 });

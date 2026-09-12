@@ -11,7 +11,8 @@ import {
 import { scheduleTimer, TimerHandle } from "../timer.js";
 import { QuestionManager } from "../questions/questionManager.js";
 import { loadBank, BankQuestion } from "../questions/bank.js";
-import { createOpenTdbQuestionSource, McQuestionSource } from "../questions/opentdb.js";
+import { createOpenTdbQuestionSource, McQuestion, McQuestionSource } from "../questions/opentdb.js";
+import { createMcBackupQuestionSource } from "../questions/mcBackup.js";
 import { pickChaseOptions } from "../questions/chaseOptions.js";
 import {
   BOARD,
@@ -21,6 +22,7 @@ import {
   CHASER_REVEAL,
   FINAL_ROUND,
   LINEUP,
+  MC_SOURCE,
   PLAYER_NAME,
   RATE_LIMIT,
   REVEAL_READY,
@@ -87,6 +89,10 @@ export class TriviaRoom extends Room {
   questionManager = new QuestionManager();
   questionBank: BankQuestion[] = [];
   mcQuestionSource: McQuestionSource = createOpenTdbQuestionSource();
+  /** Local fallback pool (ticket 090), drawn only once the live source's
+   * bounded retries (ticket 074) are exhausted — a network blip must never
+   * strand a Chase. */
+  mcBackupSource: McQuestionSource = createMcBackupQuestionSource();
   currentChaseQuestion: ActiveChaseQuestion | null = null;
   chaseAnswers: Partial<Record<ChaseRole, number>> = {};
   chaseAnswerTimer: TimerHandle | null = null;
@@ -162,22 +168,49 @@ export class TriviaRoom extends Room {
   /** Draws the next MC question for the chase and broadcasts it — the option
    * list shown to clients is narrowed to `CHASE_QUESTION.optionCount` options,
    * and `correctIndex` is held only in `currentChaseQuestion`, never sent. */
+  /** Bounded recovery around a single chase question draw (ticket 074): the
+   * live source (OpenTDB) already retries at the fetch level, but a whole
+   * draw can still throw or come back empty (network blip, rate limit). Retry
+   * a small bounded number of times, then fall back to the local MC backup
+   * pool (ticket 090) — only returning null if that pool is itself exhausted. */
+  private async drawChaseQuestion(): Promise<McQuestion | null> {
+    for (let attempt = 0; attempt <= MC_SOURCE.retries; attempt += 1) {
+      try {
+        const drawn = await this.mcQuestionSource.getQuestions(1);
+        if (drawn[0]) {
+          return drawn[0];
+        }
+      } catch (error) {
+        console.error(`Chase question draw attempt ${attempt + 1} failed:`, error);
+      }
+      if (attempt < MC_SOURCE.retries) {
+        await new Promise((resolve) => setTimeout(resolve, MC_SOURCE.retryDelayMs));
+      }
+    }
+
+    console.warn("Chase question source exhausted its retries — falling back to the local MC backup pool");
+    try {
+      const backupDrawn = await this.mcBackupSource.getQuestions(1);
+      if (backupDrawn[0]) {
+        return backupDrawn[0];
+      }
+    } catch (error) {
+      console.error("MC backup pool draw failed:", error);
+    }
+    return null;
+  }
+
   private async startNextChaseQuestion(): Promise<void> {
     this.currentChaseQuestion = null;
     this.chaseAnswers = {};
 
-    let drawn;
-    try {
-      drawn = await this.mcQuestionSource.getQuestions(1);
-    } catch (error) {
-      console.error("Failed to draw a chase question:", error);
-      this.broadcast("question", null);
-      return;
-    }
-    const question = drawn[0];
+    const question = await this.drawChaseQuestion();
     if (!question) {
-      console.error("Chase question source returned no questions");
-      this.broadcast("question", null);
+      // Both the live source and the local backup are exhausted — this is
+      // the last resort so the room never hangs. Resolve the round as caught
+      // rather than leave it unanswerable forever (ticket 074).
+      console.error("Chase question source and the MC backup pool are both exhausted — resolving the round as caught");
+      this.dispatch({ type: "contestantForfeit" });
       return;
     }
 
