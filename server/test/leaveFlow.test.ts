@@ -52,6 +52,7 @@ async function createForfeitRoom(
         cashBuilderDurationMs: 200,
         chaserSelectionDurationMs: 10000,
         chaserRevealDurationMs: 80,
+        chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80,
         teamFinalDurationMs: 80

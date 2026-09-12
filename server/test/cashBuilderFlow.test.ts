@@ -43,6 +43,7 @@ async function openCashBuilder(
         cashBuilderDurationMs: opts?.cashBuilderDurationMs ?? 8000,
         chaserSelectionDurationMs: 80,
         chaserRevealDurationMs: 80,
+        chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80,
         wrongAnswerRevealMs: opts?.wrongAnswerRevealMs ?? 0
@@ -262,6 +263,7 @@ describe("cashBuilderFlow (integration)", () => {
             cashBuilderDurationMs: 80,
             chaserSelectionDurationMs: 80,
             chaserRevealDurationMs: 80,
+            chaserCharacterRevealDurationMs: 80,
             revealReadyCooldownMs: 80,
             lineupDurationMs: 80
         });

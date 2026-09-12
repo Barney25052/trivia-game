@@ -11,6 +11,7 @@ export type FlowEvent =
     | { type: "lineupComplete" }
     | { type: "readyCooldownDone" }
     | { type: "cashBuilderTimeout" }
+    | { type: "chaserCharacterRevealComplete" }
     | { type: "chaserOffersSet"; low: number; high: number }
     | { type: "contestantChoice"; offer: OfferTier }
     | { type: "chaseEscape" }
@@ -42,6 +43,7 @@ export type FlowEffect =
     | { type: "assignChaser"; seatId: string }
     | { type: "startChaserReveal" }
     | { type: "startRolesReveal" }
+    | { type: "startChaserCharacterReveal" }
     | { type: "startLineup" }
     | { type: "startReadyCooldown"; seatId: string; round: number }
     | { type: "startCashBuilder"; seatId: string; round: number }
@@ -176,6 +178,22 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
 
         case "cashBuilderTimeout": {
             ensurePhase(event, context, GamePhase.CashBuilder);
+            // The Chaser's character gets its own dramatic reveal once, after the
+            // first contestant's cash builder — not replayed on later rounds.
+            if (context.activeRound === 1) {
+                return {
+                    nextPhase: GamePhase.ChaserCharacterReveal,
+                    effects: [{ type: "startChaserCharacterReveal" }]
+                };
+            }
+            return {
+                nextPhase: GamePhase.Offer,
+                effects: [{ type: "startOffer", seatId: context.activeContestantSeatId }]
+            };
+        }
+
+        case "chaserCharacterRevealComplete": {
+            ensurePhase(event, context, GamePhase.ChaserCharacterReveal);
             return {
                 nextPhase: GamePhase.Offer,
                 effects: [{ type: "startOffer", seatId: context.activeContestantSeatId }]

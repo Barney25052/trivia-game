@@ -48,6 +48,7 @@ describe("roomFlow", () => {
       cashBuilderDurationMs: 250,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
+      chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 100,
       lineupDurationMs: 80
     });
@@ -176,6 +177,71 @@ describe("roomFlow", () => {
     assert.ok(phases.includes(GamePhase.RolesReveal), "should have broadcast rolesReveal phase");
   });
 
+  it("chaser character reveal is a one-time phase after the first contestant's cash builder: broadcasts the chosen character, holds, then advances to Offer; later rounds skip it (ticket 059)", async () => {
+    const room = await colyseus.createRoom<GameState>("trivia", {
+      cashBuilderDurationMs: 80,
+      chaserSelectionDurationMs: 80,
+      chaserRevealDurationMs: 80,
+      chaserCharacterRevealDurationMs: 200,
+      revealReadyCooldownMs: 80,
+      lineupDurationMs: 80
+    });
+
+    const alice = await colyseus.connectTo(room, { playerName: "Alice" });
+    const bob = await colyseus.connectTo(room, { playerName: "Bob" });
+    const carol = await colyseus.connectTo(room, { playerName: "Carol" });
+    await sleep(100);
+
+    const bySession = new Map<string, typeof alice>(
+      [alice, bob, carol].map((client) => [seatIdOf(room, client), client])
+    );
+
+    const phases: string[] = [];
+    alice.onMessage("phase", (message: any) => phases.push(message.phase));
+    const revealMessage = alice.waitForMessage("chaserCharacterReveal");
+
+    alice.send("startGame");
+    await waitForPhase(room, GamePhase.RolesReveal);
+    alice.send("revealReady", { characterId: "bezos" });
+    bob.send("revealReady", { characterId: "bezos" });
+    carol.send("revealReady", { characterId: "bezos" });
+    await waitForPhase(room, GamePhase.CashBuilder);
+
+    const chaserClient = bySession.get(room.state.chaserSeatId);
+    room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney = 1000;
+
+    // Round 1: cashBuilder timeout -> the one-time character reveal, not straight to Offer.
+    await waitForPhase(room, GamePhase.ChaserCharacterReveal);
+    assert.strictEqual(room.state.activeRound, 1);
+
+    const reveal = await revealMessage;
+    assert.strictEqual(reveal.chaserCharacterId, "bezos");
+    assert.strictEqual(reveal.chaserCharacterName, "Bezos");
+
+    // The reveal is a hold: it stays put until its own timer fires.
+    await sleep(120);
+    assert.strictEqual(room.state.currentPhase, GamePhase.ChaserCharacterReveal);
+
+    await waitForPhase(room, GamePhase.Offer);
+
+    const first = bySession.get(room.state.activeContestantSeatId);
+    await setChaserOffers(chaserClient, 0, 2000);
+    first.send("offerChoice", { offer: "middle" });
+    await waitForPhase(room, GamePhase.Chase);
+    first.send("chaseResult", { escaped: true });
+
+    // Round 2: cashBuilder timeout skips straight to Offer — no reveal replay.
+    await waitForPhase(room, GamePhase.CashBuilder);
+    assert.strictEqual(room.state.activeRound, 2);
+    await waitForPhase(room, GamePhase.Offer);
+
+    assert.strictEqual(
+      phases.filter((phase) => phase === GamePhase.ChaserCharacterReveal).length,
+      1,
+      "the character reveal is broadcast exactly once for the whole game"
+    );
+  });
+
   it("lineup is its own hold phase: after all-ready it shows the turn order, then the timer auto-advances to the cash builder", async () => {
     const room = await colyseus.createRoom<GameState>("trivia", {
       cashBuilderDurationMs: 80,
@@ -250,6 +316,7 @@ describe("roomFlow", () => {
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
+      chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80,
       teamFinalDurationMs: 80
@@ -329,6 +396,7 @@ alice.send("startGame");
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
+      chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80
     });
@@ -375,6 +443,7 @@ alice.send("startGame");
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
+      chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80
     });
@@ -416,6 +485,7 @@ alice.send("startGame");
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
+      chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80,
       teamFinalDurationMs: 80
@@ -586,6 +656,7 @@ alice.send("chaserVote", { targetSeatId: seatIdOf(room, bob) });
         cashBuilderDurationMs: 250,
         chaserSelectionDurationMs: 80,
         chaserRevealDurationMs: 80,
+        chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80
       });

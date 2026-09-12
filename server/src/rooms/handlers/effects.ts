@@ -1,7 +1,14 @@
 import { FlowEffect } from "../../gameFlow.js";
 import { PlayerRole } from "../../TriviaTypes.js";
 import * as chaserSelection from "./chaserSelection.js";
-import { CHASER_CHARACTERS, CHASER_POT, CHASER_REVEAL, CHASER_SELECTION, LINEUP } from "../../gameConfig.js";
+import {
+  CHASER_CHARACTERS,
+  CHASER_CHARACTER_REVEAL,
+  CHASER_POT,
+  CHASER_REVEAL,
+  CHASER_SELECTION,
+  LINEUP,
+} from "../../gameConfig.js";
 
 export function applyEffects(effects: FlowEffect[], room: any, context: any): void {
     for (const effect of effects) {
@@ -66,6 +73,22 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           room.broadcast("getReady", { cooldownMs: room.revealReadyCooldownMs });
           room.activeTimer = room.scheduleTimer(room.revealReadyCooldownMs, () => {
             room.dispatch({ type: "readyCooldownDone" });
+          });
+          break;
+        }
+
+        case "startChaserCharacterReveal": {
+          const duration = room.chaserCharacterRevealDurationMs ?? CHASER_CHARACTER_REVEAL.durationMs;
+          const chaser = room.state.players.get(room.state.chaserSeatId);
+          const chaserCharId = chaser?.chaserCharacterId ?? "";
+          const chaserChar = CHASER_CHARACTERS.find((c) => c.id === chaserCharId);
+          console.log(`Chaser character reveal — ${chaserChar?.name ?? chaserCharId} (${duration}ms)`);
+          room.broadcast("chaserCharacterReveal", {
+            chaserCharacterId: chaserCharId,
+            chaserCharacterName: chaserChar?.name ?? ""
+          });
+          room.activeTimer = room.scheduleTimer(duration, () => {
+            room.dispatch({ type: "chaserCharacterRevealComplete" });
           });
           break;
         }

@@ -37,6 +37,7 @@ describe("chaserPot lifecycle", () => {
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
+      chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80
     });
@@ -61,6 +62,7 @@ describe("chaserPot lifecycle", () => {
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
+      chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80
     });
@@ -104,6 +106,7 @@ describe("chaserPot lifecycle", () => {
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
+      chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80
     });
@@ -145,6 +148,7 @@ describe("chaserPot lifecycle", () => {
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
+      chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80
     });

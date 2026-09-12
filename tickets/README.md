@@ -94,7 +94,7 @@ Granular, agent-sized work items. One ticket = one task = one agent session (or 
 | 062 | Fix cash-builder answer input silently swallowing submissions (`bug-008`) | backlog |
 
 ### Phase 3 follow-up — new feature
-| 059 | Chaser character reveal — new phase after the first cash builder, before the first offer | backlog |
+| 059 | Chaser character reveal — new phase after the first cash builder, before the first offer | done |
 
 ### Phase 4 — The board chase
 | 063 | Extend the question bank to multiple-choice | backlog |

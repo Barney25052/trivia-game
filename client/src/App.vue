@@ -7,6 +7,7 @@ import HomeScreen from "./screens/HomeScreen.vue"
 import LobbyScreen from "./screens/LobbyScreen.vue";
 import ChaserSelectionScreen from "./screens/ChaserSelectionScreen.vue";
 import ChaserWheelScreen from "./screens/ChaserWheelScreen.vue";
+import ChaserCharacterRevealScreen from "./screens/ChaserCharacterRevealScreen.vue";
 import RolesRevealScreen from "./screens/RolesRevealScreen.vue";
 import ContestantLineupScreen from "./screens/ContestantLineupScreen.vue";
 import CashBuilderScreen from "./screens/CashBuilderScreen.vue";
@@ -37,6 +38,8 @@ const winner = ref(null);
 const getReadyCooldownMs = ref(0);
 const currentQuestion = ref(null);
 const answerResult = ref(null);
+const revealChaserCharacterId = ref("");
+const revealChaserCharacterName = ref("");
 const chaserQuipText = ref("");
 const chaserQuipKey = ref(0);
 let chaserQuipClearTimeout = null;
@@ -51,6 +54,7 @@ const currentScreen = computed(() => {
     case GamePhase.RolesReveal: return "rolesReveal";
     case GamePhase.Lineup: return "lineup";
     case GamePhase.CashBuilder: return "cashBuilder";
+    case GamePhase.ChaserCharacterReveal: return "chaserCharacterReveal";
     case GamePhase.Offer: return "offer";
     case GamePhase.Chase: return "chase";
     case GamePhase.TeamFinal: return "teamFinal";
@@ -160,6 +164,11 @@ async function joinLobby(playerName, roomCode) {
 
     room.value.onMessage("chaserQuip", (message) => {
       showChaserQuip(message.text);
+    });
+
+    room.value.onMessage("chaserCharacterReveal", (message) => {
+      revealChaserCharacterId.value = message.chaserCharacterId;
+      revealChaserCharacterName.value = message.chaserCharacterName;
     });
 
     room.value.onMessage("offerStart", (message) => {
@@ -361,6 +370,11 @@ function sendChaserQuip(text) {
       :cashBuilderCorrectAnswers="activeContestantCorrectAnswers"
       :answerResult="answerResult"
       @submit-answer="submitAnswer"
+    />
+    <ChaserCharacterRevealScreen
+      v-if="currentScreen=='chaserCharacterReveal'"
+      :chaserCharacterId="revealChaserCharacterId"
+      :chaserCharacterName="revealChaserCharacterName"
     />
     <OfferScreen
       v-if="currentScreen=='offer'"

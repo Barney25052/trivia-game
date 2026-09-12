@@ -191,8 +191,23 @@ describe("gameFlow transition", () => {
     });
 
     describe("cashBuilderTimeout", () => {
-        it("cashBuilder + timeout -> offer for the active contestant", () => {
-            const ctx = context({ currentPhase: GamePhase.CashBuilder, activeContestantSeatId: "bob" });
+        it("round 1: cashBuilder + timeout -> chaserCharacterReveal (the one-time reveal), not straight to offer", () => {
+            const ctx = context({
+                currentPhase: GamePhase.CashBuilder,
+                activeContestantSeatId: "bob",
+                activeRound: 1
+            });
+            const result = transition({ type: "cashBuilderTimeout" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.ChaserCharacterReveal);
+            assert.deepStrictEqual(result.effects, [{ type: "startChaserCharacterReveal" }]);
+        });
+
+        it("round 2+: cashBuilder + timeout -> offer directly, no reveal replay", () => {
+            const ctx = context({
+                currentPhase: GamePhase.CashBuilder,
+                activeContestantSeatId: "bob",
+                activeRound: 2
+            });
             const result = transition({ type: "cashBuilderTimeout" }, ctx);
             assert.strictEqual(result.nextPhase, GamePhase.Offer);
             assert.deepStrictEqual(result.effects, [{ type: "startOffer", seatId: "bob" }]);
@@ -202,6 +217,25 @@ describe("gameFlow transition", () => {
             assert.throws(
                 () => transition({ type: "cashBuilderTimeout" }, context()),
                 /cashBuilderTimeout is not valid in phase lobby/
+            );
+        });
+    });
+
+    describe("chaserCharacterRevealComplete", () => {
+        it("chaserCharacterReveal + complete -> offer for the active contestant", () => {
+            const ctx = context({
+                currentPhase: GamePhase.ChaserCharacterReveal,
+                activeContestantSeatId: "bob"
+            });
+            const result = transition({ type: "chaserCharacterRevealComplete" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.Offer);
+            assert.deepStrictEqual(result.effects, [{ type: "startOffer", seatId: "bob" }]);
+        });
+
+        it("throws if not in chaserCharacterReveal", () => {
+            assert.throws(
+                () => transition({ type: "chaserCharacterRevealComplete" }, context()),
+                /chaserCharacterRevealComplete is not valid in phase lobby/
             );
         });
     });
@@ -426,7 +460,8 @@ describe("gameFlow transition", () => {
                 { type: "revealAllReady" },
                 { type: "lineupComplete" },
                 { type: "readyCooldownDone" },
-                { type: "cashBuilderTimeout" },
+                { type: "cashBuilderTimeout" },       // round 1 -> chaserCharacterReveal (one-time)
+                { type: "chaserCharacterRevealComplete" },
                 { type: "contestantChoice", offer: "high" },
                 { type: "chaseEscape" },           // alice makes it back
                 { type: "cashBuilderTimeout" },
@@ -467,10 +502,11 @@ describe("gameFlow transition", () => {
                 GamePhase.Lineup,       // the turn-order interstitial
                 GamePhase.CashBuilder,   // ready cooldown, then...
                 GamePhase.CashBuilder,    // ...the cash builder runs
+                GamePhase.ChaserCharacterReveal, // round 1 only, before the first offer
                 GamePhase.Offer,
                 GamePhase.Chase,
                 GamePhase.CashBuilder,
-                GamePhase.Offer,
+                GamePhase.Offer,          // round 2 -> straight to offer, no reveal replay
                 GamePhase.Chase,
                 GamePhase.TeamFinal
             ]);

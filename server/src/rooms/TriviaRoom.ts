@@ -13,6 +13,7 @@ import { QuestionManager } from "../questions/questionManager.js";
 import { loadBank, BankQuestion } from "../questions/bank.js";
 import {
   CASH_BUILDER,
+  CHASER_CHARACTER_REVEAL,
   CHASER_REVEAL,
   FINAL_ROUND,
   LINEUP,
@@ -56,6 +57,7 @@ export class TriviaRoom extends Room {
   wrongAnswerRevealMs: number = CASH_BUILDER.wrongAnswerRevealMs;
   chaserSelectionDurationMs: number | null = null;
   chaserRevealDurationMs: number = CHASER_REVEAL.durationMs;
+  chaserCharacterRevealDurationMs: number = CHASER_CHARACTER_REVEAL.durationMs;
   revealReadyCooldownMs: number = REVEAL_READY.cooldownMs;
   lineupDurationMs: number = LINEUP.durationMs;
   teamFinalDurationMs: number = FINAL_ROUND.teamDurationMs;
