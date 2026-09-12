@@ -15,6 +15,7 @@ import mouthNeutral from "../assets/images/mouth.png";
 
 const props = defineProps({
     teamScore: { type: Number, default: 0 },
+    chaserScore: { type: Number, default: 0 },
     teamPot: { type: Number, default: 0 },
     players: { type: Array, default: () => [] },
     mySeatId: { type: String, default: "" },
@@ -70,6 +71,18 @@ onUnmounted(() => {
 
 const isChaser = computed(() => props.mySeatId !== "" && props.mySeatId === props.chaserSeatId);
 const teamPlayers = computed(() => props.players.filter((p) => p.seatId !== props.chaserSeatId));
+
+// Mirrors ChaserFinalScreen's target row: one box per point of teamScore,
+// filled by chaserScore. During the team's own section chaserScore is still
+// 0, so it renders as the empty target the team is filling as they answer
+// correctly.
+const targetBoxes = computed(() =>
+    Array.from({ length: Math.max(props.teamScore, 1) }, (_, i) => ({
+        index: i + 1,
+        filled: i + 1 <= props.chaserScore
+    }))
+);
+
 const isBuzzWinner = computed(() => props.finalBuzzSeatId !== "" && props.finalBuzzSeatId === props.mySeatId);
 const buzzWinnerName = computed(
     () => teamPlayers.value.find((p) => p.seatId === props.finalBuzzSeatId)?.name ?? "A teammate"
@@ -136,6 +149,15 @@ watch(isBuzzWinner, (winner) => {
   <div class="teamFinalRoot">
     <h2 class="lobbyTitle">The Team Final</h2>
     <p class="playerName teamFinalScore">Time left: {{ secondsLeft }}s · Team score: {{ teamScore }}</p>
+
+    <div class="finalTargetRow">
+      <div
+          v-for="box in targetBoxes"
+          :key="box.index"
+          class="finalTargetBox"
+          :class="{ 'finalTargetBox-filled': box.filled }"
+      >{{ box.index }}</div>
+    </div>
 
     <div v-if="isChaser" class="teamFinalQuestionArea">
       <p class="playerName">Chaser, your round is next — you're up after the team.</p>

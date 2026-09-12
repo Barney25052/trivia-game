@@ -643,6 +643,7 @@ function sendChaserQuip(text) {
     <TeamFinalScreen
       v-if="currentScreen=='teamFinal'"
       :teamScore="teamScore"
+      :chaserScore="chaserScore"
       :teamPot="teamPot"
       :players="players"
       :mySeatId="mySeatId"

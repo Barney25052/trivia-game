@@ -1995,14 +1995,14 @@ ul {
   padding: 20px;
 }
 
-.chaserFinalTargetRow {
+.finalTargetRow {
   display: flex;
   width: 100%;
   gap: 6px;
   margin: 10px 0;
 }
 
-.chaserFinalTargetBox {
+.finalTargetBox {
   flex: 1 1 0;
   box-sizing: border-box;
   height: 46px;
@@ -2019,7 +2019,7 @@ ul {
   transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
 }
 
-.chaserFinalTargetBox-filled {
+.finalTargetBox-filled {
   background-color: var(--chaser-red-glow);
   box-shadow: 0 0 14px var(--chaser-red-glow);
 }

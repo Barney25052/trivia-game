@@ -234,12 +234,12 @@ function submitSteal() {
       />
     </div>
 
-    <div class="chaserFinalTargetRow">
+    <div class="finalTargetRow">
       <div
           v-for="box in targetBoxes"
           :key="box.index"
-          class="chaserFinalTargetBox"
-          :class="{ 'chaserFinalTargetBox-filled': box.filled }"
+          class="finalTargetBox"
+          :class="{ 'finalTargetBox-filled': box.filled }"
       >{{ box.index }}</div>
     </div>
 
