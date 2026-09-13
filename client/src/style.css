@@ -1065,7 +1065,17 @@ ul {
   isolation: isolate;
 }
 
-.cashBuilderScreenFlash {
+/* Shared full-viewport screen-flash layer (ticket 100 consolidated this: the
+   cash builder's own flash, the Chaser Final steal-outcome flash (ticket 096),
+   and the Team/Chaser Final answer flash below are visually identical — same
+   fixed layer, fade, and green/red tokens — so the position/fade rule and the
+   two color rules are declared once here and shared by grouped selector
+   instead of copy-pasted per screen. Each screen keeps its own class name
+   (its Vue only ever toggles its own name) so this is a pure CSS dedupe, not
+   a behavior change for any of them. */
+.cashBuilderScreenFlash,
+.chaserFinalStealFlash,
+.finalScreenFlash {
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -1074,14 +1084,18 @@ ul {
   transition: background-color 0.25s ease-out;
 }
 
-.cashBuilder-flash-correct {
+.cashBuilder-flash-correct,
+.chaserFinalStealFlash-correct,
+.finalScreenFlash-correct {
   background-color: rgba(var(--color-green-flash-rgb), 0.6);
 }
 
 /* Wrong answers hold a solid red tint for the whole reveal window (cleared in
    script when the next question arrives), so the "you got it wrong" signal
    doesn't fade out while the correct-answer reveal is still on screen. */
-.cashBuilder-flash-wrong {
+.cashBuilder-flash-wrong,
+.chaserFinalStealFlash-wrong,
+.finalScreenFlash-wrong {
   background-color: rgba(var(--color-danger-strong-rgb), 0.5);
 }
 
@@ -1821,6 +1835,11 @@ ul {
   box-sizing: border-box;
   margin: 30px auto;
   padding: 0 20px;
+  /* Establishes a fresh stacking context so the answer flash's z-index: -1
+     (ticket 100, .finalScreenFlash) is compared only against this screen's
+     own content, not against body's own background — same pattern as
+     .cashBuilderRoot/.chaserFinalRoot. */
+  isolation: isolate;
 }
 
 .teamFinalScore {
@@ -2058,25 +2077,11 @@ ul {
 
 /* Resolved-outcome flash (ticket 096) — swaps in for .chaseLockoutFlash once
    a steal's outcome is known, same fixed full-viewport layer + fade pattern
-   as .cashBuilderScreenFlash, tinted with the cash builder's own green/red
-   flash colors so the two screens read consistently. */
-.chaserFinalStealFlash {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  background-color: transparent;
-  transition: background-color 0.25s ease-out;
-}
-
-.chaserFinalStealFlash-correct {
-  background-color: rgba(var(--color-green-flash-rgb), 0.6);
-}
-
-.chaserFinalStealFlash-wrong {
-  background-color: rgba(var(--color-danger-strong-rgb), 0.5);
-}
-
+   as .cashBuilderScreenFlash. Ticket 100 pulled the .chaserFinalStealFlash /
+   -correct / -wrong declarations themselves up into that shared rule (see
+   .cashBuilderScreenFlash) since all three screens' flashes are identical —
+   this class name still exists and still works exactly as before, just
+   defined there instead of here. */
 .chaserFinalStealOutcome {
   font-size: 20px;
 }

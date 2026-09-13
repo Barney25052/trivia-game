@@ -317,10 +317,12 @@ function submitSteal() {
 }
 
 // Reuses the existing chaseLockoutFlash full-viewport layer for the "steal is
-// live" pulse, then swaps to a solid green/red tint — same pattern as the
-// cash builder's flash classes (.cashBuilder-flash-correct/-wrong) — once the
-// outcome is known, so ticket 100 can extend either the pulse or the
-// resolved-tint step into a shared final-round flash later.
+// live" pulse, then swaps to a solid green/red tint via chaserFinalStealFlash
+// -correct/-wrong once the outcome is known. Ticket 100 folded those two
+// classes' declarations into the shared rule next to .cashBuilderScreenFlash
+// in style.css (identical fixed-layer/fade/color rule as the Team Final's own
+// new .finalScreenFlash) — this computed still returns the same class names,
+// so no behavior changes here, just where the CSS lives.
 const stealFlashClass = computed(() => {
     if (!stealActive.value) return "";
     if (stealOutcomeCorrect.value === null) return "chaseLockoutFlash";

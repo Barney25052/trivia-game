@@ -68,6 +68,7 @@ onUnmounted(() => {
     clearInterval(countdownInterval);
     document.removeEventListener("keydown", handleSpace);
     clearBubble();
+    if (screenFlashTimeout) clearTimeout(screenFlashTimeout);
 });
 
 const isChaser = computed(() => props.mySeatId !== "" && props.mySeatId === props.chaserSeatId);
@@ -93,6 +94,15 @@ const potText = computed(() => "$" + props.teamPot.toLocaleString("en-US"));
 const answerInput = ref("");
 const inputBox = ref(null);
 const revealedCorrectAnswer = ref("");
+// Full-viewport correct/wrong flash (ticket 100) — same shared
+// .finalScreenFlash pattern/timing as CashBuilderScreen's screenFlash (see
+// style.css). `answerResult` is sent to the buzz winner's own client only
+// (server/src/rooms/handlers/messageHandlers.ts submitFinalAnswer uses
+// `client.send`, never a broadcast), so a "flash every team client" version
+// would need a new server broadcast — out of this ticket's scope — hence
+// this flashes only the answering player's own screen.
+const screenFlash = ref("");
+let screenFlashTimeout = null;
 // Only the buzz winner's own client ever learns the typed text (the server
 // sends `submitFinalAnswer` results to the submitter only, same as the cash
 // builder) — so the bubble only ever pops up over your own seat.
@@ -152,6 +162,14 @@ function handleSpace(e) {
 watch(() => props.finalQuestion, () => {
     revealedCorrectAnswer.value = "";
     answerInput.value = "";
+    // The wrong-answer flash has no timer of its own — it holds until the
+    // next question arrives (mirrors CashBuilderScreen's screenFlash, ticket
+    // 100). The correct-answer flash clears itself on its own short timer
+    // below instead, since a correct answer's next question can land in the
+    // same tick as the flash starting.
+    if (screenFlash.value === "finalScreenFlash-wrong") {
+        screenFlash.value = "";
+    }
     // bubbleText is intentionally NOT cleared here (ticket 099) — it has its
     // own minimum-life timer above, independent of when the next question
     // arrives.
@@ -160,9 +178,19 @@ watch(() => props.finalQuestion, () => {
 watch(() => props.answerResult, (result) => {
     if (!result || !isBuzzWinner.value) return;
     // A correct answer ticks teamScore via synced state and the next question
-    // follows immediately — nothing to hold here. A wrong answer holds the
-    // reveal until the server's next finalQuestion clears it above.
-    if (!result.correct) revealedCorrectAnswer.value = result.correctAnswer;
+    // follows immediately — nothing to hold here beyond the brief flash. A
+    // wrong answer holds the reveal until the server's next finalQuestion
+    // clears it above.
+    if (screenFlashTimeout) clearTimeout(screenFlashTimeout);
+    if (result.correct) {
+        screenFlash.value = "finalScreenFlash-correct";
+        screenFlashTimeout = setTimeout(() => {
+            screenFlash.value = "";
+        }, 700);
+    } else {
+        revealedCorrectAnswer.value = result.correctAnswer;
+        screenFlash.value = "finalScreenFlash-wrong";
+    }
 });
 
 watch(isBuzzWinner, (winner) => {
@@ -172,6 +200,7 @@ watch(isBuzzWinner, (winner) => {
 
 <template>
   <div class="teamFinalRoot">
+    <div class="finalScreenFlash" :class="screenFlash"></div>
     <h2 class="lobbyTitle">The Team Final</h2>
     <p class="playerName teamFinalScore">Time left: {{ secondsLeft }}s · Team score: {{ teamScore }}</p>
 
