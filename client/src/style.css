@@ -2048,6 +2048,55 @@ ul {
   gap: 18px;
 }
 
+/* Per-seat steal answer bubble (ticket 096) — same chaserPanelBubble look as
+   the Chaser's own answer bubble and TeamFinalScreen's teamFinalBubble, just
+   stacked above the avatar layers within .teamFinalPlayer's own positioned
+   box. */
+.chaserFinalStealBubble {
+  z-index: 2;
+}
+
+/* Resolved-outcome flash (ticket 096) — swaps in for .chaseLockoutFlash once
+   a steal's outcome is known, same fixed full-viewport layer + fade pattern
+   as .cashBuilderScreenFlash, tinted with the cash builder's own green/red
+   flash colors so the two screens read consistently. */
+.chaserFinalStealFlash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-color: transparent;
+  transition: background-color 0.25s ease-out;
+}
+
+.chaserFinalStealFlash-correct {
+  background-color: rgba(var(--color-green-flash-rgb), 0.6);
+}
+
+.chaserFinalStealFlash-wrong {
+  background-color: rgba(var(--color-danger-strong-rgb), 0.5);
+}
+
+.chaserFinalStealOutcome {
+  font-size: 20px;
+}
+
+.chaserFinalStealOutcome-correct {
+  color: var(--color-green);
+}
+
+.chaserFinalStealOutcome-wrong {
+  color: var(--chaser-red-bright);
+}
+
+.chaserFinalStealCountdown {
+  font-family: "Roboto", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+  font-size: 48px;
+  color: var(--color-white);
+}
+
 /* Game-end results (ticket 083) — the winner banner reuses the chase
    escape/caught color language (contestant blue vs chaser red) but as an
    inline block rather than chaseOutcomeBanner's fixed overlay, since this

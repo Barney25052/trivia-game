@@ -25,6 +25,7 @@ const props = defineProps({
     players: { type: Array, default: () => [] },
     finalQuestion: { type: Object, default: null },
     finalSteal: { type: Object, default: null },
+    finalStealAnswer: { type: Object, default: null },
     finalStealResolved: { type: Object, default: null },
     answerResult: { type: Object, default: null }
 });
@@ -61,7 +62,6 @@ function eyesFor(seatId) {
 // module between the two npm projects, and the server doesn't broadcast a
 // remaining-time message, so this is a local approximation of the countdown.
 const CHASER_FINAL_SECONDS = 120;
-const STEAL_RESULT_HOLD_MS = 2500;
 const secondsLeft = ref(CHASER_FINAL_SECONDS);
 let countdownInterval = null;
 
@@ -81,6 +81,7 @@ onMounted(() => {
 onUnmounted(() => {
     clearInterval(countdownInterval);
     stopStealTicker();
+    stopHoldTicker();
     if (closeTimeout) clearTimeout(closeTimeout);
     if (answerBubbleTimeout) clearTimeout(answerBubbleTimeout);
 });
@@ -96,9 +97,11 @@ const targetBoxes = computed(() =>
 
 const chaserAnswerInput = ref("");
 const chaserInputBox = ref(null);
-// The Chaser gets no `finalSteal`/`finalStealResolved` messages (those are
-// team-only) — all they know is their own answer came back wrong, so they
-// wait here until the next finalQuestion arrives (steal won or lost).
+// A brief fallback only: the Chaser's own `answerResult` (wrong) and the
+// room-wide `finalSteal` broadcast (ticket 095) both fire from the same
+// server-side handler call and arrive over the same ordered connection, so
+// `stealActive` below almost always takes over the view before this ever
+// paints — this just covers the instant between the two.
 const chaserWaitingForSteal = ref(false);
 
 // Pops the Chaser's own submitted answer from their ChaserPanel bubble
@@ -183,52 +186,101 @@ const stealAnswerInput = ref("");
 const stealInputBox = ref(null);
 const stealLocked = ref(false);
 const stealOutcomeText = ref("");
+// null = not yet resolved, true/false once finalStealResolved lands — drives
+// both the outcome line's color and the green/red flash below.
+const stealOutcomeCorrect = ref(null);
+
+// The submitter's typed guess (ticket 095/096): a whole-room broadcast, so
+// every client — the Chaser included — renders it as a bubble over that
+// exact seat in the team row, not just the submitter's own screen.
+const stealAnswerSeatId = ref("");
+const stealAnswerText = ref("");
+const stealAnswerBubbleKey = ref(0);
+
+// The post-resolution outcome hold (ticket 096): a 3-2-1 countdown over the
+// server's stealResolveHoldMs before the question area resets. This is a
+// second, separate ticker from the open-window's nowTick/stealWindowEndsAt
+// above — the two never run at once, one covers the open steal window, the
+// other the resolved/expired hold that follows it.
+// Mirrors server/src/gameConfig.ts FINAL_ROUND.stealResolveHoldMs — duplicated
+// client-side the same way CHASER_FINAL_SECONDS above is (see AGENTS.md
+// gotchas): the server doesn't echo the tunable back in any payload.
+const STEAL_RESOLVE_HOLD_MS = 3000;
+const holdEndsAt = ref(0);
+const holdNowTick = ref(0);
+let holdTicker = null;
+
+function stopHoldTicker() {
+    if (holdTicker) {
+        clearInterval(holdTicker);
+        holdTicker = null;
+    }
+}
+function startHoldCountdown() {
+    stopHoldTicker();
+    holdEndsAt.value = Date.now() + STEAL_RESOLVE_HOLD_MS;
+    holdNowTick.value = Date.now();
+    holdTicker = setInterval(() => {
+        holdNowTick.value = Date.now();
+    }, 100);
+    if (closeTimeout) clearTimeout(closeTimeout);
+    closeTimeout = setTimeout(() => {
+        manuallyClosed.value = true;
+    }, STEAL_RESOLVE_HOLD_MS);
+}
+const holdActive = computed(() => holdEndsAt.value > 0 && !manuallyClosed.value);
+const holdSecondsLeft = computed(() =>
+    holdActive.value ? Math.max(0, Math.ceil((holdEndsAt.value - holdNowTick.value) / 1000)) : 0
+);
 
 watch(() => props.finalSteal, (steal) => {
     if (closeTimeout) {
         clearTimeout(closeTimeout);
         closeTimeout = null;
     }
+    stopHoldTicker();
+    holdEndsAt.value = 0;
     if (steal) {
         manuallyClosed.value = false;
         stealAnswerInput.value = "";
         stealLocked.value = false;
         stealOutcomeText.value = "";
+        stealOutcomeCorrect.value = null;
+        stealAnswerSeatId.value = "";
+        stealAnswerText.value = "";
         startStealTicker();
         nextTick(() => stealInputBox.value?.focus());
+        // No server signal reaches non-submitting clients when a steal window
+        // expires with nobody answering — finalStealResolved only fires on an
+        // actual submission — so this local timer (a 500ms buffer past the
+        // server's own window, for network latency) is what detects that case;
+        // if the window is still open at that point, start the same resolve
+        // hold with no outcome line to show.
         closeTimeout = setTimeout(() => {
-            manuallyClosed.value = true;
+            if (!holdActive.value) startHoldCountdown();
         }, steal.windowMs + 500);
     } else {
         stopStealTicker();
     }
 });
 
+watch(() => props.finalStealAnswer, (message) => {
+    if (!message || !props.finalSteal || message.questionId !== props.finalSteal.questionId) return;
+    stealAnswerSeatId.value = message.seatId;
+    stealAnswerText.value = message.answer;
+    stealAnswerBubbleKey.value += 1;
+});
+
 watch(() => props.finalStealResolved, (result) => {
     if (!result) return;
     stealLocked.value = true;
-    stealOutcomeText.value = result.pushedBack
-        ? "Stolen! The Chaser is pushed back."
-        : "Correct! The Chaser was already at zero — the target goes up.";
-    if (closeTimeout) clearTimeout(closeTimeout);
-    closeTimeout = setTimeout(() => {
-        manuallyClosed.value = true;
-    }, STEAL_RESULT_HOLD_MS);
-});
-
-watch(() => props.answerResult, (result) => {
-    if (!result || isChaser.value || stealLocked.value) return;
-    // Only the team member who submitted the steal answer gets this — a
-    // correct one is immediately followed by finalStealResolved above, so
-    // only render the wrong case here.
-    if (!result.correct) {
-        stealLocked.value = true;
-        stealOutcomeText.value = `Wrong — the answer was ${result.correctAnswer}`;
-        if (closeTimeout) clearTimeout(closeTimeout);
-        closeTimeout = setTimeout(() => {
-            manuallyClosed.value = true;
-        }, STEAL_RESULT_HOLD_MS);
-    }
+    stealOutcomeCorrect.value = result.correct;
+    stealOutcomeText.value = result.correct
+        ? (result.pushedBack
+            ? "Stolen! The Chaser is pushed back."
+            : "Correct! The Chaser was already at zero — the target goes up.")
+        : `Wrong — the answer was ${result.correctAnswer}`;
+    startHoldCountdown();
 });
 
 function submitSteal() {
@@ -238,6 +290,19 @@ function submitSteal() {
     emit("submit-final-steal-answer", { answer: trimmed, questionId: props.finalSteal.questionId });
     stealLocked.value = true;
 }
+
+// Reuses the existing chaseLockoutFlash full-viewport layer for the "steal is
+// live" pulse, then swaps to a solid green/red tint — same pattern as the
+// cash builder's flash classes (.cashBuilder-flash-correct/-wrong) — once the
+// outcome is known, so ticket 100 can extend either the pulse or the
+// resolved-tint step into a shared final-round flash later.
+const stealFlashClass = computed(() => {
+    if (!stealActive.value) return "";
+    if (stealOutcomeCorrect.value === null) return "chaseLockoutFlash";
+    return stealOutcomeCorrect.value
+        ? "chaserFinalStealFlash chaserFinalStealFlash-correct"
+        : "chaserFinalStealFlash chaserFinalStealFlash-wrong";
+});
 </script>
 
 <template>
@@ -274,10 +339,63 @@ function submitSteal() {
       >{{ box.index }}</div>
     </div>
 
-    <div v-if="stealActive" class="chaseLockoutFlash"></div>
+    <div v-if="stealFlashClass" :class="stealFlashClass"></div>
 
     <div class="chaserFinalBottom">
-      <template v-if="isChaser">
+      <!-- Everyone — including the Chaser — sees the team table during a
+           steal (ticket 096): the old isChaser/stealActive split left the
+           Chaser stuck on a static "waiting" message while the team's whole
+           interaction (who answered, what, and the outcome) happened without
+           them. -->
+      <template v-if="stealActive">
+        <div class="chaserFinalTeamRow">
+          <div v-for="p in teamPlayers" :key="p.seatId" class="teamFinalPlayer">
+            <Transition name="chaser-bubble-pop">
+              <div
+                  v-if="p.seatId === stealAnswerSeatId && stealAnswerText"
+                  :key="stealAnswerBubbleKey"
+                  class="chaserPanelBubble chaserFinalStealBubble"
+              >{{ stealAnswerText }}</div>
+            </Transition>
+            <div class="teamFinalAvatarWrap">
+              <div class="offerFaceWrap">
+                <div class="offerShoulders"></div>
+                <img :src="faceFor(p.seatId)" class="offerFaceLayer" alt="" />
+                <img :src="hairFor(p.seatId)" class="offerFaceLayer" alt="" />
+                <img :src="eyesFor(p.seatId)" class="offerFaceLayer" alt="" />
+                <img :src="mouthNeutral" class="offerFaceLayer" alt="" />
+              </div>
+            </div>
+            <p class="playerName teamFinalPlayerName">{{ p.name }}</p>
+          </div>
+        </div>
+
+        <template v-if="holdActive">
+          <p
+              v-if="stealOutcomeText"
+              class="playerName chaserFinalStealOutcome"
+              :class="{
+                'chaserFinalStealOutcome-correct': stealOutcomeCorrect === true,
+                'chaserFinalStealOutcome-wrong': stealOutcomeCorrect === false
+              }"
+          >{{ stealOutcomeText }}</p>
+          <p class="playerName chaserFinalStealCountdown">{{ holdSecondsLeft }}</p>
+        </template>
+        <template v-else>
+          <p class="playerName">Steal! {{ stealSecondsLeft }}s left</p>
+          <input
+              v-if="!isChaser"
+              v-model="stealAnswerInput"
+              class="teamFinalInput"
+              placeholder="Type your answer..."
+              :disabled="stealLocked"
+              ref="stealInputBox"
+              @keyup.enter="submitSteal"
+          />
+        </template>
+      </template>
+
+      <template v-else-if="isChaser">
         <template v-if="finalQuestion">
           <template v-if="!chaserWaitingForSteal">
             <p class="teamFinalQuestion">{{ finalQuestion.prompt }}</p>
@@ -292,34 +410,6 @@ function submitSteal() {
           <p v-else class="playerName">Wrong! Waiting to see if the team steals…</p>
         </template>
         <p v-else class="playerName">Waiting for the first question…</p>
-      </template>
-
-      <template v-else-if="stealActive">
-        <div class="chaserFinalTeamRow">
-          <div v-for="p in teamPlayers" :key="p.seatId" class="teamFinalPlayer">
-            <div class="teamFinalAvatarWrap">
-              <div class="offerFaceWrap">
-                <div class="offerShoulders"></div>
-                <img :src="faceFor(p.seatId)" class="offerFaceLayer" alt="" />
-                <img :src="hairFor(p.seatId)" class="offerFaceLayer" alt="" />
-                <img :src="eyesFor(p.seatId)" class="offerFaceLayer" alt="" />
-                <img :src="mouthNeutral" class="offerFaceLayer" alt="" />
-              </div>
-            </div>
-            <p class="playerName teamFinalPlayerName">{{ p.name }}</p>
-          </div>
-        </div>
-        <p class="playerName">Steal! {{ stealSecondsLeft }}s left</p>
-        <p v-if="stealOutcomeText" class="playerName">{{ stealOutcomeText }}</p>
-        <input
-            v-else
-            v-model="stealAnswerInput"
-            class="teamFinalInput"
-            placeholder="Type your answer..."
-            :disabled="stealLocked"
-            ref="stealInputBox"
-            @keyup.enter="submitSteal"
-        />
       </template>
 
       <template v-else>

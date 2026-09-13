@@ -89,3 +89,10 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: for the reveal beat the correct index highlights green and a wrong picked index highlights red, on every client.
 - Repro steps: 1. Run `server` + `client` dev. 2. Reach a Chase. 3. Both sides answer (or let the 5s lockout expire). 4. Watch the answer rows for the green/red highlight.
 - Status: triaged — ticket 089
+
+## `bug-013` — ChaserFinalScreen's "Time left" readout never pauses during a steal window, unlike the real server clock
+- Found: 2026-09-13 · ticket 096 · `client/src/screens/ChaserFinalScreen.vue` (`secondsLeft`, `countdownInterval`)
+- What you saw: `secondsLeft` is decremented by a plain `setInterval(() => { if (secondsLeft.value > 0) secondsLeft.value -= 1; }, 1000)` started once in `onMounted`, with no awareness of `stealActive`/`holdActive`. The real Chaser-final clock is paused server-side for the duration of every steal window plus its `stealResolveHoldMs` hold (`pauseChaserFinalClock`/`resumeChaserFinalClock`, tickets 094/095), so the two diverge every time a steal happens: the on-screen countdown keeps ticking down through a paused steal+hold, showing the Chaser with less time than they actually have left once the round resumes.
+- Expected: the displayed "Time left" freezes while the real clock is paused (during any steal window and its resolve hold) and only resumes ticking once the Chaser's question stream actually resumes, matching `chaserFinalClockRunning` server-side.
+- Repro steps: 1. Run `server` + `client` dev, reach `ChaserFinal`. 2. Note the displayed "Time left". 3. Force a Chaser miss so a steal window opens, and let a full steal + 3s resolve hold play out without doing anything else for, say, 15s. 4. Compare the seconds actually consumed on screen (15) against the server's real budget consumption (should be ~0, since the whole window was paused) — the display has silently burned time the Chaser wasn't actually charged for.
+- Status: open

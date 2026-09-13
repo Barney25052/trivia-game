@@ -47,6 +47,7 @@ const finalTeamQuestion = ref(null);
 const finalBuzzSeatId = ref("");
 const finalChaserQuestion = ref(null);
 const finalSteal = ref(null);
+const finalStealAnswer = ref(null);
 const finalStealResolved = ref(null);
 const revealChaserCharacterId = ref("");
 const revealChaserCharacterName = ref("");
@@ -158,6 +159,7 @@ function applyPhase(phase) {
   if (phase !== GamePhase.ChaserFinal) {
     finalChaserQuestion.value = null;
     finalSteal.value = null;
+    finalStealAnswer.value = null;
     finalStealResolved.value = null;
   }
 }
@@ -381,10 +383,17 @@ async function joinLobby(playerName, roomCode) {
       finalBuzzSeatId.value = message.seatId;
     });
 
-    // Team-only messages (sendToTeam server-side) — the Chaser never sees a
-    // steal open or resolve.
+    // Whole-room broadcasts (ticket 095) — finalSteal now reaches the Chaser
+    // too (096 renders the team table to every seat during a steal), and
+    // finalStealAnswer/finalStealResolved reach everyone as well so the
+    // submitter's answer bubble and the outcome render identically for the
+    // whole room, not just the team.
     room.value.onMessage("finalSteal", (message) => {
       finalSteal.value = { ...message, startedAt: Date.now() };
+    });
+
+    room.value.onMessage("finalStealAnswer", (message) => {
+      finalStealAnswer.value = message;
     });
 
     room.value.onMessage("finalStealResolved", (message) => {
@@ -666,6 +675,7 @@ function sendChaserQuip(text) {
       :players="players"
       :finalQuestion="finalChaserQuestion"
       :finalSteal="finalSteal"
+      :finalStealAnswer="finalStealAnswer"
       :finalStealResolved="finalStealResolved"
       :answerResult="answerResult"
       @submit-final-chaser-answer="submitFinalChaserAnswer"
