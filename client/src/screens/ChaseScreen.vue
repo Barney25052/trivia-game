@@ -1,7 +1,8 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import ChaserPanel from "../components/ChaserPanel.vue";
 import CharacterFace from "../components/CharacterFace.vue";
+import { CHASER_PORTRAITS, CHASER_NAMES } from "../chaserPortraits.ts";
 
 const props = defineProps({
     players: { type: Array, default: () => [] },
@@ -61,6 +62,12 @@ const activeContestantCharacter = computed(
     () => props.players.find((p) => p.seatId === props.activeContestantSeatId)?.character ?? ""
 );
 
+// Ticket 116: the Caught/Escaped cutscene's Chaser image is a bare <img> of
+// the same portrait ChaserPanel renders — resolved from the shared lookup
+// (chaserPortraits.ts) instead of duplicating ChaserPanel's own table.
+const chaserPortraitSrc = computed(() => CHASER_PORTRAITS[props.chaserCharacterId] ?? null);
+const chaserDisplayName = computed(() => CHASER_NAMES[props.chaserCharacterId] ?? "");
+
 function isPlayerSpace(space) {
     return contestantPos.value === space;
 }
@@ -115,6 +122,30 @@ const answerWindowLeft = computed(() => {
     ));
 });
 
+// Ticket 116: replaces the old full-screen .chaseLockoutFlash with a small
+// countdown badge overlapping whichever side's circle still needs to answer.
+// chaseLockoutStarted is deliberately anonymous server-side (see
+// submitChaseAnswer's own comment) — it never says who answered first, so a
+// spectator has no way to know which side the badge belongs on, and shows it
+// on both. A participant already knows their own hasAnswered state locally
+// though, so they can work out the other side's status by elimination
+// (lockout only ever starts once exactly one side has answered) — that's not
+// new information leaking from the server, just the client's own state plus
+// a rule already visible on screen ("the clock is running").
+const lockoutBadgeSide = computed(() => {
+    if (!lockoutActive.value) return null;
+    if (isChaser.value) return hasAnswered.value ? "contestant" : "chaser";
+    if (isContestant.value) return hasAnswered.value ? "chaser" : "contestant";
+    return "both";
+});
+const lockoutUrgent = computed(() => lockoutActive.value && answerWindowLeft.value <= 2);
+const chaserCountdownSeconds = computed(() => (
+    lockoutBadgeSide.value === "chaser" || lockoutBadgeSide.value === "both" ? answerWindowLeft.value : null
+));
+const contestantCountdownSeconds = computed(() => (
+    lockoutBadgeSide.value === "contestant" || lockoutBadgeSide.value === "both" ? answerWindowLeft.value : null
+));
+
 function stopLockoutTicker() {
     if (lockoutInterval) {
         clearInterval(lockoutInterval);
@@ -162,20 +193,105 @@ function selectOption(index) {
     emit("submit-chase-answer", { answerIndex: index, questionId: props.currentQuestion.questionId });
 }
 
-watch(() => props.currentQuestion, () => {
+// Ticket 116: new-question entrance sequence — the question box wipes in
+// (an unconditional CSS animation, replayed because the box is keyed on
+// questionId in the template, i.e. a fresh DOM node per question — nothing
+// here toggles a class for it), the prompt sits alone for
+// ENTRANCE_PROMPT_HOLD_MS, then the answer buttons pop in. buttonsRevealed
+// alone drives the "buttons hidden" look (opacity/visibility in CSS, never
+// display:none), so the box's height never changes across the sequence.
+const buttonsRevealed = ref(false);
+const ENTRANCE_PROMPT_HOLD_MS = 3000;
+let entranceTimeout = null;
+
+function stopEntranceTimer() {
+    if (entranceTimeout) {
+        clearTimeout(entranceTimeout);
+        entranceTimeout = null;
+    }
+}
+
+watch(() => props.currentQuestion, (question) => {
     myAnswerIndex.value = null;
     stopLockoutTicker();
-});
-
-watch(() => props.chaseOutcome, (outcome) => {
-    if (outcome === "caught") {
-        emit("auto-quip", CATCH_QUIPS[Math.floor(Math.random() * CATCH_QUIPS.length)]);
-    } else if (outcome === "escaped") {
-        emit("auto-quip", ESCAPE_QUIPS[Math.floor(Math.random() * ESCAPE_QUIPS.length)]);
+    stopEntranceTimer();
+    buttonsRevealed.value = false;
+    if (question) {
+        entranceTimeout = setTimeout(() => {
+            buttonsRevealed.value = true;
+            entranceTimeout = null;
+        }, ENTRANCE_PROMPT_HOLD_MS);
     }
 });
 
-onUnmounted(() => stopLockoutTicker());
+// Ticket 116: Caught/Escaped cutscene — a short impact/dash beat plays first
+// (pure CSS, autoplaying the moment the cutscene markup mounts), then the
+// existing CAUGHT!/ESCAPED! banner (unchanged) pops in a beat later so the
+// two read as a sequence rather than appearing on top of each other.
+const OUTCOME_BANNER_DELAY_MS = { caught: 500, escaped: 650 };
+const showOutcomeBanner = ref(false);
+let outcomeBannerTimeout = null;
+const cutsceneContestantEl = ref(null);
+
+function stopOutcomeBannerTimer() {
+    if (outcomeBannerTimeout) {
+        clearTimeout(outcomeBannerTimeout);
+        outcomeBannerTimeout = null;
+    }
+}
+
+function prefersReducedMotion() {
+    return typeof window !== "undefined"
+        && typeof window.matchMedia === "function"
+        && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+// Reuses 115's .spark particle-burst primitive (a "★" burst — see
+// style.css's own comment: spawning/removing the actual elements is a
+// caller concern, not something the primitive does itself). Skipped
+// outright under reduced motion: .spark's animation is disabled there, but
+// nothing else removes the spawned element without its animationend event
+// firing, so spawning here would otherwise leave stars stuck on screen.
+function spawnEscapeSparkles() {
+    if (prefersReducedMotion() || !cutsceneContestantEl.value) return;
+    const rect = cutsceneContestantEl.value.getBoundingClientRect();
+    const originX = rect.left + rect.width / 2;
+    const originY = rect.top + rect.height / 2;
+    for (let i = 0; i < 10; i++) {
+        const span = document.createElement("span");
+        span.className = `spark${Math.random() < 0.5 ? " blue" : ""}`;
+        span.textContent = "★";
+        const angle = Math.random() * 360;
+        const dist = 30 + Math.random() * 55;
+        const rad = (angle * Math.PI) / 180;
+        span.style.setProperty("--dx", `${Math.cos(rad) * dist}px`);
+        span.style.setProperty("--dy", `${Math.sin(rad) * dist}px`);
+        span.style.setProperty("--rot", `${Math.random() * 180 - 90}deg`);
+        span.style.left = `${originX}px`;
+        span.style.top = `${originY}px`;
+        document.body.appendChild(span);
+        span.addEventListener("animationend", () => span.remove());
+    }
+}
+
+watch(() => props.chaseOutcome, (outcome) => {
+    stopOutcomeBannerTimer();
+    showOutcomeBanner.value = false;
+    if (outcome === "caught") {
+        emit("auto-quip", CATCH_QUIPS[Math.floor(Math.random() * CATCH_QUIPS.length)]);
+        outcomeBannerTimeout = setTimeout(() => { showOutcomeBanner.value = true; }, OUTCOME_BANNER_DELAY_MS.caught);
+    } else if (outcome === "escaped") {
+        emit("auto-quip", ESCAPE_QUIPS[Math.floor(Math.random() * ESCAPE_QUIPS.length)]);
+        nextTick(() => spawnEscapeSparkles());
+        outcomeBannerTimeout = setTimeout(() => { showOutcomeBanner.value = true; }, OUTCOME_BANNER_DELAY_MS.escaped);
+    }
+});
+
+onUnmounted(() => {
+    stopLockoutTicker();
+    stopEntranceTimer();
+    stopOutcomeBannerTimer();
+});
 </script>
 
 <template>
@@ -185,78 +301,112 @@ onUnmounted(() => stopLockoutTicker());
       The Chaser is off the board — one correct answer to enter.
     </p>
 
-    <div class="chaseTableRow">
-      <ChaserPanel
-          :character-id="chaserCharacterId"
-          :quip-text="chaserQuipText"
-          :quip-key="chaserQuipKey"
-          :is-chaser="isChaser"
-          @send-quip="emit('send-quip', $event)"
-      />
+    <div class="chaseGround">
+      <template v-if="!chaseOutcome">
+        <div v-if="currentQuestion" class="chaseWipeBar" :key="'wipe-' + currentQuestion.questionId"></div>
 
-      <div class="board">
-        <div
-          v-for="space in BOARD_SPACES"
-          :key="space"
-          class="boardSpace"
-          :class="{ playerSpace: isPlayerSpace(space), chaserSpace: isChaserSpace(space), 'boardSpace-current': isCurrentSpace(space) }"
-        >
-          <span class="boardSpaceNumber">{{ space }}</span>
-          <span v-if="isPlayerSpace(space) && chaseWagerAmount !== 0" class="chaseWagerBadge">
-            {{ formatAmount(chaseWagerAmount) }}
-          </span>
-        </div>
-        <div class="chaseEscapeSpace">ESCAPE</div>
-      </div>
+        <div class="chaseTableRow">
+          <ChaserPanel
+              circle-portrait
+              :character-id="chaserCharacterId"
+              :quip-text="chaserQuipText"
+              :quip-key="chaserQuipKey"
+              :is-chaser="isChaser"
+              :countdown-seconds="chaserCountdownSeconds"
+              :countdown-urgent="lockoutUrgent"
+              @send-quip="emit('send-quip', $event)"
+          />
 
-      <div class="offerContestantBox">
-        <div class="offerContestantMaskBox">
-          <CharacterFace :character="activeContestantCharacter" :reaction="reactions[activeContestantSeatId] ?? 'neutral'" />
-        </div>
-        <p class="playerName offerChaserName">{{ activeContestantName }}</p>
-      </div>
-    </div>
+          <div class="board">
+            <div
+              v-for="space in BOARD_SPACES"
+              :key="space"
+              class="boardSpace"
+              :class="{ playerSpace: isPlayerSpace(space), chaserSpace: isChaserSpace(space), 'boardSpace-current': isCurrentSpace(space) }"
+            >
+              <span v-if="isPlayerSpace(space) && chaseWagerAmount !== 0" class="chaseWagerBadge">
+                {{ formatAmount(chaseWagerAmount) }}
+              </span>
+            </div>
+          </div>
 
-    <div v-if="lockoutActive" class="chaseLockoutFlash"></div>
-
-    <div class="chaseQuestionArea">
-      <template v-if="currentQuestion">
-        <p class="chaseQuestion">{{ currentQuestion.prompt }}</p>
-        <div class="chaseOptions chaseOptions-row">
-          <button
-            v-for="(option, index) in currentQuestion.options"
-            :key="index"
-            class="startButton chaseOptionButton"
-            :class="[
-              {
-                'chaseOptionButton-picked': myAnswerIndex === index,
-                'chaseOptionButton-correct': revealed && resultForCurrentQuestion.correctIndex === index,
-                'chaseOptionButton-wrong': revealed && myAnswerIndex === index && resultForCurrentQuestion.correctIndex !== index,
-                'chaseOptionButton-lockout': lockoutActive
-              },
-              optionFontClass
-            ]"
-            :disabled="!isParticipant || hasAnswered || revealed"
-            @click="selectOption(index)"
-          >{{ option }}</button>
+          <div class="board-portrait-wrap">
+            <div class="board-portrait-circle">
+              <CharacterFace :character="activeContestantCharacter" :reaction="reactions[activeContestantSeatId] ?? 'neutral'" />
+            </div>
+            <div
+              v-if="contestantCountdownSeconds !== null"
+              class="countdown-chip small chaseCountdownBadge"
+              :class="{ urgent: lockoutUrgent }"
+            >
+              <span class="countdown-num">{{ contestantCountdownSeconds }}</span>
+            </div>
+          </div>
         </div>
 
-        <p v-if="isParticipant && hasAnswered && !revealed" class="playerName chaseWaitingStatus">
-          Locked in<span v-if="lockoutActive"> — waiting ({{ answerWindowLeft }}s)</span>…
-        </p>
-        <p v-else-if="isParticipant && !hasAnswered && !revealed" class="playerName chaseWaitingStatus">
-          Pick your answer!<span v-if="lockoutActive"> — {{ answerWindowLeft }}s left</span>
-        </p>
-        <p v-else-if="!isParticipant && !revealed" class="playerName chaseWaitingStatus">
-          {{ activeContestantName }} and the Chaser are answering…<span v-if="lockoutActive"> ({{ answerWindowLeft }}s)</span>
-        </p>
+        <div class="chaseQuestionArea">
+          <template v-if="currentQuestion">
+            <div
+              class="chaseQuestionBox"
+              :key="currentQuestion.questionId"
+              :class="{ 'chaseQuestionBox-buttons-hidden': !buttonsRevealed }"
+            >
+              <p class="chaseQuestion">{{ currentQuestion.prompt }}</p>
+              <div class="chaseOptions chaseOptions-row">
+                <button
+                  v-for="(option, index) in currentQuestion.options"
+                  :key="index"
+                  class="answer-btn"
+                  :class="[
+                    {
+                      picked: myAnswerIndex === index,
+                      dimmed: hasAnswered && myAnswerIndex !== index && !(revealed && resultForCurrentQuestion.correctIndex === index),
+                      'chaseOptionButton-correct': revealed && resultForCurrentQuestion.correctIndex === index,
+                      'chaseOptionButton-wrong': revealed && myAnswerIndex === index && resultForCurrentQuestion.correctIndex !== index,
+                      'chase-pop-in': buttonsRevealed
+                    },
+                    optionFontClass
+                  ]"
+                  :disabled="!isParticipant || hasAnswered || revealed"
+                  @click="selectOption(index)"
+                >{{ option }}</button>
+              </div>
+            </div>
+
+            <p v-if="isParticipant && hasAnswered && !revealed" class="playerName chaseWaitingStatus">Locked in…</p>
+            <p v-else-if="isParticipant && !hasAnswered && !revealed" class="playerName chaseWaitingStatus">Pick your answer!</p>
+            <p v-else-if="!isParticipant && !revealed" class="playerName chaseWaitingStatus">{{ activeContestantName }} and the Chaser are answering…</p>
+          </template>
+          <p v-else class="playerName">Waiting for the next question…</p>
+        </div>
       </template>
-      <p v-else class="playerName">Waiting for the next question…</p>
+
+      <div
+        v-else
+        class="chaseCutscene"
+        :class="chaseOutcome === 'caught' ? 'chaseCutscene-caught' : 'chaseCutscene-escaped'"
+      >
+        <img
+          v-if="chaserPortraitSrc"
+          :src="chaserPortraitSrc"
+          :alt="chaserDisplayName"
+          class="chaseCutsceneChaser"
+          :class="chaseOutcome === 'caught' ? 'chaseCutsceneChaser-caught' : 'chaseCutsceneChaser-escaped'"
+        />
+        <div
+          ref="cutsceneContestantEl"
+          class="chaseCutsceneContestant"
+          :class="chaseOutcome === 'caught' ? 'chaseCutsceneContestant-caught' : 'chaseCutsceneContestant-escaped'"
+        >
+          <CharacterFace :character="activeContestantCharacter" reaction="neutral" />
+        </div>
+        <div v-if="chaseOutcome === 'caught'" class="chaseCutsceneFlash"></div>
+      </div>
     </div>
 
     <Transition name="chase-outcome-pop">
       <div
-        v-if="chaseOutcome"
+        v-if="showOutcomeBanner"
         class="chaseOutcomeBanner"
         :class="chaseOutcome === 'escaped' ? 'chaseOutcomeBanner-escaped' : 'chaseOutcomeBanner-caught'"
       >

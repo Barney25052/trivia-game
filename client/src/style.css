@@ -1791,15 +1791,23 @@ ul {
   isolation: isolate;
 }
 
-/* Full-viewport lockout pulse (ticket 087) — a fixed layer behind the board
-   and buttons, not just a panel-level flash, so it reads as "the clock is
-   ticking" rather than a UI decoration. */
+/* Full-viewport lockout pulse (ticket 087). Ticket 116 removed this layer's
+   only use on the Chase board itself (replaced by the small countdown-chip
+   badge on the portraits) — but ChaserFinalScreen.vue's steal-flash still
+   reuses this exact class/keyframe (ticket 096), so both stay defined here
+   for that screen; only ChaseScreen.vue's own template stopped rendering it.
+   Ticket 117 (Chaser Final redesign) owns whatever happens to this next. */
 .chaseLockoutFlash {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: -1;
   animation: chase-lockout-bg 0.5s ease-in-out infinite;
+}
+
+@keyframes chase-lockout-bg {
+  0%, 100%  { background-color: rgba(var(--color-lockout-blue-rgb), 0); }
+  50%       { background-color: rgba(var(--color-lockout-blue-rgb), 0.85); }
 }
 
 .chaseTableTitle {
@@ -1824,23 +1832,31 @@ ul {
 .chaseTableRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 30px;
-  margin: 20px 0;
+  justify-content: center;
+  /* Ticket 116: pulled the portraits much further from the board — the
+     mockup roughly doubled the old 30px gap (which, with the old
+     justify-content: space-between, actually rendered wider than 30px on
+     this row's own 960px-wide container; switched to justify-content:
+     center + an explicit gap so the row reads as one composed group instead
+     of edge-to-edge, matching the mockup's own layout). */
+  gap: 70px;
+  margin: 0 0 28px;
 }
 
 .board {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   width: 260px;
-  margin: 10px auto;
+  margin: 0;
 }
 
 .boardSpace {
   position: relative;
   box-sizing: border-box;
-  height: 48px;
+  /* Ticket 116: bigger spaces (was 48px) now that they carry no number —
+     just the contestant's centered wager on their own space. */
+  height: 58px;
   border-radius: 10px;
   background-color: rgba(var(--color-white-rgb), 0.15);
   display: flex;
@@ -1849,87 +1865,47 @@ ul {
   transition: background-color 0.4s ease-in-out;
 }
 
-.boardSpaceNumber {
-  position: absolute;
-  left: 10px;
-  color: var(--color-white);
-  font-family: var(--font-pixel);
-  font-weight: 400;
-  font-style: normal;
-  font-size: 16px;
-  opacity: 0.6;
-}
-
 .playerSpace {
   background-color: var(--contestant-blue-glow);
 }
 
+/* Ticket 116: the Chaser starts at space 7 and closes in toward 1 — every
+   space already behind them (this class alone, without -current) is one
+   flat dark red the whole way back, not a fade (tried and reversed in the
+   design conversation — see tickets/README.md's ticket-116 footnote). Only
+   the Chaser's actual current space (paired with .boardSpace-current below)
+   reads differently, via brightness + a glow, not an outline. */
 .chaserSpace {
-  background-color: var(--chaser-red-glow);
+  background-color: var(--chaser-deep);
 }
 
 .playerSpace.boardSpace-current {
-  border: 3px solid var(--contestant-blue-glow);
+  background-color: var(--contestant-blue-glow);
   box-shadow: 0 0 14px var(--contestant-blue-glow);
 }
 
 .chaserSpace.boardSpace-current {
-  border: 3px solid var(--chaser-red-glow);
+  background-color: var(--chaser-red-glow);
   box-shadow: 0 0 14px var(--chaser-red-glow);
-  background-color: var(--chaser-red-bright);
 }
 
+/* Ticket 116: moved onto the contestant's own space (was a gold Roboto
+   badge floating beside the board) — centered in the space via the flex
+   parent, VT323, white. */
 .chaseWagerBadge {
-  color: var(--color-gold);
-  font-family: var(--font-pixel);
-  font-weight: 400;
-  font-style: normal;
-  font-size: 18px;
-}
-
-.chaseEscapeSpace {
-  height: 36px;
-  border-radius: 10px;
-  background-color: rgba(var(--color-white-rgb), 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: var(--color-white);
-  /* Ticket 115: a board-strip label — VT323 to match the board's other HUD
-     bits. This whole element is slated for removal in ticket 116 ("just
-     remove that" per the design conversation), so this is a low-stakes,
-     transitional role assignment, not a redesign of it. */
   font-family: var(--font-pixel);
   font-weight: 400;
   font-style: normal;
-  font-size: 14px;
-  opacity: 0.7;
-  letter-spacing: 1px;
+  font-size: 22px;
 }
 
 .chaseQuestionArea {
   width: 100%;
-  max-width: 900px;
-  margin: 10px auto;
+  max-width: 700px;
+  margin: 0 auto;
   text-align: center;
   box-sizing: border-box;
-  padding: 14px;
-  border-radius: 16px;
-}
-
-.chaseOptionButton-lockout {
-  animation: chase-lockout-scale 0.5s ease-in-out infinite;
-}
-
-@keyframes chase-lockout-bg {
-  0%, 100%  { background-color: rgba(var(--color-lockout-blue-rgb), 0); }
-  50%       { background-color: rgba(var(--color-lockout-blue-rgb), 0.85); }
-}
-
-@keyframes chase-lockout-scale {
-  0%   { transform: scale(0.98); }
-  50%  { transform: scale(1.02); }
-  100% { transform: scale(0.98); }
 }
 
 .chaseQuestion {
@@ -1943,7 +1919,16 @@ ul {
      confirmed live (a 1-line vs 3-line prompt shifted the button row by
      ~48px with no reservation). */
   min-height: 52px;
-  margin: 10px auto;
+  margin: 0 0 16px;
+  transition: transform 0.5s ease;
+}
+
+/* Ticket 116: while the buttons are hidden (the entrance sequence's 3s
+   prompt-alone beat), the prompt settles down into roughly the middle of
+   the box's reserved height instead of sitting pinned to the top — eased
+   back up once the buttons pop in. */
+.chaseQuestionBox-buttons-hidden .chaseQuestion {
+  transform: translateY(46px);
 }
 
 .chaseOptions {
@@ -1962,51 +1947,11 @@ ul {
   gap: 25px;
 }
 
-.chaseOptions-row .chaseOptionButton {
-  width: 260px;
-}
-
-.chaseOptionButton {
-  width: 190px;
-  margin: 0;
-  min-height: 60px;
-  font-size: 18px;
-  white-space: normal;
-  overflow-wrap: break-word;
-  line-height: 1.3;
-}
-
-.chaseOptionButton-fontSm {
-  font-size: 15px;
-}
-
-.chaseOptionButton-fontXs {
-  font-size: 13px;
-}
-
-.chaseOptionButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.chaseOptionButton-correct:disabled,
-.chaseOptionButton-wrong:disabled {
-  opacity: 1;
-}
-
-.chaseOptionButton-picked {
-  background-color: var(--contestant-blue-glow);
-}
-
-.chaseOptionButton-correct {
-  background-color: var(--color-green);
-  opacity: 1;
-}
-
-.chaseOptionButton-wrong {
-  background-color: var(--chaser-red-dark);
-  opacity: 1;
-}
+/* Ticket 116: the buttons themselves moved to the raised .answer-btn family
+   (see the trailing "Chase board redesign" block near the end of this file
+   for .answer-btn's chase-specific state modifiers — chaseOptionButton-
+   fontSm/-fontXs/-correct/-wrong — which need to sit after .answer-btn's own
+   rules in the cascade to win the specificity ties). */
 
 .chaseWaitingStatus {
   margin: 10px auto;
@@ -2916,4 +2861,263 @@ ul {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* ============================================================
+   Chase board redesign (ticket 116) — ChaseScreen.vue.
+   Builds on 115's tokens/components (frame-free circles, the raised
+   .answer-btn family, .bill/.spark bursts) rather than inventing new ones.
+   See tickets/116-chase-board-visual-redesign.md and the ticket-116 footnote
+   in tickets/README.md for the mockup-vs-ticket-prose calls made here.
+   ============================================================ */
+
+/* Red on the Chaser's (left) side easing into the page's own navy on the
+   contestant's (right) side, meeting in a neutral zone around the board —
+   the board/question box sit on top of this with their own opaque
+   backgrounds, so the gradient only actually shows through the padding
+   around them. */
+.chaseGround {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, var(--ink-chase) 0%, var(--ink-chase) 32%, var(--color-bg-page) 68%, var(--color-bg-page) 100%);
+  border: 2px solid var(--ink-line);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+/* A wide light streak sweeping the full width of the scene (Chaser, board,
+   and contestant) — plays alongside the question box's own local wipe-in
+   below so a new question reads as crossing the whole stage, not just one
+   small panel opening on its own. Keyed on the question id in the template
+   (a fresh DOM node per question), which is what makes this replay each
+   time rather than a JS class toggle. */
+.chaseWipeBar {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  background: linear-gradient(100deg, transparent 42%, rgba(var(--color-white-rgb), 0.35) 49%, rgba(var(--color-white-rgb), 0.35) 55%, transparent 62%);
+  animation: chase-wipe-sweep 0.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+@keyframes chase-wipe-sweep {
+  from { transform: translateX(-140%); }
+  to   { transform: translateX(140%); }
+}
+
+/* ---------- answer buttons: chase-specific state on top of .answer-btn ----------
+   These sit after .answer-btn/.answer-btn.picked (defined above) so they win
+   ties in the cascade — e.g. a picked answer that also turns out correct
+   needs to show green, not .picked's blue. */
+
+.answer-btn.chaseOptionButton-fontSm { font-size: 15px; }
+.answer-btn.chaseOptionButton-fontXs { font-size: 13px; }
+
+.answer-btn.chaseOptionButton-correct {
+  background: var(--color-green);
+  opacity: 1;
+}
+.answer-btn.chaseOptionButton-wrong {
+  background: var(--chaser-red-dark);
+  opacity: 1;
+}
+
+/* Staggered pop-in for the entrance sequence's third beat — the prompt has
+   already settled back up by the time this plays (see
+   .chaseQuestionBox-buttons-hidden above). */
+.answer-btn.chase-pop-in { animation: chase-answer-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.chaseOptions-row .answer-btn.chase-pop-in:nth-child(2) { animation-delay: 0.08s; }
+.chaseOptions-row .answer-btn.chase-pop-in:nth-child(3) { animation-delay: 0.16s; }
+@keyframes chase-answer-pop-in {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.6); }
+  60%  { opacity: 1; transform: translateY(0) scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- question box: a real card, with the wipe-in entrance beat ----------
+   Neutral --ink-raised, not the chase-tinted --ink-raised-adjacent red — the
+   question itself belongs to neither side. Height never changes across the
+   entrance sequence: .chaseOptions-row stays laid out the whole time, just
+   invisible (opacity/visibility below, never display:none), so nothing
+   above/below the box reflows. */
+.chaseQuestionBox {
+  position: relative;
+  padding: 24px 28px;
+  border-radius: 14px;
+  background: var(--ink-raised);
+  border: 1px solid rgba(var(--color-white-rgb), 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: chase-question-wipe 0.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+@keyframes chase-question-wipe {
+  from { clip-path: inset(0 100% 0 0 round 14px); }
+  to   { clip-path: inset(0 0 0 0 round 14px); }
+}
+
+.chaseQuestionBox-buttons-hidden .chaseOptions-row {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* ---------- countdown: a small chip on whichever circle still needs to answer ----------
+   Replaces the old full-screen .chaseLockoutFlash pulse entirely on this
+   screen — see the ticket-116 footnote in tickets/README.md for how the
+   caller (ChaseScreen.vue's lockoutBadgeSide) decides which side gets it
+   without the server ever saying who answered first. */
+.countdown-chip {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--ink-raised);
+  border: 3px solid var(--ink-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 4px 4px 0 rgba(var(--color-black-rgb), 0.35);
+}
+.countdown-chip.urgent {
+  border-color: var(--chaser-red-glow);
+  animation: countdown-pulse 0.5s ease-in-out infinite;
+}
+.countdown-num {
+  font-family: var(--font-pixel);
+  font-size: 28px;
+  color: var(--color-white);
+  font-variant-numeric: tabular-nums;
+}
+.countdown-chip.urgent .countdown-num { color: var(--chaser-red-glow); }
+@keyframes countdown-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+
+/* Positions the chip overlapping the portrait circle's bottom-right edge.
+   Lives in .board-portrait-wrap (not .board-portrait-circle), which does
+   NOT clip via overflow:hidden the way the circle itself does — nesting it
+   inside the circle instead clips the badge exactly where it overlaps the
+   edge (hit this while building the mockup). */
+.chaseCountdownBadge {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+}
+
+/* ---------- Caught / Escaped cutscenes ----------
+   Replaces the board scene entirely while chaseOutcome is set: an
+   impact/dash beat plays immediately (these animations autoplay the moment
+   Vue mounts this block), then ChaseScreen.vue delays the existing
+   .chaseOutcomeBanner Transition by a few hundred ms so the banner reads as
+   following the beat rather than appearing on top of it. */
+.chaseCutscene {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 2px solid var(--ink-line);
+}
+
+.chaseCutscene-caught {
+  background: linear-gradient(180deg, #2a1010, var(--ink-chase) 65%);
+  animation: chase-cutscene-shake 0.4s ease 0.12s;
+}
+.chaseCutscene-escaped {
+  background: linear-gradient(180deg, #10202a, var(--ink-chase) 65%);
+}
+@keyframes chase-cutscene-shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px); }
+  40%      { transform: translateX(5px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(2px); }
+}
+
+/* The Chaser floats free (no background box — 115's frame-free rule
+   extended to cutscenes) and reads noticeably larger/more dominant here
+   than their resting 150-180px board circle. */
+.chaseCutsceneChaser {
+  position: absolute;
+  left: 4%;
+  top: 52%;
+  width: 190px;
+  height: 190px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 16px 20px rgba(var(--color-black-rgb), 0.6));
+}
+.chaseCutsceneChaser-caught {
+  animation: chase-catch-chaser-slam 0.35s cubic-bezier(0.6, -0.2, 0.7, 1.4) forwards;
+}
+@keyframes chase-catch-chaser-slam {
+  from { transform: translate(0, -50%); }
+  to   { transform: translate(80px, -50%) scale(1.08); }
+}
+.chaseCutsceneChaser-escaped {
+  top: 55%;
+  animation: chase-escape-chaser-lunge 0.3s ease forwards;
+}
+@keyframes chase-escape-chaser-lunge {
+  from { transform: translate(0, -50%); }
+  to   { transform: translate(24px, -50%) rotate(-10deg); }
+}
+
+.chaseCutsceneContestant {
+  position: absolute;
+  top: 50%;
+}
+.chaseCutsceneContestant-caught {
+  right: 18%;
+  width: 110px;
+  height: 110px;
+  animation: chase-catch-victim-fly 0.5s cubic-bezier(0.5, 0, 0.75, 0) 0.15s forwards,
+             chase-cutscene-fade 0.4s ease 0.4s forwards;
+}
+@keyframes chase-catch-victim-fly {
+  from { transform: translate(0, -50%); }
+  to   { transform: translate(360px, -85%) rotate(70deg); }
+}
+.chaseCutsceneContestant-escaped {
+  left: 32%;
+  top: 55%;
+  width: 100px;
+  height: 100px;
+  animation: chase-escape-runner-dash 0.75s cubic-bezier(0.3, 0.6, 0.2, 1) forwards,
+             chase-cutscene-fade 0.3s ease 0.6s forwards;
+}
+@keyframes chase-escape-runner-dash {
+  from { transform: translate(0, -50%); }
+  to   { transform: translate(420px, -125%) rotate(-18deg); }
+}
+@keyframes chase-cutscene-fade {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.chaseCutsceneFlash {
+  position: absolute;
+  inset: 0;
+  background: var(--color-white);
+  pointer-events: none;
+  animation: chase-catch-flash 0.25s ease-out 0.12s forwards;
+}
+@keyframes chase-catch-flash {
+  0%   { opacity: 0; }
+  30%  { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chaseWipeBar, .chaseQuestionBox, .answer-btn.chase-pop-in,
+  .countdown-chip.urgent,
+  .chaseCutscene-caught, .chaseCutsceneChaser-caught, .chaseCutsceneChaser-escaped,
+  .chaseCutsceneContestant-caught, .chaseCutsceneContestant-escaped, .chaseCutsceneFlash {
+    animation: none !important;
+  }
+  /* Without their (disabled) animations, these two would otherwise render
+     mid-transform/mid-fade forever at their end state — pin them to a plain
+     resting look instead. */
+  .chaseCutsceneChaser-caught { transform: translate(0, -50%); }
+  .chaseCutsceneChaser-escaped { transform: translate(0, -50%); }
+  .chaseCutsceneContestant-caught, .chaseCutsceneContestant-escaped { opacity: 1; transform: translate(0, -50%); }
+  .chaseCutsceneFlash { opacity: 0; }
 }

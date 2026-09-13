@@ -1,9 +1,6 @@
 <script setup>
 import { ref, computed } from "vue";
-import { ChaserCharacter } from "../TriviaTypes.ts";
-import bezosIcon from "../assets/images/chasers/bezos-icon.png";
-import bigStanIcon from "../assets/images/chasers/bigstan-icon.png";
-import namiIcon from "../assets/images/chasers/nami-icon.png";
+import { CHASER_PORTRAITS, CHASER_NAMES } from "../chaserPortraits.ts";
 
 // Mirrors server/src/gameConfig.ts CHASER_QUIP.maxLength — duplicated
 // client-side the same way GamePhase is (see AGENTS.md gotchas).
@@ -24,23 +21,26 @@ const props = defineProps({
     // Hides the composable "Say something..." input row (ticket 097) — the
     // Chaser Final passes false so the Chaser only tabs into the answer
     // input. The bubble and broadcast quips still render either way.
-    quipInput: { type: Boolean, default: true }
+    quipInput: { type: Boolean, default: true },
+    // Ticket 116: opts into the frame-free circle-portrait treatment (115's
+    // .board-portrait-wrap/.board-portrait-circle/.chaser-wrap) instead of
+    // this panel's original rounded-square .chaserPanelMask box. Defaults to
+    // false so Offer/Chaser Final (which still use the box) are unaffected —
+    // only the Chase board opts in today. Whichever ticket redesigns Offer or
+    // the Chaser Final next can flip this on there too instead of forking a
+    // second component.
+    circlePortrait: { type: Boolean, default: false },
+    // Small VT323 countdown badge overlapping the circle's edge (ticket 116)
+    // — only meaningful alongside circlePortrait. null hides the badge
+    // entirely; a number shows it. See ChaseScreen.vue's lockoutBadgeSide for
+    // how the caller decides whether this side gets the badge.
+    countdownSeconds: { type: Number, default: null },
+    countdownUrgent: { type: Boolean, default: false }
 });
 const emit = defineEmits(["send-quip"]);
 
-const portraits = {
-    [ChaserCharacter.Bezos]: bezosIcon,
-    [ChaserCharacter.BigStan]: bigStanIcon,
-    [ChaserCharacter.Nami]: namiIcon
-};
-const names = {
-    [ChaserCharacter.Bezos]: "Bezos",
-    [ChaserCharacter.BigStan]: "Big Stan",
-    [ChaserCharacter.Nami]: "Nami"
-};
-
-const portrait = computed(() => portraits[props.characterId] ?? null);
-const displayName = computed(() => names[props.characterId] ?? "");
+const portrait = computed(() => CHASER_PORTRAITS[props.characterId] ?? null);
+const displayName = computed(() => CHASER_NAMES[props.characterId] ?? "");
 
 const quipDraft = ref("");
 const onCooldown = ref(false);
@@ -66,7 +66,24 @@ function submitQuip() {
 
 <template>
     <div class="chaserPanel">
-        <div class="chaserPanelMask">
+        <div v-if="circlePortrait" class="board-portrait-wrap chaser-wrap">
+            <div class="board-portrait-circle">
+                <img
+                    v-if="portrait"
+                    :src="portrait"
+                    :alt="displayName"
+                    class="board-portrait-img"
+                />
+            </div>
+            <div
+                v-if="countdownSeconds !== null"
+                class="countdown-chip small chaseCountdownBadge"
+                :class="{ urgent: countdownUrgent }"
+            >
+                <span class="countdown-num">{{ countdownSeconds }}</span>
+            </div>
+        </div>
+        <div v-else class="chaserPanelMask">
             <img
                 v-if="portrait"
                 :src="portrait"
