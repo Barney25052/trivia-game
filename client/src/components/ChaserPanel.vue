@@ -14,6 +14,12 @@ const props = defineProps({
     characterId: { type: String, default: "" },
     quipText: { type: String, default: "" },
     quipKey: { type: Number, default: 0 },
+    // The Chaser's own submitted-answer bubble during the Chaser Final
+    // (ticket 098) — kept separate from quipText/quipKey so a future
+    // broadcast quip can never clobber, or be clobbered by, the Chaser's
+    // own answer bubble.
+    answerText: { type: String, default: "" },
+    answerKey: { type: Number, default: 0 },
     isChaser: { type: Boolean, default: false },
     // Hides the composable "Say something..." input row (ticket 097) — the
     // Chaser Final passes false so the Chaser only tabs into the answer
@@ -70,6 +76,9 @@ function submitQuip() {
         </div>
         <Transition name="chaser-bubble-pop">
             <div v-if="quipText" :key="quipKey" class="chaserPanelBubble">{{ quipText }}</div>
+        </Transition>
+        <Transition name="chaser-bubble-pop">
+            <div v-if="answerText" :key="answerKey" class="chaserPanelBubble chaserPanelAnswerBubble">{{ answerText }}</div>
         </Transition>
         <p v-if="displayName" class="playerName chaserPanelName">{{ displayName }}</p>
 

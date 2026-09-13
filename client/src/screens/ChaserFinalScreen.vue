@@ -82,6 +82,7 @@ onUnmounted(() => {
     clearInterval(countdownInterval);
     stopStealTicker();
     if (closeTimeout) clearTimeout(closeTimeout);
+    if (answerBubbleTimeout) clearTimeout(answerBubbleTimeout);
 });
 
 // The target row always spans the full width, one box per point the team
@@ -100,9 +101,31 @@ const chaserInputBox = ref(null);
 // wait here until the next finalQuestion arrives (steal won or lost).
 const chaserWaitingForSteal = ref(false);
 
+// Pops the Chaser's own submitted answer from their ChaserPanel bubble
+// (ticket 098) — mirrors TeamFinalScreen's bubbleText/bubbleKey pattern.
+// This is local, own-client-only state driven straight off submission (the
+// server never broadcasts it — the team must never see the Chaser's typed
+// text) and kept separate from the chaserQuipText/chaserQuipKey channel
+// (App.vue) so a future broadcast quip can never clobber, or be clobbered
+// by, this bubble. A plain local timer is enough here; ticket 099 will
+// generalize this into a shared min-lifetime pattern for the final bubbles.
+const ANSWER_BUBBLE_HOLD_MS = 3000;
+const chaserAnswerBubbleText = ref("");
+const chaserAnswerBubbleKey = ref(0);
+let answerBubbleTimeout = null;
+
+function clearAnswerBubble() {
+    if (answerBubbleTimeout) {
+        clearTimeout(answerBubbleTimeout);
+        answerBubbleTimeout = null;
+    }
+    chaserAnswerBubbleText.value = "";
+}
+
 watch(() => props.finalQuestion, () => {
     chaserAnswerInput.value = "";
     chaserWaitingForSteal.value = false;
+    clearAnswerBubble();
 });
 
 watch(() => props.answerResult, (result) => {
@@ -115,6 +138,12 @@ function submitChaserAnswer() {
     const trimmed = chaserAnswerInput.value.trim();
     if (!trimmed) return;
     emit("submit-final-chaser-answer", { answer: trimmed, questionId: props.finalQuestion.questionId });
+    chaserAnswerBubbleText.value = trimmed;
+    chaserAnswerBubbleKey.value += 1;
+    if (answerBubbleTimeout) clearTimeout(answerBubbleTimeout);
+    answerBubbleTimeout = setTimeout(() => {
+        chaserAnswerBubbleText.value = "";
+    }, ANSWER_BUBBLE_HOLD_MS);
 }
 
 // The steal window countdown is driven by the server's windowMs off the
@@ -228,6 +257,8 @@ function submitSteal() {
           :character-id="chaserCharacterId"
           :quip-text="chaserQuipText"
           :quip-key="chaserQuipKey"
+          :answer-text="chaserAnswerBubbleText"
+          :answer-key="chaserAnswerBubbleKey"
           :is-chaser="isChaser"
           :quip-input="false"
           @send-quip="emit('send-quip', $event)"
