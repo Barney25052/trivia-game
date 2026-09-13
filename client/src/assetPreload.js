@@ -37,9 +37,34 @@ const PRELOAD_IMAGES = [
     bezosIcon, bigStanIcon, namiIcon
 ];
 
+// Memoized across every caller (ticket 109): `new Image().src = ...` fires the
+// request but returns nothing awaitable, so the original version gave callers
+// no way to know preloading had actually finished — the very first real usage
+// of an image (e.g. the Lobby character picker, the earliest and highest-
+// density consumer of this art) could render before the preload request for
+// that same image resolved, especially on a slow/cold connection. Wrapping
+// each image in a load/error promise gives the app a real "preload settled"
+// signal; the promise resolves (never rejects) even on a load error so one
+// missing/broken asset can't hang every caller awaiting the batch. Memoizing
+// the single Promise.all means App.vue's fire-and-forget call at module scope
+// and any later caller (e.g. LobbyScreen gating its live preview) share the
+// same in-flight/settled promise instead of each triggering its own fresh
+// wave of `new Image()` requests for the same 19 files.
+let preloadPromise = null;
+
 export function preloadImages() {
-    for (const src of PRELOAD_IMAGES) {
-        const img = new Image();
-        img.src = src;
+    if (!preloadPromise) {
+        preloadPromise = Promise.all(
+            PRELOAD_IMAGES.map(
+                (src) =>
+                    new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => resolve();
+                        img.onerror = () => resolve();
+                        img.src = src;
+                    })
+            )
+        );
     }
+    return preloadPromise;
 }

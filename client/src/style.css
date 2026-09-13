@@ -1490,6 +1490,24 @@ ul {
   image-rendering: pixelated;
 }
 
+/* Ticket 109: .offerFaceWrap/.offerFaceLayer's box (width/height as
+   percentages of a positioned ancestor, resolved from that ancestor's own
+   explicit size — every screen sizes its avatar box in pixels, e.g.
+   .offerContestantMaskBox at 220px, .lobbyCharacterPreview at 120px,
+   .lobbyBust at 70x63, .teamFinalAvatarWrap at 64px) is already reserved by
+   the browser purely from CSS, before any layer image loads — confirmed live
+   via getBoundingClientRect while every source was still unloaded/erroring,
+   across both the div-based (108) and img-based layers. So a layer never
+   collapses to zero size. The one real gap found live-testing: an `<img>`
+   (eyes/mouth) that genuinely fails to load still paints the browser's own
+   broken-image glyph inside that reserved box even with alt="" — unlike a
+   failed background-image/mask-image div, which paints nothing. This class
+   (applied on the `<img>`'s error event, see CharacterFace.vue) hides the
+   glyph while leaving the box's reserved space alone. */
+.offerFaceLayerHidden {
+  visibility: hidden;
+}
+
 /* Ticket 108: hair/face colour overlay. background-color (the target colour)
    blended against background-image (the art) with background-blend-mode:
    multiply darkens proportionally to the art's own per-pixel shading —

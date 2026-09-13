@@ -2,10 +2,26 @@
 import { ref, computed, watch } from "vue";
 import CharacterFace from "../components/CharacterFace.vue";
 import { encodeCharacter, decodeCharacter } from "../character.ts";
+import { preloadImages } from "../assetPreload.js";
 
 const props = defineProps(["players", "isHost", "room", "chaserSelectionMode", "mySeatId"]);
 const emit = defineEmits(["start", "setChaserMode", "setCharacter"]);
 const settingsOpen = ref(false);
+
+// Ticket 109: this screen is the earliest and highest-density real usage of
+// the CharacterFace art — the live preview repaints on every swatch click,
+// and every seated player gets their own bust the moment they join. Gating
+// both on the same awaitable preloadImages() promise App.vue already kicked
+// off at module scope (memoized there, so this doesn't trigger a second wave
+// of image requests) means that by the time either renders, the browser's
+// image cache is already warm and every layer paints in one frame instead of
+// popping in piecemeal as each layer's own fetch happens to finish. Only
+// gates this screen, not app boot generally — proportionate to where the
+// stall was actually reported.
+const assetsReady = ref(false);
+preloadImages().then(() => {
+    assetsReady.value = true;
+});
 
 // Mirrors server/src/gameConfig.ts CHARACTER — duplicated client-side the
 // same way GamePhase is (see AGENTS.md gotchas).
@@ -125,7 +141,7 @@ async function copyRoomCode() {
           <h3 class="settingsTitle">Customize your look</h3>
 
           <div class="lobbyCharacterPreview">
-            <CharacterFace :character="previewCharacter" reaction="neutral" />
+            <CharacterFace v-if="assetsReady" :character="previewCharacter" reaction="neutral" />
           </div>
 
           <p class="lobbyCharacterLabel">Hairstyle</p>
@@ -233,7 +249,7 @@ async function copyRoomCode() {
                 @animationend="pokedSeatId = null"
               >
                 <div v-if="seatPlayer" class="lobbyBustAvatar">
-                  <CharacterFace :character="seatPlayer.character" reaction="neutral" />
+                  <CharacterFace v-if="assetsReady" :character="seatPlayer.character" reaction="neutral" />
                 </div>
                 <svg v-else viewBox="0 0 100 90" class="lobbyBustSvg" aria-hidden="true">
                   <circle cx="50" cy="30" r="24" />

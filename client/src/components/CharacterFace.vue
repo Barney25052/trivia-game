@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { decodeCharacter } from "../character.ts";
 import { characterColourVar } from "../characterColours.ts";
 import face1 from "../assets/images/face-1.png";
@@ -64,6 +64,25 @@ const eyesImg = computed(() => {
 });
 const mouthImg = computed(() => REACTION_MOUTHS[props.reaction] ?? mouthNeutral);
 
+// Ticket 109: eyes/mouth are the two layers still plain `<img>` tags (108
+// moved hair/face to background-image divs, which already fail silently —
+// confirmed live: a broken background-image/mask-image just paints nothing,
+// no icon). A plain `<img>` is different: even with alt="", a real load
+// failure still renders the browser's own broken-image glyph inside the
+// layer's otherwise-correctly-reserved box (confirmed live by forcing a bad
+// src) — jarring exactly the way the ticket describes, and inconsistent with
+// how the div layers degrade. This makes a failed `<img>` degrade the same
+// way: hide it (not collapse its box — `.offerFaceLayerHidden` only sets
+// visibility:hidden) instead of letting the glyph show. A genuinely slow-but-
+// still-loading image already shows nothing on its own (also confirmed
+// live) — this only covers the real-error case. Reset whenever the source
+// changes so a later successful load (or a reaction switching back) isn't
+// left permanently hidden from a stale failure.
+const eyesLoadFailed = ref(false);
+const mouthLoadFailed = ref(false);
+watch(eyesImg, () => { eyesLoadFailed.value = false; });
+watch(mouthImg, () => { mouthLoadFailed.value = false; });
+
 // Colour model (ticket 102): the art is drawn once in greyscale (today: the
 // existing colour placeholder art, see HUMAN_TASKS.md) and recoloured per
 // channel — see characterColours.ts for the palette and its "one shared
@@ -102,7 +121,19 @@ const shirtColour = computed(() => characterColourVar(decoded.value.shirtColour)
                 WebkitMaskImage: `url(${hairImg})`
             }"
         ></div>
-        <img :src="eyesImg" class="offerFaceLayer" alt="" />
-        <img :src="mouthImg" class="offerFaceLayer" alt="" />
+        <img
+            :src="eyesImg"
+            class="offerFaceLayer"
+            :class="{ offerFaceLayerHidden: eyesLoadFailed }"
+            alt=""
+            @error="eyesLoadFailed = true"
+        />
+        <img
+            :src="mouthImg"
+            class="offerFaceLayer"
+            :class="{ offerFaceLayerHidden: mouthLoadFailed }"
+            alt=""
+            @error="mouthLoadFailed = true"
+        />
     </div>
 </template>
