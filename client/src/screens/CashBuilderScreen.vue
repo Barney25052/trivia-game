@@ -228,8 +228,10 @@ onUnmounted(() => {
                     @blur="inputBox?.focus()"
                 />
 
-                <p v-if="roundFinished" class="playerName cashBuilderStatus">Time's up!</p>
-                <p v-else-if="awaitingNext && !revealedCorrectAnswer" class="playerName cashBuilderStatus">Next question…</p>
+                <div class="cashBuilderStatusSlot">
+                    <p v-if="roundFinished" class="playerName cashBuilderStatus">Time's up!</p>
+                    <p v-else-if="awaitingNext && !revealedCorrectAnswer" class="playerName cashBuilderStatus">Next question…</p>
+                </div>
             </template>
 
             <template v-else>
@@ -240,7 +242,9 @@ onUnmounted(() => {
                     </div>
                     <p class="playerName cashBuilderMeta">{{ questionsLabel }}</p>
                 </div>
-                <p v-if="roundFinished" class="playerName cashBuilderStatus">Time's up!</p>
+                <div class="cashBuilderStatusSlot">
+                    <p v-if="roundFinished" class="playerName cashBuilderStatus">Time's up!</p>
+                </div>
             </template>
           </div>
 

@@ -181,7 +181,7 @@ onUnmounted(() => stopLockoutTicker());
 <template>
   <div class="chaseTable">
     <h2 class="lobbyTitle chaseTableTitle">The Chase</h2>
-    <p v-if="!chaserIsOnBoard" class="playerName chaseOffboardNote">
+    <p class="playerName chaseOffboardNote" :class="{ 'chaseOffboardNote-hidden': chaserIsOnBoard }">
       The Chaser is off the board — one correct answer to enter.
     </p>
 

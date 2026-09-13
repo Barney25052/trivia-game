@@ -1131,6 +1131,29 @@ ul {
 
 .cashBuilderStatus {
   font-size: 20px;
+  /* Ticket 111: zeroed so .cashBuilderStatusSlot's min-height reservation
+     below is exact — a <p>'s default 20px top/bottom margin would otherwise
+     count toward the flex item's outer size and overshoot the slot's
+     reserved 44px. Safe: this class is only ever used inside that slot. */
+  margin: 0;
+}
+
+/* Ticket 111: .cashBuilderStatus ("Time's up!"/"Next question…") is v-if'd
+   in and out at the end of nearly every question. .cashBuilderBody centers
+   its two columns (align-items: center), so without a reserved slot, this
+   line appearing/disappearing changed .cashBuilderMain's height enough to
+   visibly recenter the profile box/CharacterFace beside it (confirmed by
+   direct measurement: a 32px vertical shift). Always rendering the wrapper
+   at a fixed min-height keeps that column's height constant either way.
+   display: flex (rather than a plain block min-height) is required here —
+   a <p>'s default browser margin collapses through a plain block wrapper
+   with no border/padding, which let the slot's true footprint grow past its
+   own min-height; a flex container doesn't collapse its item's margins. */
+.cashBuilderStatusSlot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
 }
 
 .cashBuilderRoot {
@@ -1737,6 +1760,15 @@ ul {
   opacity: 0.7;
 }
 
+/* Ticket 111: this note used to be v-if'd in and out of the DOM as the Chaser
+   crosses on/off the board mid-round, which visibly dropped the whole
+   .chaseTableRow (both portraits + the board) up by the note's own height the
+   moment it disappeared. It now always renders and only toggles visibility,
+   so its line is permanently reserved and nothing below it jumps. */
+.chaseOffboardNote-hidden {
+  visibility: hidden;
+}
+
 .chaseTableRow {
   display: flex;
   align-items: center;
@@ -1849,6 +1881,12 @@ ul {
   font-weight: 400;
   font-style: normal;
   font-size: 20px;
+  line-height: 1.3;
+  /* Ticket 111: reserves 2 lines' worth of height so a long prompt following
+     a short one doesn't drop the answer buttons/status line beneath it —
+     confirmed live (a 1-line vs 3-line prompt shifted the button row by
+     ~48px with no reservation). */
+  min-height: 52px;
   margin: 10px auto;
 }
 
@@ -2129,6 +2167,15 @@ ul {
 .chaserFinalTop {
   display: flex;
   justify-content: center;
+  /* Ticket 111: this slot swaps between ChaserPanel (~294px tall live) and
+     .chaserFinalStealQuestion (much shorter) on every steal open/close —
+     confirmed via direct measurement that the swap alone was dropping
+     .finalTargetRow/.chaserFinalBottom below by ~200px. min-height matches
+     ChaserPanel's own natural height so the slot never shrinks below it, and
+     align-items centers whichever side is showing within that reserved
+     space, so the row below stays put either way. */
+  align-items: center;
+  min-height: 300px;
   margin: 20px 0;
 }
 
