@@ -1,8 +1,9 @@
-/** Colour→CSS-filter map for the contestant character system (ticket 102).
+/** Colour→CSS map for the contestant character system (ticket 102; tint
+ * technique replaced in ticket 108 — see below).
  *
  * Colour model: the character art (hair/face layers) is drawn once in
- * greyscale and recoloured at render time via a CSS `filter`, rather than
- * shipping 9 pre-coloured copies of every layer. `hairColour`/`faceColour`/
+ * greyscale and recoloured at render time, rather than shipping 9
+ * pre-coloured copies of every layer. `hairColour`/`faceColour`/
  * `shirtColour` (see `character.ts`) all index into this SAME 9-entry array —
  * one shared palette across all three channels.
  * ⚠ Judgment call (ticket 102 flagged this as "confirm at implementation",
@@ -10,40 +11,46 @@
  * rather than separate palettes per channel. Revisit if hair/skin/shirt end
  * up wanting different hue ranges.
  *
- * Each entry pairs a solid colour (for the CSS custom properties in
- * style.css, e.g. picker swatches and the flat-shape shoulders/torso
- * placeholder) with an approximate CSS `filter` recipe that pushes a
- * greyscale image toward that same hue. `hue-rotate` alone cannot recolour a
- * fully desaturated image (there's no hue to rotate), so the standard trick
- * is `sepia(1)` first — which injects a fixed sepia hue/chroma — then
- * `hue-rotate` shifts THAT hue toward the target, with `saturate`/
- * `brightness` trimming intensity and depth. These are hand-tuned
- * approximations against today's colour PLACEHOLDER art (see HUMAN_TASKS.md
- * — real greyscale art is still `todo`), not an exact colour conversion;
- * expect to retune the recipes once the real greyscale layers land. */
+ * Tint technique (ticket 108): ticket 102's original approach ran a CSS
+ * `filter` recipe (grayscale → sepia → hue-rotate → saturate/brightness) over
+ * each `<img>` layer. `sepia(1)` injects a fixed, fairly desaturated sepia
+ * hue as the base for `hue-rotate` to shift — even at high `saturate()`
+ * multipliers that base clamps how vivid the result can read, so the tint
+ * came through as a faint wash rather than a clear, identifiable colour
+ * (user report, see ticket 108). `CharacterFace.vue` now recolours hair/face
+ * with a colour overlay instead: each layer's `<img>` becomes a `<div>` with
+ * a `background-color` (the target colour) blended against a
+ * `background-image` (the actual artwork) via `background-blend-mode:
+ * multiply`. `mask-image` (set to the same artwork URL, which defaults to
+ * using its alpha channel as the mask) clips the div back down to the art's
+ * silhouette, since the flat background-color would otherwise paint the
+ * whole rectangular box.
+ *
+ * `multiply` (over the alternative `color`, tried first) was picked after
+ * sampling today's placeholder art directly: every visible pixel in
+ * face-*.png/hair-*.png is either fully white or fully transparent — a flat
+ * silhouette with no shading at all. `background-blend-mode: color` keeps
+ * the backdrop's *luminance* and replaces only hue/saturation, but at 100%
+ * white luminance there is no headroom left to express any saturation, so
+ * every colour blended straight back to white (the exact "faint wash" bug
+ * this ticket is fixing, just relocated). `multiply` instead darkens
+ * proportionally to the art's own value: white * colour = colour exactly, so
+ * today's flat-white art reads as the full, undiluted target colour. It also
+ * still does the sensible thing once real *shaded* greyscale art lands —
+ * white stays full colour, greys darken proportionally into a natural
+ * shadow in the same hue, black stays black — rather than flattening the
+ * layer to one flat solid colour the way a silhouette-fill recolour trick
+ * would (which would look wrong as soon as the art has real shading). The
+ * plain `characterColourVar` below supplies the flat colour for both that
+ * overlay and the flat-shape shoulders/torso placeholder. */
 
 export const CHARACTER_COLOUR_COUNT = 9;
 
-/** Index-matched to the `--character-colour-N` custom properties in
- * style.css — keep both lists in the same order. */
-export const CHARACTER_COLOUR_FILTERS: readonly string[] = [
-    "grayscale(1) brightness(0.4) contrast(1.15)", // 0 charcoal / near-black
-    "grayscale(1) sepia(1) hue-rotate(-45deg) saturate(2.4) brightness(0.6)", // 1 brown
-    "grayscale(1) sepia(1) hue-rotate(-20deg) saturate(1.8) brightness(1.05)", // 2 tan
-    "grayscale(1) sepia(1) hue-rotate(0deg) saturate(3.2) brightness(1.15)", // 3 blonde / gold
-    "grayscale(1) sepia(1) hue-rotate(-50deg) saturate(6) brightness(0.9)", // 4 red
-    "grayscale(1) brightness(0.85) contrast(0.85)", // 5 grey
-    "grayscale(1) sepia(1) hue-rotate(170deg) saturate(3.5) brightness(0.85)", // 6 blue
-    "grayscale(1) sepia(1) hue-rotate(60deg) saturate(2.6) brightness(0.75)", // 7 green
-    "grayscale(1) sepia(1) hue-rotate(220deg) saturate(3.5) brightness(0.8)" // 8 purple
-];
-
-export function characterColourFilter(colourIndex: number): string {
-    return CHARACTER_COLOUR_FILTERS[colourIndex] ?? CHARACTER_COLOUR_FILTERS[0];
-}
-
-/** CSS `var(...)` reference for the same index — for solid-colour shapes
- * (e.g. the shoulders/torso placeholder) that don't need image filtering. */
+/** CSS `var(...)` reference for a palette index — used both for the
+ * hair/face colour-overlay tint and for flat-colour shapes (e.g. the
+ * shoulders/torso placeholder) that don't need image recolouring. Index-
+ * matched to the `--character-colour-N` custom properties in style.css —
+ * keep both in the same order. */
 export function characterColourVar(colourIndex: number): string {
     const clamped = colourIndex >= 0 && colourIndex < CHARACTER_COLOUR_COUNT ? colourIndex : 0;
     return `var(--character-colour-${clamped})`;

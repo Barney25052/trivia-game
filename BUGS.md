@@ -117,3 +117,10 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: the correct-answer flash always fades back to transparent ~700ms after it starts, regardless of how quickly subsequent questions/answers arrive.
 - Repro steps: 1. Run `server` + `client` dev, two players, reach Cash Builder as the active contestant. 2. Answer a question correctly, then wait several seconds without answering again (or answer a second time in quick succession). 3. Watch the full-screen tint — check whether it fades out at ~700ms or lingers.
 - Status: open
+
+## `bug-017` — `chaseFlow` lockout-window test is timing-flaky (wall-clock assertion with only 20ms slack)
+- Found: 2026-09-13 · ticket 108 (found running the server's green gate; unrelated to it — ticket 108 made no server changes) · `server/test/chaseFlow.test.ts:260-275` ("lockout window: the round resolves from just one side's answer once the window closes, without waiting for the other side")
+- What you saw: `npm test` failed once with `AssertionError: expected the round to wait out the 150ms lockout, resolved after 116ms` (`elapsedMs >= windowMs - 20` failed, i.e. it resolved 34ms early). The very next full-suite run on the same unmodified `dev` HEAD passed cleanly (308/308). The test measures a real `chaseAnswerWindowMs: 150` lockout with `Date.now()` around a live `submitChaseAnswer` round-trip and only allows 20ms of slack — under momentary system/event-loop load that margin can be missed even though the underlying `scheduleTimer` behavior is correct.
+- Expected: the test passes reliably regardless of incidental system load, e.g. by widening the slack, using the room's mocked/virtual clock instead of wall-clock `Date.now()` (`scheduleTimer` already supports a controllable clock per its own test suite), or asserting a looser bound.
+- Repro steps: `cd server && npm test`, repeatedly — fails intermittently (1 failure observed in 2 consecutive full runs) always at this same assertion.
+- Status: open

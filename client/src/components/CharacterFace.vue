@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from "vue";
 import { decodeCharacter } from "../character.ts";
-import { characterColourFilter, characterColourVar } from "../characterColours.ts";
+import { characterColourVar } from "../characterColours.ts";
 import face1 from "../assets/images/face-1.png";
 import face2 from "../assets/images/face-2.png";
 import face3 from "../assets/images/face-3.png";
@@ -65,11 +65,16 @@ const eyesImg = computed(() => {
 const mouthImg = computed(() => REACTION_MOUTHS[props.reaction] ?? mouthNeutral);
 
 // Colour model (ticket 102): the art is drawn once in greyscale (today: the
-// existing colour placeholder art, see HUMAN_TASKS.md) and recoloured via a
-// CSS filter per channel — see characterColours.ts for the palette + recipe
-// and its "one shared palette across channels" judgment call.
-const hairFilter = computed(() => characterColourFilter(decoded.value.hairColour));
-const faceFilter = computed(() => characterColourFilter(decoded.value.faceColour));
+// existing colour placeholder art, see HUMAN_TASKS.md) and recoloured per
+// channel — see characterColours.ts for the palette and its "one shared
+// palette across channels" judgment call.
+// Tint technique (ticket 108): a colour overlay (background-color blended
+// against the art with background-blend-mode: multiply, masked to the art's
+// own silhouette — see the .offerFaceTint rule in style.css and the comment
+// in characterColours.ts) replaced the original CSS `filter` recipe, which
+// read as a faint wash rather than a clear, identifiable colour.
+const hairColour = computed(() => characterColourVar(decoded.value.hairColour));
+const faceColour = computed(() => characterColourVar(decoded.value.faceColour));
 // The shoulders/torso layer is a flat CSS shape, not an image (no
 // shoulders.png exists yet — HUMAN_TASKS.md has it as `todo`), so it's
 // recoloured with a plain background-color instead of an image filter.
@@ -79,8 +84,24 @@ const shirtColour = computed(() => characterColourVar(decoded.value.shirtColour)
 <template>
     <div class="offerFaceWrap">
         <div class="offerShoulders" :style="{ backgroundColor: shirtColour }"></div>
-        <img :src="faceImg" class="offerFaceLayer" :style="{ filter: faceFilter }" alt="" />
-        <img :src="hairImg" class="offerFaceLayer" :style="{ filter: hairFilter }" alt="" />
+        <div
+            class="offerFaceLayer offerFaceTint"
+            :style="{
+                backgroundColor: faceColour,
+                backgroundImage: `url(${faceImg})`,
+                maskImage: `url(${faceImg})`,
+                WebkitMaskImage: `url(${faceImg})`
+            }"
+        ></div>
+        <div
+            class="offerFaceLayer offerFaceTint"
+            :style="{
+                backgroundColor: hairColour,
+                backgroundImage: `url(${hairImg})`,
+                maskImage: `url(${hairImg})`,
+                WebkitMaskImage: `url(${hairImg})`
+            }"
+        ></div>
         <img :src="eyesImg" class="offerFaceLayer" alt="" />
         <img :src="mouthImg" class="offerFaceLayer" alt="" />
     </div>

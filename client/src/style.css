@@ -1483,11 +1483,37 @@ ul {
 
 .offerFaceLayer {
   position: absolute;
-  top: -4%;
+  top: 2%;
   left: 15%;
   width: 70%;
   height: 70%;
   image-rendering: pixelated;
+}
+
+/* Ticket 108: hair/face colour overlay. background-color (the target colour)
+   blended against background-image (the art) with background-blend-mode:
+   multiply darkens proportionally to the art's own per-pixel shading —
+   today's placeholder art is a flat white silhouette (confirmed by pixel
+   sampling: 100% fully-white or fully-transparent, no shading at all), so
+   white * colour = colour exactly, giving the full, undiluted target colour
+   with no wash at all. This also still does the right thing once real
+   *shaded* greyscale art replaces the placeholder: white stays full colour,
+   greys darken proportionally (natural shadow in the same hue), black stays
+   black. (background-blend-mode: color — which keeps the backdrop's
+   luminance and replaces only hue/saturation — was tried first and
+   rejected: at the placeholder's 100%-white luminance there is no headroom
+   left to express saturation, so every colour blended to plain white.)
+   mask-image (same art, used for its alpha channel) clips the div back down
+   to the art's silhouette so the flat background-color doesn't paint the
+   whole rectangular box. */
+.offerFaceTint {
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-blend-mode: multiply;
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
 }
 
 .offerControls {
