@@ -160,6 +160,15 @@ Custom-pickable contestant avatars (5 hairstyles, 3 faces, hair/face/shirt colou
 ### Follow-up bug fixes (found 2026-09-13, overnight session)
 | 104 | Fix invalid WebSocket close code on host disconnect (`bug-014`) | done*************** |
 
+### User-reported polish & bugs (105-111, live session 2026-09-13)
+| 105 | Chaser Final round doesn't end at 0; clock must genuinely pause during a pushback (`bug-013` + user report) | backlog |
+| 106 | Stale Cash Builder question briefly visible after the phase moves on | backlog |
+| 107 | Cash Builder speech bubble doesn't stay up long enough | backlog |
+| 108 | Character colours render too lightly; head sits too high (UI sign-off required) | backlog |
+| 109 | Character layer images flash/look broken on first load | backlog |
+| 110 | Contestants' custom characters aren't shown on the Roles Reveal screen (UI sign-off required) | backlog |
+| 111 | Layout stability — stop elements shifting/jumping across screens (UI sign-off required) | backlog |
+
 \*\*\* 056: scope was narrowed with the user before implementation (per AGENTS.md's UI sign-off rule) from "always there, every phase" to **only the phases where the Chaser and a contestant are face-to-face**: Offer, Chase, and the Chaser Final — not Lobby, Chaser Selection/Reveal, Roles Reveal, Lineup, Cash Builder, or Team Final. Placement is inline on the left side of each of those three screens (matching where the box already sat in Offer, per ticket 052) rather than a global fixed-position overlay, so `ChaserPanel.vue` is instantiated once per "table" screen instead of a single App-level mount; quip display state (`chaserQuipText`/`chaserQuipKey`) is still centralized in `App.vue` and passed down, with each screen able to feed it local auto-quips (`@auto-quip`) alongside the real `chaserQuip` broadcast from ticket 055. `OfferScreen.vue`'s inline chaser box/portrait/bubble markup was extracted into the shared component as scoped. Verified manually with two browser clients through a full round (Lobby → chaser pick → Offer, incl. a live Chaser-typed quip arriving on the other client → Chase → Team Final (panel correctly absent) → Chaser Final); found and logged an unrelated pre-existing bug in the process (`bug-008`, `CashBuilderScreen.vue` answer input).
 
 \*\*\*\* 058: found already implemented in code (server + client) but left marked `backlog` in this table — corrected 2026-09-12, no new work needed.
