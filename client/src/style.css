@@ -865,18 +865,12 @@ ul {
 }
 
 .contestantAvatar {
+  position: relative;
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background-color: var(--color-azure);
-  color: var(--color-white);
-  font-family: "Roboto", sans-serif;
-  font-weight: 400;
-  font-style: normal;
-  font-size: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background-color: var(--color-grey-avatar-bg);
+  overflow: hidden;
 }
 
 .contestantName {

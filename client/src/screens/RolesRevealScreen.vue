@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import { PlayerRole, ChaserCharacter } from "../TriviaTypes.ts";
+import CharacterFace from "../components/CharacterFace.vue";
 import bezosIcon from "../assets/images/chasers/bezos-icon.png";
 import bigStanIcon from "../assets/images/chasers/bigstan-icon.png";
 import namiIcon from "../assets/images/chasers/nami-icon.png";
@@ -67,7 +68,9 @@ function handleCharacterSelect(characterId) {
             <h3 class="revealContestantsTitle">The Contestants</h3>
             <ul class="revealContestants">
                 <li v-for="player in contestants" :key="player.seatId" class="contestantCard">
-                    <div class="contestantAvatar">{{ player.name.charAt(0).toUpperCase() }}</div>
+                    <div class="contestantAvatar">
+                        <CharacterFace :character="player.character" reaction="neutral" />
+                    </div>
                     <span class="contestantName">{{ player.name }}</span>
                     <span class="contestantReadyRow">
                         <span
