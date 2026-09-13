@@ -415,7 +415,7 @@ describe("final round — team buzz-in and answers (ticket 078)", () => {
         room.mcQuestionSource = stubChaseSource();
         room.questionBank = bankFixture(20);
 
-        const { contestantClient, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        const { contestantClient, contestantSeatId, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
         const teamMessage = await teamFinalQuestion;
         const scoreBefore = room.state.teamScore;
 
@@ -424,12 +424,15 @@ describe("final round — team buzz-in and answers (ticket 078)", () => {
 
         const nextQuestion = contestantClient.waitForMessage("finalQuestion");
         const answerResult = contestantClient.waitForMessage("answerResult");
+        // A correct final answer broadcasts a smile reaction (ticket 103).
+        const reactionPromise = contestantClient.waitForMessage("reaction");
         // The fixture's canonical answer is "Answer <id>".
         contestantClient.send("submitFinalAnswer", { questionId: teamMessage.questionId, answer: `Answer ${teamMessage.questionId}` });
 
         const result = await answerResult;
         assert.strictEqual(result.correct, true);
         assert.strictEqual(room.state.teamScore, scoreBefore + 1);
+        assert.deepStrictEqual(await reactionPromise, { seatId: contestantSeatId, expression: "smile" });
 
         const next = await nextQuestion;
         assert.strictEqual(next.side, "team");
@@ -652,7 +655,7 @@ describe("final round — Chaser answer engine and steal (ticket 079)", () => {
         room.mcQuestionSource = stubChaseSource();
         room.questionBank = bankFixture(20);
 
-        const { contestantClient, chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
+        const { contestantClient, contestantSeatId, chaserClient, chaserMessage } = await toChaserFinal(colyseus, room);
         room.state.chaserScore = 2;
 
         const steal = contestantClient.waitForMessage("finalSteal");
@@ -663,6 +666,8 @@ describe("final round — Chaser answer engine and steal (ticket 079)", () => {
         assert.ok(!("answer" in stealMessage));
 
         const resolved = contestantClient.waitForMessage("finalStealResolved");
+        // A correct resolved steal broadcasts a smile reaction (ticket 103).
+        const reactionPromise = contestantClient.waitForMessage("reaction");
         contestantClient.send("submitFinalStealAnswer", {
             questionId: chaserMessage.questionId,
             answer: `Answer ${chaserMessage.questionId}`
@@ -670,6 +675,7 @@ describe("final round — Chaser answer engine and steal (ticket 079)", () => {
         const resolvedMessage = await resolved;
         assert.strictEqual(resolvedMessage.pushedBack, true);
         assert.strictEqual(room.state.chaserScore, 1);
+        assert.deepStrictEqual(await reactionPromise, { seatId: contestantSeatId, expression: "smile" });
     });
 
     it("a correct steal while chaserScore is 0 raises the team's target instead", async () => {

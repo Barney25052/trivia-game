@@ -3,7 +3,7 @@ import { allPlayersReady, allPlayersVoted, tallyChaserVotes } from "./chaserSele
 import { checkAnswer } from "../../questions/answerChecker.js";
 import { pickOfferQuip } from "../../offerQuips.js";
 import { isValidCharacter } from "../../character.js";
-import { CASH_BUILDER, CHASER_CHARACTERS, CHASER_QUIP, OFFER } from "../../gameConfig.js";
+import { CASH_BUILDER, CHASER_CHARACTERS, CHASER_QUIP, OFFER, REACTION } from "../../gameConfig.js";
 
 export function startGame(client: any, message: any, room: any) {
     if (!room.isHost(client)) {
@@ -160,6 +160,13 @@ export function setChaserLowOffer(client: any, message: any, room: any) {
     }
     room.currentOffer.low = amount;
     console.log(`${seatId} set the low offer to ${amount}`);
+    // Reaction reveal (ticket 103), replacing OfferScreen.vue's former local
+    // computed: a low offer at or below the threshold frowns the contestant
+    // receiving it. Never fires for the $0-middle case — that offer is
+    // pre-filled to $0 and never reaches this handler (see startOffer).
+    if (amount <= REACTION.offerSadLowThreshold) {
+        room.broadcast("reaction", { seatId: room.state.activeContestantSeatId, expression: "frown" });
+    }
     room.broadcast("offerLowSet", {
       seatId: room.state.activeContestantSeatId,
       low: amount,
@@ -352,6 +359,9 @@ export function submitFinalAnswer(client: any, message: any, room: any) {
     const isCorrect = checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])]);
     if (isCorrect) {
         room.state.teamScore += 1;
+        // Final round only reacts to success (ticket 103) — a wrong answer
+        // already gets the full-screen red flash from ticket 100.
+        room.broadcastSuccessReaction(seatId);
     }
     client.send("answerResult", {
         correct: isCorrect,
@@ -486,6 +496,9 @@ export function submitFinalStealAnswer(client: any, message: any, room: any) {
         } else {
             room.state.teamScore += 1;
         }
+        // Resolved steal only reacts to success (ticket 103) — same scope as
+        // the team's regular final answers.
+        room.broadcastSuccessReaction(seatId);
     }
     console.log(
         `${seatId} attempted the steal: ${isCorrect ? "correct" : "wrong"}` +
@@ -555,6 +568,7 @@ export function submitAnswer(client: any, message: any, room: any) {
         player.cashBuilderMoney += CASH_BUILDER.rewardPerCorrect;
         player.cashBuilderCorrectAnswers += 1;
     }
+    room.broadcastAnswerReaction(seatId, isCorrect);
 
     client.send("answerResult", {
         correct: isCorrect,

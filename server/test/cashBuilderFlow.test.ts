@@ -4,7 +4,7 @@ import appConfig from "../src/app.config.js";
 import { GameState } from "../src/rooms/schema/GameState.js";
 import { GamePhase } from "../src/TriviaTypes.js";
 import { loadBank, BankQuestion } from "../src/questions/bank.js";
-import { CASH_BUILDER } from "../src/gameConfig.js";
+import { CASH_BUILDER, REACTION } from "../src/gameConfig.js";
 import { cleanup, getTestServer } from "./testServer.js";
 import { seatIdOf } from "./seatIdHelper.js";
 
@@ -317,6 +317,56 @@ describe("cashBuilderFlow (integration)", () => {
 
         assert.strictEqual(room.state.players.get(activeSeatId).cashBuilderMoney, 0);
         assert.strictEqual(room.state.players.get(activeSeatId).cashBuilderCorrectAnswers, 0);
+    });
+
+    it("broadcasts a reaction cue to every client on a correct answer (smile), visible to the bench spectator too (ticket 103)", async () => {
+        const { activeClient, benchClient, activeSeatId } = await openCashBuilder(colyseus, {
+            cashBuilderDurationMs: 8000
+        });
+
+        const q1 = await activeClient.waitForMessage("question");
+        const canonical1 = bank.find((q) => q.id === q1.questionId)!;
+
+        const activeReaction = activeClient.waitForMessage("reaction");
+        const benchReaction = benchClient.waitForMessage("reaction");
+        activeClient.send("submitAnswer", { answer: canonical1.answer, questionId: q1.questionId });
+
+        const [activeMsg, benchMsg] = await Promise.all([activeReaction, benchReaction]);
+        assert.deepStrictEqual(activeMsg, { seatId: activeSeatId, expression: "smile" });
+        assert.deepStrictEqual(benchMsg, { seatId: activeSeatId, expression: "smile" });
+        assert.ok(!("correctAnswer" in activeMsg) && !("answer" in activeMsg), "the reaction cue never carries the answer text");
+    });
+
+    it("a wrong answer frowns, and a second wrong answer in a row goes teary — resetting on the next correct answer (ticket 103)", async () => {
+        const { activeClient, activeSeatId } = await openCashBuilder(colyseus, {
+            cashBuilderDurationMs: 8000
+        });
+
+        const q1 = await activeClient.waitForMessage("question");
+        const reaction1 = activeClient.waitForMessage("reaction");
+        const q2Promise = activeClient.waitForMessage("question");
+        activeClient.send("submitAnswer", { answer: "definitely wrong", questionId: q1.questionId });
+        assert.deepStrictEqual(await reaction1, { seatId: activeSeatId, expression: "frown" }, "one wrong answer frowns");
+        const q2 = await q2Promise;
+
+        const reaction2 = activeClient.waitForMessage("reaction");
+        const q3Promise = activeClient.waitForMessage("question");
+        activeClient.send("submitAnswer", { answer: "still wrong", questionId: q2.questionId });
+        assert.deepStrictEqual(
+            await reaction2,
+            { seatId: activeSeatId, expression: "teary" },
+            `${REACTION.wrongStreakTear} wrong answers in a row goes teary`
+        );
+        const q3 = await q3Promise;
+
+        const canonical3 = bank.find((q) => q.id === q3.questionId)!;
+        const reaction3 = activeClient.waitForMessage("reaction");
+        activeClient.send("submitAnswer", { answer: canonical3.answer, questionId: q3.questionId });
+        assert.deepStrictEqual(
+            await reaction3,
+            { seatId: activeSeatId, expression: "smile" },
+            "a correct answer resets the streak and smiles, not teary from the prior streak"
+        );
     });
 
     it("bank exhaustion: a tiny bank of 2 questions is drained, then null is broadcast and the timer still transitions to Offer", async () => {

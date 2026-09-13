@@ -12,17 +12,21 @@ const props = defineProps({
     chaserQuipText: { type: String, default: "" },
     chaserQuipKey: { type: Number, default: 0 },
     chaserPot: { type: Number, default: 0 },
-    teamPot: { type: Number, default: 0 }
+    teamPot: { type: Number, default: 0 },
+    // Per-seat face reaction store (ticket 103): seatId -> expression, see
+    // App.vue's reactionsBySeat.
+    reactions: { type: Object, default: () => ({}) }
 });
 const emit = defineEmits(["setLow", "setHigh", "choose", "send-quip"]);
 
 // Mirrors server/src/gameConfig.ts OFFER + BOARD — duplicated client-side the
 // same way GamePhase is (see AGENTS.md gotchas): no shared module between the
-// two npm projects.
+// two npm projects. The former HAPPY_HIGH_THRESHOLD/SAD_LOW_THRESHOLD mirror
+// (server/src/gameConfig.ts REACTION) is gone — the server now decides the
+// reaction itself and broadcasts it (ticket 103), so this screen no longer
+// needs to know the thresholds at all.
 const LOW_STEP = 100;
 const HIGH_STEP = 1_000;
-const HAPPY_HIGH_THRESHOLD = 50_000;
-const SAD_LOW_THRESHOLD = 0;
 const BOARD_SPACES = [7, 6, 5, 4, 3, 2, 1];
 const LOW_SPACE = 4;
 const MIDDLE_SPACE = 5;
@@ -47,15 +51,6 @@ const contestantName = computed(() => {
 const contestantCharacter = computed(() => {
     const player = props.players.find((p) => p.seatId === props.offer?.seatId);
     return player?.character ?? "";
-});
-
-// The happy/sad reaction is still computed here and handed to CharacterFace,
-// but reaction rendering itself is deferred to ticket 103 — the component
-// renders neutral for any value until then (see CharacterFace.vue).
-const reaction = computed(() => {
-    if (hasHigh.value && props.offer.high > HAPPY_HIGH_THRESHOLD) return "happy";
-    if (hasLow.value && props.offer.middle !== 0 && props.offer.low <= SAD_LOW_THRESHOLD) return "sad";
-    return "neutral";
 });
 
 function formatAmount(amount) {
@@ -156,7 +151,7 @@ function submitHigh() {
 
                 <div class="offerContestantBox">
                     <div class="offerContestantMaskBox">
-                        <CharacterFace :character="contestantCharacter" :reaction="reaction" />
+                        <CharacterFace :character="contestantCharacter" :reaction="reactions[offer.seatId] ?? 'neutral'" />
                     </div>
                     <p class="playerName offerChaserName">{{ contestantName }}</p>
                 </div>

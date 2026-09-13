@@ -13,6 +13,11 @@ import hair5 from "../assets/images/hair-5.png";
 import eyesNeutral1 from "../assets/images/eyes-1.png";
 import eyesNeutral2 from "../assets/images/eyes-2.png";
 import mouthNeutral from "../assets/images/mouth.png";
+import eyesHappy from "../assets/images/eyes-happy.png";
+import eyesSad from "../assets/images/eyes-sad.png";
+import mouthHappy from "../assets/images/mouth-happy.png";
+import mouthSad from "../assets/images/mouth-sad.png";
+import mouthSmirk from "../assets/images/mouth-smirk.png";
 
 // Shared presentational avatar (ticket 102): decodes a `character` code
 // (see ../character.ts) and layers shoulders -> face -> hair -> eyes -> mouth,
@@ -20,9 +25,10 @@ import mouthNeutral from "../assets/images/mouth.png";
 // duplicated across CashBuilder/Offer/Chase/TeamFinal/ChaserFinal/Lineup.
 const props = defineProps({
     character: { type: String, default: "" },
-    // Reaction wiring lands in ticket 103 — accepted now so callers don't
-    // need a breaking prop change later, but every value renders the same
-    // neutral eyes/mouth until then. Do not add reaction branching here.
+    // Server-driven reaction cue (ticket 103) — "neutral" | "smile" | "frown"
+    // | "teary", broadcast by the room and flashed for a few seconds by the
+    // caller (see App.vue's reactionsBySeat store) before reverting to
+    // "neutral". Any other/unknown value also renders neutral.
     reaction: { type: String, default: "neutral" }
 });
 
@@ -42,8 +48,21 @@ const NEUTRAL_EYES_IMAGES = [eyesNeutral1, eyesNeutral2];
 
 const faceImg = computed(() => FACE_IMAGES[decoded.value.faceStyle % FACE_IMAGES.length]);
 const hairImg = computed(() => HAIR_IMAGES[decoded.value.hairStyle % HAIR_IMAGES.length]);
-const eyesImg = computed(() => NEUTRAL_EYES_IMAGES[decoded.value.hairStyle % NEUTRAL_EYES_IMAGES.length]);
-const mouthImg = computed(() => mouthNeutral);
+
+// Reaction eyes/mouth (ticket 103). "teary" has no dedicated eyes art yet —
+// eyes-teary.png is still `todo` in HUMAN_TASKS.md, no placeholder exists at
+// all — so it falls back to the sad eyes; the mouth still switches to
+// mouth-smirk so a two-in-a-row miss reads as visually more intense than a
+// single wrong answer (mouth-sad) even without the real teary eyes. Revisit
+// this pairing once the real art lands.
+const REACTION_EYES = { smile: eyesHappy, frown: eyesSad, teary: eyesSad };
+const REACTION_MOUTHS = { smile: mouthHappy, frown: mouthSad, teary: mouthSmirk };
+
+const eyesImg = computed(() => {
+    const neutralEyes = NEUTRAL_EYES_IMAGES[decoded.value.hairStyle % NEUTRAL_EYES_IMAGES.length];
+    return REACTION_EYES[props.reaction] ?? neutralEyes;
+});
+const mouthImg = computed(() => REACTION_MOUTHS[props.reaction] ?? mouthNeutral);
 
 // Colour model (ticket 102): the art is drawn once in greyscale (today: the
 // existing colour placeholder art, see HUMAN_TASKS.md) and recoloured via a

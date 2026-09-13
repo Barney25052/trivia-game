@@ -11,7 +11,10 @@ const props = defineProps({
     activeContestantCharacter: { type: String, default: "" },
     cashBuilderMoney: { type: Number, default: 0 },
     cashBuilderCorrectAnswers: { type: Number, default: 0 },
-    answerResult: { type: Object, default: null }
+    answerResult: { type: Object, default: null },
+    // Per-seat face reaction store (ticket 103): seatId -> expression, see
+    // App.vue's reactionsBySeat.
+    reactions: { type: Object, default: () => ({}) }
 });
 const emit = defineEmits(["submit-answer"]);
 
@@ -224,7 +227,7 @@ onUnmounted(() => {
               <div v-if="bubbleText" :key="bubbleKey" class="chaserPanelBubble cashBuilderBubble">{{ bubbleText }}</div>
             </Transition>
             <div class="offerContestantMaskBox">
-              <CharacterFace :character="activeContestantCharacter" reaction="neutral" />
+              <CharacterFace :character="activeContestantCharacter" :reaction="reactions[activeContestantSeatId] ?? 'neutral'" />
             </div>
             <p class="playerName offerChaserName">{{ activeContestantName || "A contestant" }}</p>
           </div>

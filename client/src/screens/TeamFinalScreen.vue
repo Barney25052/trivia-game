@@ -11,7 +11,10 @@ const props = defineProps({
     chaserSeatId: { type: String, default: "" },
     finalQuestion: { type: Object, default: null },
     finalBuzzSeatId: { type: String, default: "" },
-    answerResult: { type: Object, default: null }
+    answerResult: { type: Object, default: null },
+    // Per-seat face reaction store (ticket 103): seatId -> expression, see
+    // App.vue's reactionsBySeat.
+    reactions: { type: Object, default: () => ({}) }
 });
 const emit = defineEmits(["buzz-in", "submit-final-answer"]);
 
@@ -232,7 +235,7 @@ watch(isBuzzWinner, (winner) => {
           </Transition>
           <p class="playerName teamFinalPlayerName">{{ p.name }}</p>
           <div class="teamFinalAvatarWrap">
-            <CharacterFace :character="p.character" reaction="neutral" />
+            <CharacterFace :character="p.character" :reaction="reactions[p.seatId] ?? 'neutral'" />
           </div>
         </div>
       </div>

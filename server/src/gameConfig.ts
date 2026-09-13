@@ -226,6 +226,22 @@ export const CHARACTER = {
     colours: 9
 } as const;
 
+/** Contestant face reactions (ticket 103): the server decides the expression
+ * and broadcasts a `reaction { seatId, expression }` cue so every client
+ * (including spectators and the Chaser) renders the same flash. */
+export const REACTION = {
+    /** Consecutive wrong answers before the flashed expression escalates from
+     * frown to teary (cash builder). */
+    wrongStreakTear: 2,
+    /** Reused from OfferScreen.vue's former local "happy"/"sad" computed
+     * (tickets 057/058): a low offer at or below this is a frown, a high
+     * offer above this is a smile. The server now decides and broadcasts the
+     * `reaction` cue itself instead of each client inferring it from the
+     * synced offer amounts. */
+    offerSadLowThreshold: 0,
+    offerHappyHighThreshold: 50_000
+} as const;
+
 export const RATE_LIMIT = {
     maxMessages: 20,
     windowMs: 10_000,

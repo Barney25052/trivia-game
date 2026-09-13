@@ -9,6 +9,7 @@ import {
   CHASER_REVEAL,
   CHASER_SELECTION,
   LINEUP,
+  REACTION,
 } from "../../gameConfig.js";
 
 export function applyEffects(effects: FlowEffect[], room: any, context: any): void {
@@ -166,6 +167,12 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
             chaserCharacterAbility: chaserChar?.ability ?? "",
             quip: pickOfferQuip("high")
           });
+          // Reaction reveal (ticket 103), replacing OfferScreen.vue's former
+          // local computed: a high offer above the threshold smiles the
+          // contestant receiving it.
+          if (effect.high > REACTION.offerHappyHighThreshold) {
+            room.broadcast("reaction", { seatId: effect.seatId, expression: "smile" });
+          }
           break;
         }
 

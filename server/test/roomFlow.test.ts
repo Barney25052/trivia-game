@@ -948,6 +948,64 @@ alice.send("chaserVote", { targetSeatId: seatIdOf(room, bob) });
       await waitForPhase(room, GamePhase.Chase);
     });
 
+    it("reaction (ticket 103): a low offer at or below $0 frowns the contestant, but a positive low offer does not react", async () => {
+      const { room, chaserClient, activeClient } = await reachOffer(colyseus);
+
+      const noReaction = Symbol("no reaction broadcast");
+      const positiveLowReaction = Promise.race([
+        activeClient.waitForMessage("reaction"),
+        sleep(150).then(() => noReaction)
+      ]);
+      chaserClient.send("setChaserLowOffer", { amount: 1000 });
+      assert.strictEqual(
+        await positiveLowReaction,
+        noReaction,
+        "a low offer above the sad threshold must not trigger a reaction"
+      );
+      assert.strictEqual(room.currentOffer.low, 1000);
+    });
+
+    it("reaction (ticket 103): a $0 (or negative) low offer broadcasts a frown for the active contestant", async () => {
+      const { room, chaserClient, activeClient } = await reachOffer(colyseus);
+
+      const reactionPromise = activeClient.waitForMessage("reaction");
+      chaserClient.send("setChaserLowOffer", { amount: 0 });
+      const reaction = await reactionPromise;
+      assert.deepStrictEqual(reaction, { seatId: room.state.activeContestantSeatId, expression: "frown" });
+    });
+
+    it("reaction (ticket 103): a high offer above $50,000 broadcasts a smile for the active contestant", async () => {
+      const { room, chaserClient, activeClient } = await reachOffer(colyseus);
+      room.state.chaserPot = 100_000;
+
+      chaserClient.send("setChaserLowOffer", { amount: 0 });
+      await sleep(30);
+
+      const reactionPromise = activeClient.waitForMessage("reaction");
+      chaserClient.send("setChaserHighOffer", { amount: 60_000 });
+      const reaction = await reactionPromise;
+      assert.deepStrictEqual(reaction, { seatId: room.state.activeContestantSeatId, expression: "smile" });
+    });
+
+    it("reaction (ticket 103): a high offer at or below $50,000 does not react", async () => {
+      const { activeClient, chaserClient } = await reachOffer(colyseus);
+
+      chaserClient.send("setChaserLowOffer", { amount: 0 });
+      await sleep(30);
+
+      const noReaction = Symbol("no reaction broadcast");
+      const highReaction = Promise.race([
+        activeClient.waitForMessage("reaction"),
+        sleep(150).then(() => noReaction)
+      ]);
+      chaserClient.send("setChaserHighOffer", { amount: 12_000 });
+      assert.strictEqual(
+        await highReaction,
+        noReaction,
+        "a high offer at or below the happy threshold must not trigger a reaction"
+      );
+    });
+
     it("ticket 058: a $0 middle with a $0 team pot skips the low offer — Chaser sets high only, round still reaches Chase", async () => {
       const room = await colyseus.createRoom<GameState>("trivia", {
         cashBuilderDurationMs: 250,

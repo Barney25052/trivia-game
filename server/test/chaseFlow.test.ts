@@ -357,6 +357,14 @@ describe("chase flow (ticket 064)", () => {
         const { room, contestantClient, chaserClient, contestantSeatId, firstQuestion } =
             await reachChase(colyseus, { offer: "low" });
 
+        // Every wrong chase answer for the contestant is broadcast as a
+        // reaction (ticket 103) — the contestant is wrong every round here,
+        // so every one of them (including the terminal, catching round)
+        // should read "teary" (the Chase skips the cash builder's frown
+        // stage — see broadcastChaseReaction).
+        const reactions: any[] = [];
+        contestantClient.onMessage("reaction", (message: any) => reactions.push(message));
+
         let question = firstQuestion;
         for (let round = 0; round < 4; round += 1) {
             if (room.state.currentPhase !== GamePhase.Chase) {
@@ -383,11 +391,24 @@ describe("chase flow (ticket 064)", () => {
         // no next contestant, so the round moves straight to the team final.
         assert.strictEqual(room.state.currentPhase, GamePhase.TeamFinal);
         assert.strictEqual(room.state.players.get(contestantSeatId).isEliminated, true);
+
+        assert.ok(reactions.length > 0, "a reaction was broadcast for the caught contestant");
+        assert.ok(
+            reactions.every((r) => r.seatId === contestantSeatId && r.expression === "teary"),
+            `expected every reaction to be teary for the caught contestant, got ${JSON.stringify(reactions)}`
+        );
     });
 
     it("escape: the contestant reaching the escape space ends the chase and pays the team pot", async () => {
         const { room, contestantClient, chaserClient, contestantSeatId, firstQuestion } =
             await reachChase(colyseus, { offer: "low" });
+
+        // Every correct chase answer for the contestant is broadcast as a
+        // reaction (ticket 103) — the contestant is correct every round
+        // here, so every one of them (including the terminal, escaping
+        // round) should read "smile".
+        const reactions: any[] = [];
+        contestantClient.onMessage("reaction", (message: any) => reactions.push(message));
 
         let question = firstQuestion;
         for (let round = 0; round < 4; round += 1) {
@@ -416,6 +437,12 @@ describe("chase flow (ticket 064)", () => {
         assert.strictEqual(room.state.currentPhase, GamePhase.TeamFinal);
         assert.strictEqual(room.state.players.get(contestantSeatId).madeItBack, true);
         assert.strictEqual(room.state.teamPot, 0, "the low-tier offer for this round was $0");
+
+        assert.ok(reactions.length > 0, "a reaction was broadcast for the escaping contestant");
+        assert.ok(
+            reactions.every((r) => r.seatId === contestantSeatId && r.expression === "smile"),
+            `expected every reaction to be smile for the escaping contestant, got ${JSON.stringify(reactions)}`
+        );
     });
 
     it("a non-participant (a waiting contestant) cannot submit a chase answer (ticket 076)", async () => {

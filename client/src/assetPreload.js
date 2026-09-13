@@ -9,6 +9,11 @@ import hair5 from "./assets/images/hair-5.png";
 import eyesNeutral1 from "./assets/images/eyes-1.png";
 import eyesNeutral2 from "./assets/images/eyes-2.png";
 import mouthNeutral from "./assets/images/mouth.png";
+import eyesHappy from "./assets/images/eyes-happy.png";
+import eyesSad from "./assets/images/eyes-sad.png";
+import mouthHappy from "./assets/images/mouth-happy.png";
+import mouthSad from "./assets/images/mouth-sad.png";
+import mouthSmirk from "./assets/images/mouth-smirk.png";
 import bezosIcon from "./assets/images/chasers/bezos-icon.png";
 import bigStanIcon from "./assets/images/chasers/bigstan-icon.png";
 import namiIcon from "./assets/images/chasers/nami-icon.png";
@@ -18,15 +23,17 @@ import namiIcon from "./assets/images/chasers/nami-icon.png";
 // requests hitting at once for e.g. TeamFinalScreen's whole player row).
 // Warming the browser cache for all of them during the idle Lobby screen
 // hides that first-fetch latency instead of it landing on the reveal moment.
-// This list matches exactly what CharacterFace.vue imports today; the
-// happy/sad reaction art (eyes-happy/eyes-sad/mouth-happy/mouth-sad/
-// mouth-smirk) isn't wired into any component yet (ticket 103) so it isn't
-// preloaded here either — add it back alongside that wiring.
+// This list matches exactly what CharacterFace.vue imports today, including
+// the happy/sad/teary reaction art now that it's wired into the `reaction`
+// prop (ticket 103) — a flash on a correct/wrong answer would otherwise pay
+// the first-fetch cost live, mid-round.
 const PRELOAD_IMAGES = [
     face1, face2, face3,
     hair1, hair2, hair3, hair4, hair5,
     eyesNeutral1, eyesNeutral2,
     mouthNeutral,
+    eyesHappy, eyesSad,
+    mouthHappy, mouthSad, mouthSmirk,
     bezosIcon, bigStanIcon, namiIcon
 ];
 

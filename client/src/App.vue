@@ -55,6 +55,15 @@ const chaserQuipText = ref("");
 const chaserQuipKey = ref(0);
 let chaserQuipClearTimeout = null;
 const CHASER_QUIP_DISPLAY_MS = 6000;
+// Per-seat face reaction store (ticket 103): seatId -> "smile"/"frown"/"teary",
+// fed by the server's `reaction` broadcast and read by CharacterFace instances
+// on CashBuilder/Offer/Chase/TeamFinal/ChaserFinal. Same client-only-constant
+// precedent as CHASER_QUIP_DISPLAY_MS above — there is no server value to
+// mirror here (the hold is a purely client-side flash timing choice; the
+// server never needs to know how long a face stays flashed).
+const REACTION_HOLD_MS = 3_000;
+const reactionsBySeat = ref({});
+const reactionRevertTimeouts = {};
 const chaseWagerAmount = ref(0);
 const chaseQuestionResult = ref(null);
 const chaseOutcome = ref(null);
@@ -407,6 +416,22 @@ async function joinLobby(playerName, roomCode) {
       winner.value = message.winner;
     });
 
+    // Public reaction cue (ticket 103): every client — including spectators
+    // and the Chaser — sees the same flash for a seat's answer outcome. Each
+    // seat's expression holds for REACTION_HOLD_MS then reverts to neutral;
+    // a fresh reaction for the same seat restarts its own hold.
+    room.value.onMessage("reaction", (message) => {
+      const seatId = message?.seatId;
+      const expression = message?.expression;
+      if (typeof seatId !== "string" || typeof expression !== "string") return;
+      reactionsBySeat.value = { ...reactionsBySeat.value, [seatId]: expression };
+      if (reactionRevertTimeouts[seatId]) clearTimeout(reactionRevertTimeouts[seatId]);
+      reactionRevertTimeouts[seatId] = setTimeout(() => {
+        delete reactionRevertTimeouts[seatId];
+        reactionsBySeat.value = { ...reactionsBySeat.value, [seatId]: "neutral" };
+      }, REACTION_HOLD_MS);
+    });
+
     room.value.send("whoami", {});
 
     room.value.onLeave(() => {
@@ -506,6 +531,11 @@ function handleLeave() {
   chaseOutcome.value = null;
   chaseFreeze.value = null;
   chaseLockout.value = null;
+  for (const seatId of Object.keys(reactionRevertTimeouts)) {
+    clearTimeout(reactionRevertTimeouts[seatId]);
+    delete reactionRevertTimeouts[seatId];
+  }
+  reactionsBySeat.value = {};
 }
 
 function revealReady({ characterId } = {}) {
@@ -622,6 +652,7 @@ function sendChaserQuip(text) {
       :cashBuilderMoney="activeContestantMoney"
       :cashBuilderCorrectAnswers="activeContestantCorrectAnswers"
       :answerResult="answerResult"
+      :reactions="reactionsBySeat"
       @submit-answer="submitAnswer"
     />
     <ChaserCharacterRevealScreen
@@ -640,6 +671,7 @@ function sendChaserQuip(text) {
       :chaserQuipKey="chaserQuipKey"
       :chaserPot="chaserPot"
       :teamPot="teamPot"
+      :reactions="reactionsBySeat"
       @choose="chooseOffer"
       @setLow="setChaserLowOffer"
       @setHigh="setChaserHighOffer"
@@ -660,6 +692,7 @@ function sendChaserQuip(text) {
       :chaseOutcome="chaseOutcome"
       :chaseLockout="chaseLockout"
       :chaseWagerAmount="chaseWagerAmount"
+      :reactions="reactionsBySeat"
       @submit-chase-answer="sendChaseAnswer"
       @auto-quip="showChaserQuip"
       @send-quip="sendChaserQuip"
@@ -675,6 +708,7 @@ function sendChaserQuip(text) {
       :finalQuestion="finalTeamQuestion"
       :finalBuzzSeatId="finalBuzzSeatId"
       :answerResult="answerResult"
+      :reactions="reactionsBySeat"
       @buzz-in="buzzIn"
       @submit-final-answer="submitFinalAnswer"
     />
@@ -693,6 +727,7 @@ function sendChaserQuip(text) {
       :finalStealAnswer="finalStealAnswer"
       :finalStealResolved="finalStealResolved"
       :answerResult="answerResult"
+      :reactions="reactionsBySeat"
       @submit-final-chaser-answer="submitFinalChaserAnswer"
       @submit-final-steal-answer="submitFinalStealAnswer"
       @auto-quip="showChaserQuip"

@@ -1,5 +1,5 @@
 import assert from "assert";
-import { CASH_BUILDER, CHASER_POT, BOARD, CHASE_QUESTION, FINAL_ROUND, CHASER_CHARACTERS, LINEUP } from "../src/gameConfig.js";
+import { CASH_BUILDER, CHASER_POT, BOARD, CHASE_QUESTION, FINAL_ROUND, CHASER_CHARACTERS, LINEUP, REACTION } from "../src/gameConfig.js";
 import { PlayerRole, ChaserCharacter } from "../src/TriviaTypes.js";
 
 describe("gameConfig", () => {
@@ -37,6 +37,12 @@ describe("gameConfig", () => {
     assert.strictEqual(LINEUP.durationMs, 7_000);
     assert.ok(LINEUP.minMs <= LINEUP.durationMs, "min clamp is at or below the default");
     assert.ok(LINEUP.maxMs >= LINEUP.durationMs, "max clamp is at or above the default");
+  });
+
+  it("reaction: two wrong in a row goes teary; offer thresholds match the retired OfferScreen computed", () => {
+    assert.strictEqual(REACTION.wrongStreakTear, 2);
+    assert.strictEqual(REACTION.offerSadLowThreshold, 0);
+    assert.strictEqual(REACTION.offerHappyHighThreshold, 50_000);
   });
 
   it("PlayerRole has both roles", () => {

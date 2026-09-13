@@ -15,7 +15,10 @@ const props = defineProps({
     chaseQuestionResult: { type: Object, default: null },
     chaseOutcome: { type: String, default: null },
     chaseLockout: { type: Object, default: null },
-    chaseWagerAmount: { type: Number, default: 0 }
+    chaseWagerAmount: { type: Number, default: 0 },
+    // Per-seat face reaction store (ticket 103): seatId -> expression, see
+    // App.vue's reactionsBySeat.
+    reactions: { type: Object, default: () => ({}) }
 });
 const emit = defineEmits(["submit-chase-answer", "auto-quip", "send-quip"]);
 
@@ -208,7 +211,7 @@ onUnmounted(() => stopLockoutTicker());
 
       <div class="offerContestantBox">
         <div class="offerContestantMaskBox">
-          <CharacterFace :character="activeContestantCharacter" reaction="neutral" />
+          <CharacterFace :character="activeContestantCharacter" :reaction="reactions[activeContestantSeatId] ?? 'neutral'" />
         </div>
         <p class="playerName offerChaserName">{{ activeContestantName }}</p>
       </div>

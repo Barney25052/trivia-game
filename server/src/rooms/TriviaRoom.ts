@@ -16,6 +16,7 @@ import { createOpenTdbQuestionSource, McQuestion, McQuestionSource } from "../qu
 import { createMcBackupQuestionSource } from "../questions/mcBackup.js";
 import { pickChaseOptions } from "../questions/chaseOptions.js";
 import { randomCharacter } from "../character.js";
+import { nextExpression, Expression } from "../reactions.js";
 import {
   BOARD,
   CASH_BUILDER,
@@ -27,6 +28,7 @@ import {
   MC_SOURCE,
   PLAYER_NAME,
   RATE_LIMIT,
+  REACTION,
   REVEAL_READY,
   ROOM_SETTINGS,
 } from "../gameConfig.js";
@@ -75,6 +77,11 @@ export class TriviaRoom extends Room {
   /** Translation layer: Colyseus sessionId (per-connection, ephemeral) → seatId. */
   sessionIdToSeatId = new Map<string, string>();
   private seatCounter = 0;
+  /** Per-seat consecutive-wrong-answer count feeding the reaction escalation
+   * (ticket 103) — cleared on leave (like sessionIdToSeatId) and on every
+   * phase/round transition (see `dispatch`), so a streak never survives past
+   * the round it was built in. */
+  wrongStreakBySeat = new Map<string, number>();
 
   cashBuilderDurationMs: number = CASH_BUILDER.durationMs;
   wrongAnswerRevealMs: number = CASH_BUILDER.wrongAnswerRevealMs;
@@ -192,6 +199,40 @@ export class TriviaRoom extends Room {
       questionId,
     };
     this.broadcast("question", payload);
+  }
+
+  /** Broadcasts the public `reaction` cue for a seat's answer outcome (ticket
+   * 103): a correct answer always resets that seat's wrong streak and
+   * smiles; a wrong answer grows the streak and only turns teary once it
+   * reaches `REACTION.wrongStreakTear` — one wrong answer just frowns. Never
+   * call this with anything beyond correct/wrong — the cue must never leak
+   * the correct answer or index (AGENTS.md "never broadcast before reveal"). */
+  private broadcastAnswerReaction(seatId: string, correct: boolean) {
+    const priorStreak = this.wrongStreakBySeat.get(seatId) ?? 0;
+    const streak = correct ? 0 : priorStreak + 1;
+    this.wrongStreakBySeat.set(seatId, streak);
+    const expression: Expression = nextExpression("neutral", correct, streak);
+    this.broadcast("reaction", { seatId, expression });
+  }
+
+  /** Same cue, tuned for the Chase (ticket 103 judgment call): every wrong
+   * answer here is immediately dangerous — the Chaser is actively closing
+   * the gap on that very question — so there's no intermediate "frown"
+   * stage the way the cash builder builds one over several questions; a miss
+   * jumps straight to the streak's tear threshold. */
+  private broadcastChaseReaction(seatId: string, correct: boolean) {
+    const streak = correct ? 0 : REACTION.wrongStreakTear;
+    this.wrongStreakBySeat.set(seatId, streak);
+    const expression: Expression = nextExpression("neutral", correct, streak);
+    this.broadcast("reaction", { seatId, expression });
+  }
+
+  /** The final round only reacts to success (ticket 103 scope) — a wrong
+   * final/steal answer already gets the full-screen red flash from ticket
+   * 100, so no frown/teary face is layered on top of it here. */
+  private broadcastSuccessReaction(seatId: string) {
+    const expression: Expression = nextExpression("neutral", true, 0);
+    this.broadcast("reaction", { seatId, expression });
   }
 
   /** Delivers a final-round question to exactly one side's clients — never a
@@ -430,6 +471,12 @@ export class TriviaRoom extends Room {
       chaserBoardPos: chaser?.boardPos ?? null,
     });
 
+    if (contestant) {
+      // Contestants only — the Chaser's portrait stays static (ticket 103),
+      // so no reaction is broadcast for chaserSeatId here.
+      this.broadcastChaseReaction(contestantSeatId, contestantCorrect);
+    }
+
     if (contestant && contestant.boardPos <= BOARD.escapeSpace) {
       this.dispatch({ type: "chaseEscape" });
       return;
@@ -456,6 +503,9 @@ export class TriviaRoom extends Room {
       this.clearTimer();
       this.clearChaseAnswerTimer();
       this.clearFinalStealTimer();
+      // Every dispatch is a phase/round transition (ticket 103): a wrong
+      // streak built up in one round/phase must never leak into the next.
+      this.wrongStreakBySeat.clear();
       applyEffects(result.effects, this, context);
       this.setPhase(result.nextPhase);
     } catch (error) {
@@ -607,6 +657,7 @@ export class TriviaRoom extends Room {
       if (seatId) {
         this.state.players.delete(seatId);
         this.sessionIdToSeatId.delete(client.sessionId);
+        this.wrongStreakBySeat.delete(seatId);
         const contestantIndex = this.state.contestantsOrder.indexOf(seatId);
         if (contestantIndex >= 0) {
           this.state.contestantsOrder.splice(contestantIndex, 1);
@@ -645,6 +696,7 @@ export class TriviaRoom extends Room {
     if (seatId) {
       this.state.players.delete(seatId);
       this.sessionIdToSeatId.delete(client.sessionId);
+      this.wrongStreakBySeat.delete(seatId);
       const contestantIndex = this.state.contestantsOrder.indexOf(seatId);
       if (contestantIndex >= 0) {
         this.state.contestantsOrder.splice(contestantIndex, 1);

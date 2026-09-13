@@ -16,7 +16,10 @@ const props = defineProps({
     finalSteal: { type: Object, default: null },
     finalStealAnswer: { type: Object, default: null },
     finalStealResolved: { type: Object, default: null },
-    answerResult: { type: Object, default: null }
+    answerResult: { type: Object, default: null },
+    // Per-seat face reaction store (ticket 103): seatId -> expression, see
+    // App.vue's reactionsBySeat.
+    reactions: { type: Object, default: () => ({}) }
 });
 const emit = defineEmits(["submit-final-chaser-answer", "submit-final-steal-answer", "auto-quip", "send-quip"]);
 
@@ -351,7 +354,7 @@ const stealFlashClass = computed(() => {
               >{{ stealAnswerText }}</div>
             </Transition>
             <div class="teamFinalAvatarWrap">
-              <CharacterFace :character="p.character" reaction="neutral" />
+              <CharacterFace :character="p.character" :reaction="reactions[p.seatId] ?? 'neutral'" />
             </div>
             <p class="playerName teamFinalPlayerName">{{ p.name }}</p>
           </div>
