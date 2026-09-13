@@ -36,6 +36,17 @@ const mySeatId = ref("");
 const contestantsOrder = ref([]);
 const teamScore = ref(0);
 const chaserScore = ref(0);
+// Server-authoritative Chaser-final clock (ticket 105, fixing bug-013): the
+// room only patches these two fields when the clock actually starts, pauses,
+// or resumes (see TriviaRoom.syncChaserFinalClockState), so
+// chaserFinalClockSyncedAt below is stamped client-side the moment either
+// value actually changes — the same "stamp our own receipt time" pattern
+// finalSteal.startedAt already uses just below — giving ChaserFinalScreen a
+// wall-clock reference to tick a *display* countdown from between patches,
+// without ever needing to guess when the clock is paused or running.
+const chaserFinalClockRunning = ref(false);
+const chaserFinalRemainingMs = ref(0);
+const chaserFinalClockSyncedAt = ref(Date.now());
 const chaserPot = ref(0);
 const teamPot = ref(0);
 const currentOffer = ref(null);
@@ -238,6 +249,17 @@ async function joinLobby(playerName, roomCode) {
       chaserSeatId.value = newState.chaserSeatId;
       teamScore.value = newState.teamScore;
       chaserScore.value = newState.chaserScore;
+      if (
+          newState.chaserFinalClockRunning !== chaserFinalClockRunning.value ||
+          newState.chaserFinalRemainingMs !== chaserFinalRemainingMs.value
+      ) {
+        // Only re-stamp the sync point when the server actually changed
+        // something — an unrelated state patch (a score update, say) must not
+        // reset the reference the display countdown ticks from.
+        chaserFinalClockRunning.value = newState.chaserFinalClockRunning;
+        chaserFinalRemainingMs.value = newState.chaserFinalRemainingMs;
+        chaserFinalClockSyncedAt.value = Date.now();
+      }
       chaserPot.value = newState.chaserPot;
       teamPot.value = newState.teamPot;
       contestantsOrder.value = Array.from(newState.contestantsOrder);
@@ -728,6 +750,9 @@ function sendChaserQuip(text) {
       :finalStealResolved="finalStealResolved"
       :answerResult="answerResult"
       :reactions="reactionsBySeat"
+      :chaserFinalClockRunning="chaserFinalClockRunning"
+      :chaserFinalRemainingMs="chaserFinalRemainingMs"
+      :chaserFinalClockSyncedAt="chaserFinalClockSyncedAt"
       @submit-final-chaser-answer="submitFinalChaserAnswer"
       @submit-final-steal-answer="submitFinalStealAnswer"
       @auto-quip="showChaserQuip"

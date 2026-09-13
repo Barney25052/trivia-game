@@ -19,20 +19,61 @@ const props = defineProps({
     answerResult: { type: Object, default: null },
     // Per-seat face reaction store (ticket 103): seatId -> expression, see
     // App.vue's reactionsBySeat.
-    reactions: { type: Object, default: () => ({}) }
+    reactions: { type: Object, default: () => ({}) },
+    // Server-authoritative Chaser-final clock (ticket 105, fixing bug-013):
+    // App.vue mirrors GameState.chaserFinalClockRunning/chaserFinalRemainingMs
+    // (synced by TriviaRoom.syncChaserFinalClockState) and stamps the wall-clock
+    // moment it last saw either change as chaserFinalClockSyncedAt.
+    chaserFinalClockRunning: { type: Boolean, default: false },
+    chaserFinalRemainingMs: { type: Number, default: 0 },
+    chaserFinalClockSyncedAt: { type: Number, default: () => Date.now() }
 });
 const emit = defineEmits(["submit-final-chaser-answer", "submit-final-steal-answer", "auto-quip", "send-quip"]);
 
 const isChaser = computed(() => props.mySeatId !== "" && props.mySeatId === props.chaserSeatId);
 const teamPlayers = computed(() => props.players.filter((p) => p.seatId !== props.chaserSeatId));
 
-// Mirrors server/src/gameConfig.ts FINAL_ROUND.chaserDurationMs — duplicated
-// client-side the same way GamePhase is (see AGENTS.md gotchas): no shared
-// module between the two npm projects, and the server doesn't broadcast a
-// remaining-time message, so this is a local approximation of the countdown.
-const CHASER_FINAL_SECONDS = 120;
-const secondsLeft = ref(CHASER_FINAL_SECONDS);
-let countdownInterval = null;
+// The displayed "Time left" is derived straight from the server's real
+// running/paused clock (ticket 105) instead of a client-only setInterval
+// (bug-013): while running, it counts down from chaserFinalRemainingMs as of
+// chaserFinalClockSyncedAt; the moment the server pauses it (a steal window
+// and its resolve hold), chaserFinalClockRunning flips to false and the
+// display freezes at the exact frozen remainder instead of guessing — and
+// resumes ticking from that same true remainder, not from wherever a naive
+// local timer would have decremented it to. The ticker only needs to run
+// while the clock is actually running; while paused, secondsLeft is a plain
+// (non-ticking) computed off the frozen remainder.
+const clockNowTick = ref(Date.now());
+let clockTicker = null;
+function stopClockTicker() {
+    if (clockTicker) {
+        clearInterval(clockTicker);
+        clockTicker = null;
+    }
+}
+function startClockTicker() {
+    stopClockTicker();
+    clockNowTick.value = Date.now();
+    clockTicker = setInterval(() => {
+        clockNowTick.value = Date.now();
+    }, 250);
+}
+watch(
+    () => props.chaserFinalClockRunning,
+    (running) => {
+        if (running) startClockTicker();
+        else stopClockTicker();
+    },
+    { immediate: true }
+);
+
+const secondsLeft = computed(() => {
+    if (!props.chaserFinalClockRunning) {
+        return Math.max(0, Math.ceil(props.chaserFinalRemainingMs / 1000));
+    }
+    const endsAt = props.chaserFinalClockSyncedAt + props.chaserFinalRemainingMs;
+    return Math.max(0, Math.ceil((endsAt - clockNowTick.value) / 1000));
+});
 
 const START_QUIPS = [
     "Let's finish this.",
@@ -41,14 +82,11 @@ const START_QUIPS = [
 ];
 
 onMounted(() => {
-    countdownInterval = setInterval(() => {
-        if (secondsLeft.value > 0) secondsLeft.value -= 1;
-    }, 1000);
     emit("auto-quip", START_QUIPS[Math.floor(Math.random() * START_QUIPS.length)]);
 });
 
 onUnmounted(() => {
-    clearInterval(countdownInterval);
+    stopClockTicker();
     stopStealTicker();
     stopHoldTicker();
     if (closeTimeout) clearTimeout(closeTimeout);
@@ -193,8 +231,11 @@ function clearStealAnswerBubble() {
 // above — the two never run at once, one covers the open steal window, the
 // other the resolved/expired hold that follows it.
 // Mirrors server/src/gameConfig.ts FINAL_ROUND.stealResolveHoldMs — duplicated
-// client-side the same way CHASER_FINAL_SECONDS above is (see AGENTS.md
-// gotchas): the server doesn't echo the tunable back in any payload.
+// client-side (see AGENTS.md gotchas on GamePhase): the server doesn't echo
+// this tunable back in any payload. Unlike the overall Chaser-final clock
+// (ticket 105 above), the hold itself is just a cosmetic countdown display —
+// the server's own pause of the real clock through the hold is what actually
+// matters, and that already comes from chaserFinalClockRunning.
 const STEAL_RESOLVE_HOLD_MS = 3000;
 const holdEndsAt = ref(0);
 const holdNowTick = ref(0);

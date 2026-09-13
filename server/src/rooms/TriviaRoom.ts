@@ -298,6 +298,7 @@ export class TriviaRoom extends Room {
       this.activeTimer.cancel();
       this.activeTimer = null;
     }
+    this.syncChaserFinalClockState();
     console.log(`Chaser final clock paused — ${this.chaserFinalRemainingMs}ms remain`);
   }
 
@@ -311,6 +312,7 @@ export class TriviaRoom extends Room {
     }
     if (this.chaserFinalRemainingMs <= 0) {
       console.log("Chaser final clock already exhausted on resume — the team wins");
+      this.syncChaserFinalClockState();
       this.dispatch({ type: "finalChaserTimeout" });
       return;
     }
@@ -320,12 +322,25 @@ export class TriviaRoom extends Room {
   private runChaserFinalCountdown() {
     this.chaserFinalClockStartedAt = Date.now();
     this.chaserFinalClockRunning = true;
+    this.syncChaserFinalClockState();
     this.activeTimer = this.scheduleTimer(this.chaserFinalRemainingMs, () => {
       this.chaserFinalClockRunning = false;
       this.chaserFinalRemainingMs = 0;
       this.activeTimer = null;
+      this.syncChaserFinalClockState();
       this.dispatch({ type: "finalChaserTimeout" });
     });
+  }
+
+  /** Mirrors the room-private clock fields above into the synced `GameState`
+   * (ticket 105) so every client renders the real running/paused status and
+   * true remaining time instead of an independent local guess (bug-013) —
+   * `chaserFinalRemainingMs`/`chaserFinalClockRunning` above stay the
+   * authoritative, unsynced source of truth the room's own logic reads;
+   * this just publishes a snapshot whenever they change. */
+  private syncChaserFinalClockState() {
+    this.state.chaserFinalClockRunning = this.chaserFinalClockRunning;
+    this.state.chaserFinalRemainingMs = Math.max(0, this.chaserFinalRemainingMs);
   }
 
   /** Draws the next team-final question (or null on exhaustion) and reopens

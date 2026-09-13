@@ -35,4 +35,10 @@ export class GameState extends Schema {
      * (not just the one who picked it) can display it on the board. */
     @type("number") chaseWagerAmount: number = 0;
     @type(["string"]) contestantsOrder = new ArraySchema<string>();
+    /** Resumable Chaser-final clock (ticket 094), mirrored into synced state
+     * (ticket 105) so every client can render the real running/paused status
+     * and true remaining time instead of a client-only guess (bug-013) — see
+     * `TriviaRoom.syncChaserFinalClockState`. */
+    @type("boolean") chaserFinalClockRunning: boolean = false;
+    @type("number") chaserFinalRemainingMs: number = 0;
 }
