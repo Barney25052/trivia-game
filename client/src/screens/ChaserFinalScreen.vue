@@ -84,6 +84,7 @@ onUnmounted(() => {
     stopHoldTicker();
     if (closeTimeout) clearTimeout(closeTimeout);
     if (answerBubbleTimeout) clearTimeout(answerBubbleTimeout);
+    if (stealAnswerBubbleTimeout) clearTimeout(stealAnswerBubbleTimeout);
 });
 
 // The target row always spans the full width, one box per point the team
@@ -193,9 +194,29 @@ const stealOutcomeCorrect = ref(null);
 // The submitter's typed guess (ticket 095/096): a whole-room broadcast, so
 // every client — the Chaser included — renders it as a bubble over that
 // exact seat in the team row, not just the submitter's own screen.
+//
+// Ticket 099: this used to rely entirely on the surrounding steal/hold state
+// machine (stealActive/manuallyClosed) to keep the bubble on screen — which
+// happens to work out today because finalStealAnswer and finalStealResolved
+// fire back-to-back from the same server handler, so the resolve-hold below
+// already spans the bubble's life. That coupling is incidental, not a
+// guarantee, so the bubble gets its own explicit min-life timer here too —
+// same ANSWER_BUBBLE_HOLD_MS pattern as the Chaser's own bubble above and
+// TeamFinalScreen's bubbleText, kept as a separate timer/variable so it
+// can't collide with startHoldCountdown()'s holdTicker/closeTimeout, which
+// govern the outcome banner + advance timing, not the bubble.
 const stealAnswerSeatId = ref("");
 const stealAnswerText = ref("");
 const stealAnswerBubbleKey = ref(0);
+let stealAnswerBubbleTimeout = null;
+
+function clearStealAnswerBubble() {
+    if (stealAnswerBubbleTimeout) {
+        clearTimeout(stealAnswerBubbleTimeout);
+        stealAnswerBubbleTimeout = null;
+    }
+    stealAnswerText.value = "";
+}
 
 // The post-resolution outcome hold (ticket 096): a 3-2-1 countdown over the
 // server's stealResolveHoldMs before the question area resets. This is a
@@ -247,7 +268,7 @@ watch(() => props.finalSteal, (steal) => {
         stealOutcomeText.value = "";
         stealOutcomeCorrect.value = null;
         stealAnswerSeatId.value = "";
-        stealAnswerText.value = "";
+        clearStealAnswerBubble();
         startStealTicker();
         nextTick(() => stealInputBox.value?.focus());
         // No server signal reaches non-submitting clients when a steal window
@@ -269,6 +290,10 @@ watch(() => props.finalStealAnswer, (message) => {
     stealAnswerSeatId.value = message.seatId;
     stealAnswerText.value = message.answer;
     stealAnswerBubbleKey.value += 1;
+    // Restart the min-life timer on every submission so it re-keys and holds
+    // cleanly instead of accumulating overlapping timeouts.
+    if (stealAnswerBubbleTimeout) clearTimeout(stealAnswerBubbleTimeout);
+    stealAnswerBubbleTimeout = setTimeout(clearStealAnswerBubble, ANSWER_BUBBLE_HOLD_MS);
 });
 
 watch(() => props.finalStealResolved, (result) => {

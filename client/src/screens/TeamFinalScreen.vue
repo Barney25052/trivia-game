@@ -67,6 +67,7 @@ onMounted(() => {
 onUnmounted(() => {
     clearInterval(countdownInterval);
     document.removeEventListener("keydown", handleSpace);
+    clearBubble();
 });
 
 const isChaser = computed(() => props.mySeatId !== "" && props.mySeatId === props.chaserSeatId);
@@ -95,8 +96,25 @@ const revealedCorrectAnswer = ref("");
 // Only the buzz winner's own client ever learns the typed text (the server
 // sends `submitFinalAnswer` results to the submitter only, same as the cash
 // builder) — so the bubble only ever pops up over your own seat.
+//
+// Ticket 099: on a correct answer the server's advanceFinalTeamQuestion()
+// fires immediately, so the next `finalQuestion` can arrive within the same
+// tick as the submission — clearing the bubble from that watch (as it used
+// to) let it flash for ~0ms. A local minimum-life timer, independent of
+// finalQuestion, guarantees it stays readable. Mirrors ChaserFinalScreen's
+// chaserAnswerBubbleText/answerBubbleTimeout pattern from ticket 098.
+const ANSWER_BUBBLE_HOLD_MS = 3000;
 const bubbleText = ref("");
 const bubbleKey = ref(0);
+let bubbleTimeout = null;
+
+function clearBubble() {
+    if (bubbleTimeout) {
+        clearTimeout(bubbleTimeout);
+        bubbleTimeout = null;
+    }
+    bubbleText.value = "";
+}
 
 const buzzOpen = computed(
     () => props.finalQuestion !== null && props.finalBuzzSeatId === "" && !revealedCorrectAnswer.value
@@ -115,6 +133,11 @@ function submit() {
     emit("submit-final-answer", { answer: trimmed, questionId: props.finalQuestion.questionId });
     bubbleText.value = trimmed;
     bubbleKey.value += 1;
+    // Restart the min-life timer on every submission so a same-seat resubmit
+    // (e.g. a rapid double-submit) re-keys and holds cleanly instead of
+    // accumulating overlapping timeouts.
+    if (bubbleTimeout) clearTimeout(bubbleTimeout);
+    bubbleTimeout = setTimeout(clearBubble, ANSWER_BUBBLE_HOLD_MS);
     answerInput.value = "";
 }
 
@@ -128,8 +151,10 @@ function handleSpace(e) {
 
 watch(() => props.finalQuestion, () => {
     revealedCorrectAnswer.value = "";
-    bubbleText.value = "";
     answerInput.value = "";
+    // bubbleText is intentionally NOT cleared here (ticket 099) — it has its
+    // own minimum-life timer above, independent of when the next question
+    // arrives.
 });
 
 watch(() => props.answerResult, (result) => {
