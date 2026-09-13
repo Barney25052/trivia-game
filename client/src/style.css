@@ -1,4 +1,12 @@
 :root {
+  /* Ticket 115: type-system roles — Luckiest Guy for titles/big numbers/
+     outcome banners, VT323 for HUD/pixel bits (timers, room codes,
+     board-space numbers/wagers, countdown digits), Rubik replacing Roboto
+     for everything else (buttons, inputs, body copy, questions, names). */
+  --font-display: "Luckiest Guy", cursive;
+  --font-pixel: "VT323", monospace;
+  --font-body: "Rubik", sans-serif;
+
   --color-white: #ffffff;
   --color-white-rgb: 255, 255, 255;
   --color-black: #000000;
@@ -11,9 +19,17 @@
   --color-grey-avatar-bg: #ddeef8;
 
   --color-green: #31c31e;
+  --color-green-rgb: 49, 195, 30;
   --color-green-hover: #19b42b;
   --color-green-pale: #cdecc4;
   --color-green-flash-rgb: 46, 204, 113;
+
+  /* Ticket 115: same value as --color-green, kept as a separate name because
+     117's "a steal just succeeded" panel is a distinct semantic moment from
+     the green reused elsewhere for plain correctness (Cash Builder's flash,
+     the Chase board's correct highlight) — not a new colour, just a second
+     name for this one. */
+  --success-green: var(--color-green);
 
   --color-gold: #ffe27a;
 
@@ -35,10 +51,36 @@
   --chaser-silhouette: #3a0d0d;
   --chaser-silhouette-light: #4a1414;
 
+  /* Ticket 115: Chaser Final tension-fill bar (116/117) — a darker/brighter
+     pair distinct from --chaser-red-* so the fill reads as its own layer
+     under the target-box row rather than reusing the reveal-screen reds. */
+  --chaser-deep: #5c0a0a;
+  --chaser-edge: #ff6a3d;
+
   --gradient-page-start: #189ccd;
   --gradient-page-end: #0a72da;
 
   --color-bg-page: #1c2733;
+
+  /* Ticket 115: a red-shifted dark ground for Chase-centric screens (Chase,
+     Chaser Final, Chaser Reveal/Character Reveal) — same darkness as
+     --color-bg-page, hue-rotated toward maroon. Team-centric screens (Lobby,
+     Cash Builder, Team Final, Results) keep --color-bg-page as-is. */
+  --ink-chase: #2a1418;
+  --ink-chase-raised: #38191d;
+
+  /* Ticket 115: background/border for panels raised off the new --ink-chase
+     ground (e.g. the open-question-box family) — mirrors how --color-bg-page
+     already has no "raised" companion because nothing sat on it that needed
+     one before now. */
+  --ink-raised: #23303e;
+  --ink-line: #34424f;
+
+  /* Ticket 115: dark navy ink used as the border/text colour on the new
+     chunky button family (flat-press + raised-3D-press) — distinct from
+     --color-text-dark, repeats across every new button/input/badge rule
+     below so it earns its own token per the CSS conventions in AGENTS.md. */
+  --btn-ink: #06202b;
 
   --color-azure: #1a5fc4;
   --color-azure-hover: #134a99;
@@ -80,7 +122,7 @@ html {
 
 body {
   background: var(--color-bg-page);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   width: 100%;
   height: 100%;
   position: absolute;
@@ -110,7 +152,7 @@ button {
   border-color: transparent;
   background-color: var(--color-white);
   appearance: none;
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 600;
   font-style: normal;
   font-size: 20px;
@@ -201,7 +243,7 @@ input {
   margin: 10px auto;
   text-align: center;
   font-size: 20px;
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   box-shadow: 0 4px 10px rgba(var(--color-black-rgb), 0.25);
@@ -224,7 +266,7 @@ input {
 
 h1, h2, h3, h4 {
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-style: normal;
 }
@@ -242,6 +284,9 @@ h1, h2, h3, h4 {
   justify-content: center;
   gap: 10px;
   color: var(--color-black);
+  /* Ticket 115: room codes are an explicit VT323 example in the type system
+     (HUD/pixel bits) — overrides the h3 base rule's Luckiest Guy. */
+  font-family: var(--font-pixel);
   font-size: 25px;
   text-align: center;
   white-space: nowrap;
@@ -282,7 +327,7 @@ h1, h2, h3, h4 {
 
 .playerName {
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   text-align: center;
@@ -626,7 +671,7 @@ h1, h2, h3, h4 {
 
 .waitingText {
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   text-align: center;
@@ -662,7 +707,7 @@ ul {
 
 .voteName {
   color: var(--color-black);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   font-size: 22px;
@@ -670,7 +715,7 @@ ul {
 
 .voteStatus {
   color: var(--color-black);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-size: 16px;
   margin-right: 10px;
 }
@@ -711,7 +756,10 @@ ul {
   align-items: center;
   justify-content: center;
   color: var(--color-black);
-  font-family: "Roboto", sans-serif;
+  /* Ticket 115: a candidate name in a spin-reveal mechanic, matching the
+     mockup's own .chaser-pick treatment for chaser names, not a plain
+     roster name (those stay Rubik, e.g. .contestantName below). */
+  font-family: var(--font-pixel);
   font-weight: 400;
   font-style: normal;
   font-size: 26px;
@@ -819,7 +867,7 @@ ul {
 
 .revealChaserYou {
   color: var(--color-gold);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   font-size: 20px;
@@ -875,7 +923,7 @@ ul {
 
 .contestantName {
   color: var(--color-black);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   font-size: 20px;
@@ -884,7 +932,7 @@ ul {
 
 .contestantYou {
   color: var(--chaser-red-dark);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   font-size: 16px;
@@ -898,7 +946,7 @@ ul {
   border-radius: 50%;
   background-color: var(--color-green);
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   font-size: 14px;
@@ -997,7 +1045,8 @@ ul {
   border-radius: 50%;
   background-color: var(--contestant-blue-glow);
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  /* Ticket 115: a bare position number — board-space-number role (VT323). */
+  font-family: var(--font-pixel);
   font-weight: 400;
   font-style: normal;
   font-size: 16px;
@@ -1014,7 +1063,7 @@ ul {
   border-radius: 10px;
   background-color: var(--color-green);
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   font-size: 14px;
@@ -1061,7 +1110,7 @@ ul {
 
 .cashBuilderQuestion {
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   font-size: 24px;
@@ -1097,7 +1146,9 @@ ul {
 
 .cashBuilderPot {
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  /* Ticket 115: a standalone big-number pot display — Luckiest Guy, matching
+     the moneyPlaque component's .amount treatment. */
+  font-family: var(--font-display);
   font-weight: 400;
   font-style: normal;
   font-size: 48px;
@@ -1112,7 +1163,7 @@ ul {
 
 .cashBuilderTimer {
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-pixel);
   font-weight: 400;
   font-style: normal;
   font-size: 24px;
@@ -1221,7 +1272,8 @@ ul {
 
 .cashBuilderRevealLabel {
   display: block;
-  font-family: "Roboto", sans-serif;
+  /* Ticket 115: an outcome-reveal label ("✗ WRONG!") — outcome-banner role. */
+  font-family: var(--font-display);
   font-weight: 400;
   font-style: normal;
   font-size: 34px;
@@ -1334,7 +1386,7 @@ ul {
   background-color: var(--color-white);
   color: var(--color-text-dark);
   border-radius: 14px;
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   font-size: 14px;
@@ -1441,7 +1493,7 @@ ul {
   position: absolute;
   left: 10px;
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-pixel);
   font-weight: 400;
   font-style: normal;
   font-size: 16px;
@@ -1450,7 +1502,7 @@ ul {
 
 .offerSpaceAmount {
   color: var(--color-gold);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-pixel);
   font-weight: 400;
   font-style: normal;
   font-size: 22px;
@@ -1801,7 +1853,7 @@ ul {
   position: absolute;
   left: 10px;
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-pixel);
   font-weight: 400;
   font-style: normal;
   font-size: 16px;
@@ -1829,7 +1881,7 @@ ul {
 
 .chaseWagerBadge {
   color: var(--color-gold);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-pixel);
   font-weight: 400;
   font-style: normal;
   font-size: 18px;
@@ -1843,7 +1895,11 @@ ul {
   align-items: center;
   justify-content: center;
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  /* Ticket 115: a board-strip label — VT323 to match the board's other HUD
+     bits. This whole element is slated for removal in ticket 116 ("just
+     remove that" per the design conversation), so this is a low-stakes,
+     transitional role assignment, not a redesign of it. */
+  font-family: var(--font-pixel);
   font-weight: 400;
   font-style: normal;
   font-size: 14px;
@@ -1877,7 +1933,7 @@ ul {
 }
 
 .chaseQuestion {
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   font-size: 20px;
@@ -1964,7 +2020,8 @@ ul {
   z-index: 10;
   padding: 30px 50px;
   border-radius: 20px;
-  font-family: "Roboto", sans-serif;
+  /* Ticket 115: CAUGHT!/ESCAPED! — the ticket's own outcome-banner example. */
+  font-family: var(--font-display);
   font-weight: 400;
   font-style: normal;
   font-size: 48px;
@@ -2026,7 +2083,7 @@ ul {
 
 .teamFinalQuestion {
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   font-size: 24px;
@@ -2035,7 +2092,8 @@ ul {
 
 .teamFinalRevealLabel {
   color: var(--color-danger);
-  font-family: "Roboto", sans-serif;
+  /* Ticket 115: a reveal/outcome label ("WRONG!") — outcome-banner role. */
+  font-family: var(--font-display);
   font-weight: 400;
   font-style: normal;
   font-size: 22px;
@@ -2140,7 +2198,7 @@ ul {
 
 .teamFinalPotAmount {
   color: var(--color-black);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-display);
   font-weight: 400;
   font-style: normal;
   font-size: 40px;
@@ -2202,7 +2260,8 @@ ul {
   border-radius: 8px;
   background-color: rgba(var(--color-white-rgb), 0.15);
   color: var(--color-white);
-  font-family: "Roboto", sans-serif;
+  /* Ticket 115: renders a bare index number — board-space-number role. */
+  font-family: var(--font-pixel);
   font-weight: 400;
   font-style: normal;
   font-size: 18px;
@@ -2262,7 +2321,7 @@ ul {
 }
 
 .chaserFinalStealCountdown {
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-pixel);
   font-weight: 700;
   font-style: normal;
   font-size: 48px;
@@ -2278,7 +2337,8 @@ ul {
   margin: 20px auto;
   padding: 20px 30px;
   border-radius: 20px;
-  font-family: "Roboto", sans-serif;
+  /* Ticket 115: "TEAM WINS!"/"CHASER WINS!" — outcome-banner role. */
+  font-family: var(--font-display);
   font-weight: 400;
   font-style: normal;
   font-size: 32px;
@@ -2349,7 +2409,7 @@ ul {
   padding: 15px 20px;
   text-align: center;
   font-size: 18px;
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
   box-shadow: 0 4px 10px rgba(var(--color-black-rgb), 0.25);
@@ -2367,4 +2427,493 @@ ul {
   font-size: 20px;
   padding: 5px;
   text-align: center;
+}
+
+/* ============================================================
+   Ticket 115 — visual design system foundation.
+   Shared primitives for tickets 116-119 to wire into real screens (Chase
+   board, Chaser Final, Team Final, Lobby); nothing below is referenced by
+   any .vue template yet. Class names match the agreed mockup ("Big Baws
+   Style Guide") 1:1 — including camelCase .moneyPlaque — rather than
+   renaming to kebab-case, since 116-119 and the mockup both refer to these
+   components by these exact names; see tickets/README.md's ticket-115
+   footnote for the reasoning.
+   ============================================================ */
+
+/* ---------- chunky buttons: flat-press family ---------- */
+
+.btn {
+  /* The legacy generic `button` rule above fixes every <button> at
+     350x75px — a class selector beats that element selector for any
+     property both declare, but width/height aren't declared here at all,
+     so without this override the old fixed box would silently win and
+     this whole family would render as an oversized pill instead of the
+     mockup's content-sized chunky button. */
+  width: auto;
+  height: auto;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 16px;
+  padding: 14px 28px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn-primary {
+  background: var(--contestant-blue-glow);
+  color: var(--btn-ink);
+  border: 3px solid var(--btn-ink);
+  box-shadow: 4px 4px 0 var(--gradient-page-end);
+}
+.btn-primary:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--gradient-page-end); }
+.btn-primary:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--gradient-page-end); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-white);
+  border: 3px solid var(--color-white);
+  box-shadow: 4px 4px 0 rgba(var(--color-white-rgb), 0.25);
+}
+.btn-outline:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 rgba(var(--color-white-rgb), 0.25); }
+.btn-outline:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(var(--color-white-rgb), 0.25); }
+
+/* ---------- chunky buttons: raised-3D-press family ----------
+   A solid bottom "lip" (the second box-shadow) reads as the button's own
+   thickness; pressing moves it down into that lip instead of just scaling,
+   like a real arcade button. Three concrete examples, sized/shaped per their
+   own use rather than one shared class — see mockup sections 12/13/15/11. */
+
+.buzzer-btn {
+  width: 150px;
+  height: 150px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--contestant-blue-glow);
+  border: 5px solid var(--btn-ink);
+  color: var(--btn-ink);
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 1px;
+  box-shadow: 0 10px 0 var(--gradient-page-end), 0 16px 22px rgba(var(--color-black-rgb), 0.5);
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.buzzer-btn:hover { transform: translateY(-3px); box-shadow: 0 13px 0 var(--gradient-page-end), 0 18px 22px rgba(var(--color-black-rgb), 0.5); }
+.buzzer-btn:active {
+  transform: translateY(8px);
+  box-shadow: 0 2px 0 var(--gradient-page-end), 0 4px 8px rgba(var(--color-black-rgb), 0.4);
+}
+
+.lobby-start-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 110px;
+  height: 110px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--contestant-blue-glow);
+  border: 5px solid var(--btn-ink);
+  color: var(--btn-ink);
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 8px 0 var(--gradient-page-end), 0 12px 18px rgba(var(--color-black-rgb), 0.5);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.lobby-start-btn:hover { transform: translate(-50%, -50%) translateY(-3px); box-shadow: 0 11px 0 var(--gradient-page-end), 0 14px 18px rgba(var(--color-black-rgb), 0.5); }
+.lobby-start-btn:active { transform: translate(-50%, -50%) translateY(6px); box-shadow: 0 2px 0 var(--gradient-page-end), 0 4px 8px rgba(var(--color-black-rgb), 0.4); }
+
+/* A border-drawn triangle instead of a "▶" glyph — a glyph's own font
+   metrics were never reliably centered inside a circle. A triangle's visual
+   weight sits left of its bounding box (closer to the flat base than the
+   point), so it needs a small rightward nudge to actually look centered
+   rather than just being centered by the numbers. */
+.lobby-play-triangle {
+  width: 0;
+  height: 0;
+  margin-left: 5px;
+  border-top: 17px solid transparent;
+  border-bottom: 17px solid transparent;
+  border-left: 28px solid var(--btn-ink);
+}
+
+/* The Chase board's per-answer buttons — same raised-key trick as the
+   buzzer: a solid bottom lip reads as the button's own thickness, and
+   pressing moves it down INTO that lip rather than just nudging it. Unlike
+   the buzzer, the picked answer stays pushed in: .picked applies the same
+   collapsed state permanently instead of springing back, since that's what
+   "you've locked this one in" actually looks like. The other options dim and
+   disable at the same time (.dimmed). */
+.answer-btn {
+  position: relative;
+  /* Same legacy generic `button` 350x75 override as .btn above — min-width
+     alone doesn't stop it, since an explicit width always wins over a
+     min-width that's already smaller than it. */
+  width: auto;
+  height: auto;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 14px 22px;
+  min-width: 140px;
+  border-radius: 10px;
+  background: var(--color-white);
+  color: var(--color-text-dark);
+  border: 3px solid var(--btn-ink);
+  box-shadow: 0 7px 0 #b7bfc7, 0 11px 16px rgba(var(--color-black-rgb), 0.4);
+  cursor: pointer;
+  transform: translateY(0);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.2s ease, background-color 0.15s ease;
+}
+.answer-btn:hover:not(.picked):not(.dimmed) {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 0 #b7bfc7, 0 13px 18px rgba(var(--color-black-rgb), 0.4);
+}
+.answer-btn:active:not(.picked):not(.dimmed),
+.answer-btn.picked {
+  transform: translateY(7px);
+  box-shadow: 0 0 0 #b7bfc7, 0 2px 4px rgba(var(--color-black-rgb), 0.3);
+}
+.answer-btn.picked { background: var(--contestant-blue-glow); }
+.answer-btn.dimmed { opacity: 0.5; cursor: default; }
+
+/* ---------- frame-free circular portraits ----------
+   Replaces the rounded-square .frame boxes used for character faces/Chaser
+   icons in board/table/cutscene contexts with a plain circle, no border, the
+   art cropped edge-to-edge. Exception (per the design conversation): don't
+   remove the box behind characters in "card" contexts (Results podium,
+   ID-card summaries) — only board/table/cutscene contexts. */
+
+.board-portrait-wrap {
+  position: relative;
+  width: 150px;
+  height: 150px;
+}
+
+.board-portrait-circle {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(var(--color-white-rgb), 0.06);
+  box-shadow: 0 16px 28px rgba(var(--color-black-rgb), 0.55);
+}
+
+.board-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+/* The Chaser's circle reads more imposing at 20% bigger than the
+   contestant's — a plain static size bump, no growth/interaction mechanic
+   (tried in the mockup, dropped after a look — see tickets/README.md's
+   ticket-115 footnote). */
+.board-portrait-wrap.chaser-wrap { width: 180px; height: 180px; }
+
+/* ---------- money display: the "prize plaque" ---------- */
+
+.moneyPlaque {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-white);
+  border: 4px solid var(--color-gold);
+  border-radius: 12px;
+  padding: 10px 20px 8px;
+  text-align: center;
+  box-shadow: 4px 4px 0 rgba(var(--color-black-rgb), 0.35);
+  /* Fast/repeated clicking on a clickable plaque otherwise text-selects its
+     label — this is needed on anything meant to be clicked repeatedly for a
+     playful/no-op reaction, not just normal buttons. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.moneyPlaque .who {
+  position: relative;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 12px;
+  color: #7a6a2a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.moneyPlaque .amount {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 30px;
+  color: var(--color-text-dark);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A green colour wipe sweeps across the plaque when its amount just went up,
+   timed alongside the amount ticking up from the old total to the new one
+   (the counting itself is a caller-driven JS concern, not CSS). */
+.plaque-wipe {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 40%, rgba(var(--color-green-rgb), 0.9) 48%, rgba(var(--color-green-rgb), 0.9) 58%, transparent 66%);
+  transform: translateX(-140%);
+}
+
+.moneyPlaque.wiping .plaque-wipe {
+  animation: plaque-wipe 0.65s ease-out;
+}
+
+@keyframes plaque-wipe {
+  0%   { transform: translateX(-140%); }
+  100% { transform: translateX(140%); }
+}
+
+/* A light squash "squeeze" on the plaque itself — paired with the wipe for a
+   correct-answer moment, or used alone for a purely delightful (no game
+   effect) click on a money plaque. */
+.plaque-squeeze.squeezing { animation: plaque-squeeze 0.3s ease; }
+@keyframes plaque-squeeze {
+  0%   { transform: scale(1, 1); }
+  40%  { transform: scale(1.08, 0.85); }
+  100% { transform: scale(1, 1); }
+}
+
+/* ---------- room code: a ticket, not a pill ---------- */
+
+.ticket-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-white);
+  border-radius: 10px;
+  padding: 10px 22px;
+  box-shadow: 4px 4px 0 rgba(var(--color-black-rgb), 0.35);
+}
+
+/* Punched side-notches: two circles cut into the badge's left/right edges,
+   coloured to match the page ground so they read as holes rather than dots. */
+.ticket-badge::before,
+.ticket-badge::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  background: var(--color-bg-page);
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+.ticket-badge::before { left: -8px; }
+.ticket-badge::after { right: -8px; }
+
+.ticket-badge .divider {
+  width: 0;
+  border-left: 2px dashed var(--ink-line);
+  align-self: stretch;
+}
+
+.ticket-badge .code {
+  font-family: var(--font-pixel);
+  font-size: 24px;
+  letter-spacing: 4px;
+  color: var(--color-text-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- open-ended answer box ----------
+   One component (prompt + a chunky input + a chunky Submit button) reused
+   and re-accented per context rather than four bespoke panels: red for
+   "your own turn," gold for "an opportunity is live" (a steal), blue for
+   "the team is acting," and neutral (matches an empty/unfilled board slot)
+   for a default/no-special-meaning state. */
+
+.open-question-box {
+  background: var(--ink-raised);
+  border-radius: 14px;
+  padding: 20px 22px;
+  border: 3px solid var(--ink-line);
+}
+.open-question-box.accent-red { border-color: var(--chaser-red-glow); }
+.open-question-box.accent-gold { border-color: var(--color-gold); }
+.open-question-box.accent-blue { border-color: var(--contestant-blue-glow); }
+.open-question-box.accent-neutral { border-color: rgba(var(--color-white-rgb), 0.15); }
+
+.oq-eyebrow {
+  display: block;
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.accent-red .oq-eyebrow { color: var(--chaser-red-glow); }
+.accent-gold .oq-eyebrow { color: var(--color-gold); }
+.accent-blue .oq-eyebrow { color: var(--contestant-blue-glow); }
+.oq-eyebrow.accent-neutral { color: #8494a2; }
+
+.oq-prompt {
+  font-family: var(--font-body);
+  font-size: 17px;
+  color: var(--color-white);
+  margin: 0 0 14px;
+}
+
+.oq-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.oq-input {
+  flex: 1 1 180px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 3px solid var(--btn-ink);
+  background: var(--color-white);
+  color: var(--color-text-dark);
+  box-shadow: 3px 3px 0 rgba(var(--color-black-rgb), 0.3);
+}
+
+.oq-submit {
+  /* Same legacy generic `button` 350x75 override as .btn above. */
+  width: auto;
+  height: auto;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: 3px solid var(--btn-ink);
+  background: var(--contestant-blue-glow);
+  color: var(--btn-ink);
+  box-shadow: 3px 3px 0 rgba(var(--color-black-rgb), 0.3);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.oq-submit:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 rgba(var(--color-black-rgb), 0.3); }
+.oq-submit:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(var(--color-black-rgb), 0.3); }
+
+/* ---------- motion: particle burst (event-triggered only, never ambient) ----------
+   A handful of small glyphs fly out from a point and fade: "$" ( .bill ) for
+   money, "★" ( .spark ) for a triumphant/escape moment. Spawning/removing the
+   actual <span> elements per burst is a caller-driven JS concern (see the
+   mockup's burst()/sparkle() functions) — these classes are just the visual
+   + the shared keyframe, driven by the --dx/--dy/--rot custom properties the
+   spawner sets per-particle. Never used for a Lobby poke or a Chase board
+   pick — that was tried in the design conversation and explicitly dropped
+   both times; don't re-add without being asked again. */
+
+.bill {
+  position: fixed;
+  pointer-events: none;
+  z-index: 50;
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  font-size: 18px;
+  transform: translate(-50%, -50%);
+  animation: bill-pop 0.85s ease-out forwards;
+  will-change: transform, opacity;
+}
+.bill.gold { color: var(--color-gold); }
+.bill.green { color: #5fd98a; }
+
+@keyframes bill-pop {
+  0%   { transform: translate(-50%, -50%) translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+}
+
+.spark {
+  position: fixed;
+  pointer-events: none;
+  z-index: 50;
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-white);
+  transform: translate(-50%, -50%);
+  animation: bill-pop 0.7s ease-out forwards;
+}
+.spark.blue { color: var(--contestant-blue-glow); }
+
+/* ---------- motion: head-wobble / eyes-squeeze reaction ----------
+   Clicking/triggering a character's bust makes the head wobble (rotate,
+   pivoting near the neck) and the eyes squeeze shut a beat later — never a
+   whole-body squash-and-stretch. Reusable everywhere a face/character
+   appears (poking a Lobby seat, a Team Final buzz, a Steal answer);
+   .bust-pokeable/.poked is the generic trigger this foundation ships with —
+   116-119's own screens may add their own differently-named trigger classes
+   (e.g. a future .lobby-seat.poked) hooking into the same .head/.eyes
+   keyframes below, the same way the mockup itself layers screen-specific
+   triggers on top of this generic one.
+
+   Real bug, not just the mockup's own demo: .head must be unscoped like
+   this (applies to every .head, not scoped under .bust-pokeable) or a
+   caller-added trigger class silently breaks it. A .head's absolutely
+   positioned children (.face-layer et al) resolve their percentage
+   positions against .head only when .head is itself positioned — otherwise
+   the browser skips up to the next positioned ancestor instead, which
+   happens to be the same size, so it looks fine at rest. But
+   `transform: none -> rotate(...)` (the wobble) makes .head act as a
+   containing block for its absolutely-positioned children the instant it
+   starts animating (a CSS transforms rule that applies even to
+   position:static elements) — so mid-wobble the face/hair/eyes/mouth
+   briefly resolve against .head's own otherwise-unsized box (near 0x0,
+   since all its children are position:absolute and contribute nothing to
+   its layout size) instead of the wrapper around it, and appear to vanish
+   for the animation's duration. CharacterFace.vue does not yet have a .head
+   wrapper at all (its layers sit directly in .offerFaceWrap) — whichever
+   ticket wires this reaction into it needs to add one, grouping the
+   face/hair/eyes/mouth layers only (shoulders stay planted, outside .head). */
+.head {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 88%;
+}
+
+.bust-pokeable { cursor: pointer; user-select: none; -webkit-user-select: none; }
+
+.bust-pokeable.poked .head {
+  animation: head-wobble 0.5s ease;
+}
+
+.bust-pokeable.poked .eyes {
+  animation: eyes-squeeze 0.4s ease 0.05s;
+}
+
+@keyframes head-wobble {
+  0%   { transform: rotate(0deg); }
+  30%  { transform: rotate(-7deg); }
+  65%  { transform: rotate(5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes eyes-squeeze {
+  0%, 100% { transform: scaleY(1); }
+  45%      { transform: scaleY(0.3); }
+  75%      { transform: scaleY(1.1); }
+}
+
+/* ---------- prefers-reduced-motion ----------
+   Disables animations/transitions outright (not just slowed) for everything
+   above. Mirrors the mockup's own split exactly: the raised-3D-press buttons
+   (.buzzer-btn/.lobby-start-btn/.answer-btn) lose their press transition
+   too, since that's a much larger, more physical motion (7-10px travel)
+   than the flat-press family's small 2px hover/active nudge, which the
+   mockup leaves alone under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .bill { animation: none !important; opacity: 0; }
+  .plaque-squeeze.squeezing, .bust-pokeable .head, .bust-pokeable .eyes { animation: none !important; }
+  .moneyPlaque.wiping .plaque-wipe { animation: none !important; }
+  .spark, .buzzer-btn, .lobby-start-btn, .answer-btn {
+    animation: none !important;
+    transition: none !important;
+  }
 }
