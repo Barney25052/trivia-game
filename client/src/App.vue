@@ -120,6 +120,9 @@ const activeContestantMoney = computed(
 const activeContestantCorrectAnswers = computed(
     () => players.value.find((p) => p.seatId === activeContestantSeatId.value)?.cashBuilderCorrectAnswers ?? 0
 );
+const activeContestantCharacter = computed(
+    () => players.value.find((p) => p.seatId === activeContestantSeatId.value)?.character ?? ""
+);
 const isActiveContestant = computed(
     () => activeContestantSeatId.value !== "" && mySeatId.value === activeContestantSeatId.value
 );
@@ -424,6 +427,15 @@ function startGame() {
   }
 }
 
+function setCharacter({ character }) {
+  try {
+    room.value?.send("setCharacter", { character });
+
+  } catch (e) {
+    console.error("Failed to set character:", e);
+  }
+}
+
 function setChaserMode({ mode }) {
   try {
     room.value?.send("setChaserMode", { mode });
@@ -564,14 +576,16 @@ function sendChaserQuip(text) {
   <div class="app">
     <HomeScreen v-if="currentScreen=='home'" @join="handleJoin" @create="handleJoin" @add-questions="showAddQuestion"/>
     <AddQuestionScreen v-if="currentScreen=='addQuestion'" @back="hideAddQuestion"/>
-    <LobbyScreen 
-      v-if="currentScreen=='lobby'" 
+    <LobbyScreen
+      v-if="currentScreen=='lobby'"
       @start="startGame"
       @setChaserMode="setChaserMode"
+      @setCharacter="setCharacter"
       :players="players"
       :isHost="isHost"
       :room = "room"
       :chaserSelectionMode="chaserSelectionMode"
+      :mySeatId="mySeatId"
     />
     <ChaserSelectionScreen
       v-if="currentScreen=='chaserSelection'"
@@ -604,6 +618,7 @@ function sendChaserQuip(text) {
       :isActiveContestant="isActiveContestant"
       :activeContestantName="activeContestantName"
       :activeContestantSeatId="activeContestantSeatId"
+      :activeContestantCharacter="activeContestantCharacter"
       :cashBuilderMoney="activeContestantMoney"
       :cashBuilderCorrectAnswers="activeContestantCorrectAnswers"
       :answerResult="answerResult"

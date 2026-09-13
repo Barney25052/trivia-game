@@ -1,18 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import ChaserPanel from "../components/ChaserPanel.vue";
-import face1 from "../assets/images/face-1.png";
-import face2 from "../assets/images/face-2.png";
-import face3 from "../assets/images/face-3.png";
-import hair1 from "../assets/images/hair-1.png";
-import hair2 from "../assets/images/hair-2.png";
-import hair3 from "../assets/images/hair-3.png";
-import hair4 from "../assets/images/hair-4.png";
-import hair5 from "../assets/images/hair-5.png";
-import hair6 from "../assets/images/hair-6.png";
-import eyesNeutral1 from "../assets/images/eyes-1.png";
-import eyesNeutral2 from "../assets/images/eyes-2.png";
-import mouthNeutral from "../assets/images/mouth.png";
+import CharacterFace from "../components/CharacterFace.vue";
 
 const props = defineProps({
     teamScore: { type: Number, default: 0 },
@@ -33,29 +22,6 @@ const emit = defineEmits(["submit-final-chaser-answer", "submit-final-steal-answ
 
 const isChaser = computed(() => props.mySeatId !== "" && props.mySeatId === props.chaserSeatId);
 const teamPlayers = computed(() => props.players.filter((p) => p.seatId !== props.chaserSeatId));
-
-// Mirrors OfferScreen/TeamFinalScreen's layered-face composition, keyed off
-// seat id so the same player shows the same face across screens.
-const faceImages = [face1, face2, face3];
-const hairImages = [hair1, hair2, hair3, hair4, hair5, hair6];
-const neutralEyesImages = [eyesNeutral1, eyesNeutral2];
-
-function seatSeed(text) {
-    let hash = 0;
-    for (const char of text) {
-        hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-    }
-    return hash;
-}
-function faceFor(seatId) {
-    return faceImages[seatSeed(seatId) % faceImages.length];
-}
-function hairFor(seatId) {
-    return hairImages[seatSeed(`${seatId}-hair`) % hairImages.length];
-}
-function eyesFor(seatId) {
-    return neutralEyesImages[seatSeed(`${seatId}-eyes`) % neutralEyesImages.length];
-}
 
 // Mirrors server/src/gameConfig.ts FINAL_ROUND.chaserDurationMs — duplicated
 // client-side the same way GamePhase is (see AGENTS.md gotchas): no shared
@@ -385,13 +351,7 @@ const stealFlashClass = computed(() => {
               >{{ stealAnswerText }}</div>
             </Transition>
             <div class="teamFinalAvatarWrap">
-              <div class="offerFaceWrap">
-                <div class="offerShoulders"></div>
-                <img :src="faceFor(p.seatId)" class="offerFaceLayer" alt="" />
-                <img :src="hairFor(p.seatId)" class="offerFaceLayer" alt="" />
-                <img :src="eyesFor(p.seatId)" class="offerFaceLayer" alt="" />
-                <img :src="mouthNeutral" class="offerFaceLayer" alt="" />
-              </div>
+              <CharacterFace :character="p.character" reaction="neutral" />
             </div>
             <p class="playerName teamFinalPlayerName">{{ p.name }}</p>
           </div>

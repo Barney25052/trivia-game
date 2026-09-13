@@ -1,22 +1,7 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import ChaserPanel from "../components/ChaserPanel.vue";
-import face1 from "../assets/images/face-1.png";
-import face2 from "../assets/images/face-2.png";
-import face3 from "../assets/images/face-3.png";
-import hair1 from "../assets/images/hair-1.png";
-import hair2 from "../assets/images/hair-2.png";
-import hair3 from "../assets/images/hair-3.png";
-import hair4 from "../assets/images/hair-4.png";
-import hair5 from "../assets/images/hair-5.png";
-import hair6 from "../assets/images/hair-6.png";
-import eyesNeutral1 from "../assets/images/eyes-1.png";
-import eyesNeutral2 from "../assets/images/eyes-2.png";
-import eyesHappy from "../assets/images/eyes-happy.png";
-import eyesSad from "../assets/images/eyes-sad.png";
-import mouthNeutral from "../assets/images/mouth.png";
-import mouthHappy from "../assets/images/mouth-happy.png";
-import mouthSad from "../assets/images/mouth-sad.png";
+import CharacterFace from "../components/CharacterFace.vue";
 
 const props = defineProps({
     offer: { type: Object, default: null },
@@ -43,10 +28,6 @@ const LOW_SPACE = 4;
 const MIDDLE_SPACE = 5;
 const HIGH_SPACE = 6;
 
-const faceImages = [face1, face2, face3];
-const hairImages = [hair1, hair2, hair3, hair4, hair5, hair6];
-const neutralEyesImages = [eyesNeutral1, eyesNeutral2];
-
 const lowInput = ref("");
 const highInput = ref("");
 const lowError = ref("");
@@ -63,42 +44,18 @@ const contestantName = computed(() => {
     const player = props.players.find((p) => p.seatId === props.offer?.seatId);
     return player?.name ?? "The contestant";
 });
-
-function seatSeed(text) {
-    let hash = 0;
-    for (const char of text) {
-        hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-    }
-    return hash;
-}
-
-const faceImg = computed(() => {
-    if (!props.offer?.seatId) return face1;
-    return faceImages[seatSeed(props.offer.seatId) % faceImages.length];
-});
-const hairImg = computed(() => {
-    if (!props.offer?.seatId) return hair1;
-    return hairImages[seatSeed(`${props.offer.seatId}-hair`) % hairImages.length];
-});
-const neutralEyesImg = computed(() => {
-    if (!props.offer?.seatId) return eyesNeutral1;
-    return neutralEyesImages[seatSeed(`${props.offer.seatId}-eyes`) % neutralEyesImages.length];
+const contestantCharacter = computed(() => {
+    const player = props.players.find((p) => p.seatId === props.offer?.seatId);
+    return player?.character ?? "";
 });
 
+// The happy/sad reaction is still computed here and handed to CharacterFace,
+// but reaction rendering itself is deferred to ticket 103 — the component
+// renders neutral for any value until then (see CharacterFace.vue).
 const reaction = computed(() => {
     if (hasHigh.value && props.offer.high > HAPPY_HIGH_THRESHOLD) return "happy";
     if (hasLow.value && props.offer.middle !== 0 && props.offer.low <= SAD_LOW_THRESHOLD) return "sad";
     return "neutral";
-});
-const eyesImg = computed(() => {
-    if (reaction.value === "happy") return eyesHappy;
-    if (reaction.value === "sad") return eyesSad;
-    return neutralEyesImg.value;
-});
-const mouthImg = computed(() => {
-    if (reaction.value === "happy") return mouthHappy;
-    if (reaction.value === "sad") return mouthSad;
-    return mouthNeutral;
 });
 
 function formatAmount(amount) {
@@ -199,13 +156,7 @@ function submitHigh() {
 
                 <div class="offerContestantBox">
                     <div class="offerContestantMaskBox">
-                        <div class="offerFaceWrap">
-                            <div class="offerShoulders"></div>
-                            <img :src="faceImg" class="offerFaceLayer" alt="" />
-                            <img :src="hairImg" class="offerFaceLayer" alt="" />
-                            <img :src="eyesImg" class="offerFaceLayer" alt="" />
-                            <img :src="mouthImg" class="offerFaceLayer" alt="" />
-                        </div>
+                        <CharacterFace :character="contestantCharacter" :reaction="reaction" />
                     </div>
                     <p class="playerName offerChaserName">{{ contestantName }}</p>
                 </div>

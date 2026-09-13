@@ -1,12 +1,8 @@
 <script setup>
 import { computed } from "vue";
-import face1 from "../assets/images/face-1.png";
-import face2 from "../assets/images/face-2.png";
-import face3 from "../assets/images/face-3.png";
+import CharacterFace from "../components/CharacterFace.vue";
 
 const props = defineProps(["contestants", "mySeatId"]);
-
-const faceImages = [face1, face2, face3];
 
 const lineup = computed(() =>
     props.contestants.map((contestant, index) => {
@@ -14,8 +10,7 @@ const lineup = computed(() =>
         return {
             ...contestant,
             position,
-            ordinal: ordinal(position),
-            face: faceImages[index % faceImages.length]
+            ordinal: ordinal(position)
         };
     })
 );
@@ -38,7 +33,9 @@ function ordinal(position) {
                 class="lineupCard"
                 :class="{ 'lineupCard-first': contestant.position === 1 }"
             >
-                <img :src="contestant.face" class="lineupAvatar" :alt="contestant.name" />
+                <div class="lineupAvatar">
+                    <CharacterFace :character="contestant.character" reaction="neutral" />
+                </div>
                 <span class="lineupOrdinal">{{ contestant.ordinal }}</span>
                 <span class="contestantName">{{ contestant.name }}</span>
                 <span

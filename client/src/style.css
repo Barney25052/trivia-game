@@ -55,6 +55,23 @@
   /* Deep navy for the chase lockout pulse (ticket 087) — reads as "danger,
      clock ticking" across the whole viewport, not just a panel flash. */
   --color-lockout-blue-rgb: 4, 20, 51;
+
+  /* Contestant character colour palette (ticket 102) — one shared set of 9
+     swatches reused across all three recolourable channels (hair, face,
+     shirt); see the "shared palette" judgment call documented in
+     client/src/characterColours.ts, which holds the matching
+     colour->CSS-filter recipes used to tint the greyscale character art
+     layers (currently the colour placeholder art — real greyscale art is
+     `todo` in HUMAN_TASKS.md). Keep this list index-matched to that file. */
+  --character-colour-0: #2b2b2b;
+  --character-colour-1: #6b4423;
+  --character-colour-2: #d2a679;
+  --character-colour-3: #f2d478;
+  --character-colour-4: #c0392b;
+  --character-colour-5: #9aa5ab;
+  --character-colour-6: #3b82c4;
+  --character-colour-7: #2e8b57;
+  --character-colour-8: #8e44ad;
 }
 
 html {
@@ -366,15 +383,15 @@ h1, h2, h3, h4 {
   stroke-dasharray: 6 5;
 }
 
-.lobbyBustInitial {
-  position: absolute;
-  top: 18%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: var(--color-white);
-  font-family: "Roboto", sans-serif;
-  font-weight: 700;
-  font-size: 20px;
+.lobbyBustAvatar {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: var(--color-grey-avatar-bg);
+  border: 3px solid currentColor;
 }
 
 .lobbyCrown {
@@ -491,17 +508,84 @@ h1, h2, h3, h4 {
   margin-top: 40px;
 }
 
-.lobbyCustomiserPlaceholder {
-  min-height: 300px;
+/* Prefixed lobbyCharacter* (not the shorter character*) to avoid colliding
+   with RolesRevealScreen's pre-existing .characterPicker/.characterPickerLabel
+   (the unrelated Chaser-portrait picker) — the two are separate features that
+   happen to want similar names. */
+.lobbyCharacterPicker {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
-  border: 2px dashed rgba(var(--color-white-rgb), 0.2);
+  padding: 15px;
+  border: 2px solid rgba(var(--color-white-rgb), 0.2);
   border-radius: 12px;
-  color: rgba(var(--color-white-rgb), 0.35);
-  font-size: 16px;
-  text-align: center;
+}
+
+.lobbyCharacterPreview {
+  width: 120px;
+  height: 120px;
+  margin: 0 0 10px;
+  border-radius: 15px;
+  background-color: rgba(var(--contestant-blue-glow-rgb), 0.15);
+  border: 3px solid var(--contestant-blue-glow);
+  overflow: hidden;
+}
+
+.lobbyCharacterLabel {
+  width: 100%;
+  margin: 8px 0 4px;
+  color: var(--color-white);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.lobbyCharacterRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.lobbyCharacterSwatchButton {
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  padding: 0;
+  background-color: rgba(var(--color-white-rgb), 0.1);
+  border: 2px solid rgba(var(--color-white-rgb), 0.3);
+  color: var(--color-white);
+  font-size: 14px;
+}
+
+.lobbyCharacterSwatchButton.selected {
+  background-color: var(--color-azure);
+  border-color: var(--color-white);
+}
+
+.lobbyCharacterColourSwatch {
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--color-white-rgb), 0.3);
+}
+
+.lobbyCharacterColourSwatch.selected {
+  border-color: var(--color-white);
+  box-shadow: 0 0 0 2px var(--color-azure);
+}
+
+.lobbyCharacterSaveButton {
+  width: 150px;
+  margin-top: 15px;
+}
+
+.lobbyCharacterSaveButton:disabled {
+  background-color: var(--color-grey-disabled-bg);
+  color: var(--color-grey-disabled-text);
+  cursor: default;
 }
 
 .lobbySettingsColumn {
@@ -902,14 +986,12 @@ ul {
 }
 
 .lineupAvatar {
+  position: relative;
   width: 90px;
   height: 90px;
   border-radius: 50%;
   background-color: var(--color-grey-avatar-bg);
-  object-fit: cover;
-  -ms-interpolation-mode: nearest-neighbor;
-  image-rendering: crisp-edges;
-  image-rendering: pixelated;
+  overflow: hidden;
 }
 
 .lineupOrdinal {

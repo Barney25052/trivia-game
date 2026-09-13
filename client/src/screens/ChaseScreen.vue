@@ -1,18 +1,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import ChaserPanel from "../components/ChaserPanel.vue";
-import face1 from "../assets/images/face-1.png";
-import face2 from "../assets/images/face-2.png";
-import face3 from "../assets/images/face-3.png";
-import hair1 from "../assets/images/hair-1.png";
-import hair2 from "../assets/images/hair-2.png";
-import hair3 from "../assets/images/hair-3.png";
-import hair4 from "../assets/images/hair-4.png";
-import hair5 from "../assets/images/hair-5.png";
-import hair6 from "../assets/images/hair-6.png";
-import eyesNeutral1 from "../assets/images/eyes-1.png";
-import eyesNeutral2 from "../assets/images/eyes-2.png";
-import mouthNeutral from "../assets/images/mouth.png";
+import CharacterFace from "../components/CharacterFace.vue";
 
 const props = defineProps({
     players: { type: Array, default: () => [] },
@@ -65,32 +54,9 @@ const activeContestantName = computed(
 );
 const chaserIsOnBoard = computed(() => chaserPos.value <= ON_BOARD_MAX);
 
-// Mirrors OfferScreen's layered-face composition, keyed off the active
-// contestant's seat id so the same player shows the same face across screens.
-const faceImages = [face1, face2, face3];
-const hairImages = [hair1, hair2, hair3, hair4, hair5, hair6];
-const neutralEyesImages = [eyesNeutral1, eyesNeutral2];
-
-function seatSeed(text) {
-    let hash = 0;
-    for (const char of text) {
-        hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-    }
-    return hash;
-}
-
-const faceImg = computed(() => {
-    if (!props.activeContestantSeatId) return face1;
-    return faceImages[seatSeed(props.activeContestantSeatId) % faceImages.length];
-});
-const hairImg = computed(() => {
-    if (!props.activeContestantSeatId) return hair1;
-    return hairImages[seatSeed(`${props.activeContestantSeatId}-hair`) % hairImages.length];
-});
-const eyesImg = computed(() => {
-    if (!props.activeContestantSeatId) return eyesNeutral1;
-    return neutralEyesImages[seatSeed(`${props.activeContestantSeatId}-eyes`) % neutralEyesImages.length];
-});
+const activeContestantCharacter = computed(
+    () => props.players.find((p) => p.seatId === props.activeContestantSeatId)?.character ?? ""
+);
 
 function isPlayerSpace(space) {
     return contestantPos.value === space;
@@ -242,13 +208,7 @@ onUnmounted(() => stopLockoutTicker());
 
       <div class="offerContestantBox">
         <div class="offerContestantMaskBox">
-          <div class="offerFaceWrap">
-            <div class="offerShoulders"></div>
-            <img :src="faceImg" class="offerFaceLayer" alt="" />
-            <img :src="hairImg" class="offerFaceLayer" alt="" />
-            <img :src="eyesImg" class="offerFaceLayer" alt="" />
-            <img :src="mouthNeutral" class="offerFaceLayer" alt="" />
-          </div>
+          <CharacterFace :character="activeContestantCharacter" reaction="neutral" />
         </div>
         <p class="playerName offerChaserName">{{ activeContestantName }}</p>
       </div>
