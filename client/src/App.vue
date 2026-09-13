@@ -52,6 +52,14 @@ const teamPot = ref(0);
 const currentOffer = ref(null);
 const winner = ref(null);
 const getReadyCooldownMs = ref(0);
+// Server-authoritative cash-builder duration (ticket 112, fixing bug-015):
+// mirrors GameState.cashBuilderDurationMs (set once in TriviaRoom.onCreate
+// from the already-clamped room value) so CashBuilderScreen.vue can start its
+// "Time left" display from the real configured duration instead of a
+// hardcoded guess. The 60_000 default here only covers the brief window
+// before the first state patch arrives — it never drives the real gameplay
+// timer, which stays entirely server-side.
+const cashBuilderDurationMs = ref(60_000);
 const currentQuestion = ref(null);
 const answerResult = ref(null);
 const finalTeamQuestion = ref(null);
@@ -273,6 +281,7 @@ async function joinLobby(playerName, roomCode) {
       teamPot.value = newState.teamPot;
       contestantsOrder.value = Array.from(newState.contestantsOrder);
       chaseWagerAmount.value = newState.chaseWagerAmount;
+      cashBuilderDurationMs.value = newState.cashBuilderDurationMs;
     });
 
     room.value.onMessage("seatId", (message) => {
@@ -675,6 +684,7 @@ function sendChaserQuip(text) {
     <CashBuilderScreen
       v-if="currentScreen=='cashBuilder'"
       :getReadyCooldownMs="getReadyCooldownMs"
+      :cashBuilderDurationMs="cashBuilderDurationMs"
       :currentQuestion="currentRoundQuestion"
       :isActiveContestant="isActiveContestant"
       :activeContestantName="activeContestantName"

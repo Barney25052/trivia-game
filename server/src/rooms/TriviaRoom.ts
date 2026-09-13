@@ -145,6 +145,11 @@ export class TriviaRoom extends Room {
 
   onCreate (options: any) {
     clampRoomOptions(this, options);
+    // Mirror the real (possibly clamped/overridden) cash-builder duration into
+    // synced state (ticket 112, fixing bug-015) so CashBuilderScreen.vue can
+    // derive its "Time left" display from the server-authoritative value
+    // instead of a hardcoded guess.
+    this.state.cashBuilderDurationMs = this.cashBuilderDurationMs;
     this.questionBank = loadBank();
   }
 

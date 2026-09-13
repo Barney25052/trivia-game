@@ -4,6 +4,11 @@ import CharacterFace from "../components/CharacterFace.vue";
 
 const props = defineProps({
     getReadyCooldownMs: { type: Number, default: 0 },
+    // Server-authoritative cash-builder duration in ms (ticket 112, fixing
+    // bug-015) — mirrors GameState.cashBuilderDurationMs via App.vue. The
+    // default only matters before the first state patch arrives; the real
+    // countdown always starts from whatever value the room actually used.
+    cashBuilderDurationMs: { type: Number, default: 60_000 },
     currentQuestion: { type: Object, default: null },
     isActiveContestant: { type: Boolean, default: false },
     activeContestantName: { type: String, default: "" },
@@ -40,11 +45,13 @@ function clearBubble() {
     bubbleText.value = "";
 }
 
-const CASH_BUILDER_SECONDS = 60;
-
 const answerInput = ref("");
 const cooldownLeft = ref(0);
-const secondsLeft = ref(CASH_BUILDER_SECONDS);
+// Ticket 112 (fixing bug-015): starts from the server-authoritative
+// cashBuilderDurationMs prop instead of a hardcoded 60 — this component is
+// freshly mounted (v-if) each time a contestant's cash builder round begins,
+// so this initial value is always the real duration in effect for this round.
+const secondsLeft = ref(Math.ceil(props.cashBuilderDurationMs / 1000));
 const awaitingNext = ref(false);
 const potFlash = ref(false);
 const timerStarted = ref(false);

@@ -1,6 +1,6 @@
 import { ArraySchema, MapSchema, Schema, type } from "@colyseus/schema";
 import { GamePhase, PlayerRole } from "../../TriviaTypes.js";
-import { BOARD, CHASER_POT, CHASER_SELECTION } from "../../gameConfig.js";
+import { BOARD, CASH_BUILDER, CHASER_POT, CHASER_SELECTION } from "../../gameConfig.js";
 
 export class GamePlayer extends Schema {
     @type("string") name: string = "";
@@ -41,4 +41,11 @@ export class GameState extends Schema {
      * `TriviaRoom.syncChaserFinalClockState`. */
     @type("boolean") chaserFinalClockRunning: boolean = false;
     @type("number") chaserFinalRemainingMs: number = 0;
+    /** The room's actual (possibly clamped/overridden) cash-builder duration
+     * (ticket 112, fixing bug-015) — set once in TriviaRoom.onCreate from the
+     * already-clamped `room.cashBuilderDurationMs`, so CashBuilderScreen.vue
+     * can start its "Time left" display from the real configured duration
+     * instead of a hardcoded guess. Doesn't change mid-game, so unlike the
+     * Chaser-final clock (ticket 105) this needs no running/paused pair. */
+    @type("number") cashBuilderDurationMs: number = CASH_BUILDER.durationMs;
 }
