@@ -644,7 +644,10 @@ export class TriviaRoom extends Room {
     const player = seatId ? this.state.players.get(seatId) : undefined;
     if (player?.isHost) {
       console.log("Host left the room — disconnecting", this.roomId);
-      this.disconnect(6767);
+      // 4001 is inside the WebSocket spec's private-use close-code range
+      // (RFC 6455: 4000-4999) — the old 6767 exceeded it and made `ws`
+      // throw on every real host disconnect (bug-014, ticket 104).
+      this.disconnect(4001);
       return;
     }
 
