@@ -258,7 +258,24 @@ describe("chase flow (ticket 064)", () => {
     });
 
     it("lockout window: the round resolves from just one side's answer once the window closes, without waiting for the other side", async () => {
-        const windowMs = 150;
+        // ticket 114 / bug-017: this asserted `Date.now() - startedAt >= windowMs - 20`,
+        // which failed intermittently under incidental system load (~13% slack on a
+        // 150ms window). The `timer.test.ts` "controllable clock" pattern (a bare
+        // `TimerRoom` wrapping its own `ClockTimer` that the test ticks/waits on
+        // directly) doesn't transplant cleanly here: this test drives a *real*
+        // Colyseus room created via `colyseus.createRoom()`, whose `room.clock` is
+        // the framework's own auto-ticking clock wired through actual network
+        // message dispatch (submitChaseAnswer round-trips over the wire, same as
+        // production) — there's no seam to inject a manually-advanced virtual clock
+        // without changing production code to accept an injectable clock, which is
+        // out of scope for a test-only fix. So instead we widen both the window and
+        // the slack: a bigger window makes the same absolute scheduling jitter a
+        // much smaller fraction of it, and a generous proportional lower bound still
+        // clearly distinguishes "waited out the lockout" from "resolved immediately"
+        // (the sibling immediate-resolution test above resolves in single-digit-to-
+        // low-double-digit ms, far below this bound).
+        const windowMs = 500;
+        const minElapsedMs = windowMs * 0.6; // 300ms — generous slack, still far above an "immediate" resolution
         const { room, contestantClient, contestantSeatId, firstQuestion } =
             await reachChase(colyseus, { offer: "high", chaseAnswerWindowMs: windowMs });
 
@@ -270,7 +287,7 @@ describe("chase flow (ticket 064)", () => {
         const result = await resultPromise;
         const elapsedMs = Date.now() - startedAt;
 
-        assert.ok(elapsedMs >= windowMs - 20, `expected the round to wait out the ${windowMs}ms lockout, resolved after ${elapsedMs}ms`);
+        assert.ok(elapsedMs >= minElapsedMs, `expected the round to wait out the ${windowMs}ms lockout, resolved after ${elapsedMs}ms`);
         assert.strictEqual(result.contestantCorrect, true);
         assert.strictEqual(result.chaserCorrect, false, "a side that never answered counts as incorrect");
         assert.strictEqual(room.state.players.get(contestantSeatId).boardPos, BOARD.startHigh - 1);
