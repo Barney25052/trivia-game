@@ -19,10 +19,26 @@ const props = defineProps({
 const emit = defineEmits(["submit-answer"]);
 
 // Each submitted answer (correct, wrong, or an empty pass) pops into a speech
-// bubble anchored to the profile until the next question arrives or the round
-// ends — the typed text is the contestant's own input, already public.
+// bubble anchored to the profile.
+//
+// Ticket 107 (same family as ticket 099's Team/Chaser Final fix): on a
+// correct answer the next question can arrive within the same tick as the
+// submission, so clearing the bubble from the currentQuestion watch (as it
+// used to) let it flash for ~0ms. A local minimum-life timer, independent of
+// currentQuestion, guarantees it stays readable. Mirrors TeamFinalScreen's
+// bubbleText/bubbleTimeout pattern.
+const ANSWER_BUBBLE_HOLD_MS = 3000;
 const bubbleText = ref("");
 const bubbleKey = ref(0);
+let bubbleTimeout = null;
+
+function clearBubble() {
+    if (bubbleTimeout) {
+        clearTimeout(bubbleTimeout);
+        bubbleTimeout = null;
+    }
+    bubbleText.value = "";
+}
 
 const CASH_BUILDER_SECONDS = 60;
 
@@ -87,6 +103,10 @@ function submit() {
     emit("submit-answer", { answer: trimmed, questionId: props.currentQuestion.questionId });
     bubbleText.value = trimmed || "(passed)";
     bubbleKey.value += 1;
+    // Restart the min-life timer on every submission so a same-seat resubmit
+    // re-keys and holds cleanly instead of accumulating overlapping timeouts.
+    if (bubbleTimeout) clearTimeout(bubbleTimeout);
+    bubbleTimeout = setTimeout(clearBubble, ANSWER_BUBBLE_HOLD_MS);
     answerInput.value = "";
     awaitingNext.value = true;
 }
@@ -108,11 +128,12 @@ watch(() => props.currentQuestion, (question) => {
             screenFlash.value = "";
         }
         revealedCorrectAnswer.value = "";
-        bubbleText.value = "";
+        // bubbleText is intentionally NOT cleared here (ticket 107) — it has
+        // its own minimum-life timer above, independent of when the next
+        // question arrives.
         startQuestionTimer();
     } else {
         awaitingNext.value = false;
-        bubbleText.value = "";
     }
 });
 
@@ -161,6 +182,7 @@ onUnmounted(() => {
     if (questionInterval) clearInterval(questionInterval);
     if (potFlashTimeout) clearTimeout(potFlashTimeout);
     if (screenFlashTimeout) clearTimeout(screenFlashTimeout);
+    clearBubble();
     document.removeEventListener('keydown', handleGlobalKeydown);
 });
 </script>
