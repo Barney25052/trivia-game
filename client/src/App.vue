@@ -153,7 +153,16 @@ const currentRoundQuestion = computed(() => {
     // contestant and the Chaser (and are safe to show spectators too) — the
     // server never includes correctIndex before resolution either way — so
     // they aren't filtered by targetSeatId (ticket 065, TO_REVIEW.md item 13).
-    if (currentQuestion.value.kind === "mc") return currentQuestion.value;
+    // Both branches are also gated on the current phase (ticket 106): a
+    // contestant who continues from their own Cash Builder round into their
+    // own Chase keeps the same targetSeatId/activeContestantSeatId match, so
+    // without the phase check the stale Cash Builder question object would
+    // keep satisfying this computed and leak into ChaseScreen until the
+    // server's first real chase question arrives.
+    if (currentQuestion.value.kind === "mc") {
+      return currentPhase.value === GamePhase.Chase ? currentQuestion.value : null;
+    }
+    if (currentPhase.value !== GamePhase.CashBuilder) return null;
     if (currentQuestion.value.targetSeatId !== activeContestantSeatId.value) return null;
     return currentQuestion.value;
 });
