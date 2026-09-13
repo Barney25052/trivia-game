@@ -172,6 +172,18 @@ Custom-pickable contestant avatars (5 hairstyles, 3 faces, hair/face/shirt colou
 | 113 | Cash Builder's correct-answer screen flash can stay stuck on past its 700ms timer (`bug-016`) | done************************ |
 | 114 | `chaseFlow` lockout-window test is timing-flaky (`bug-017`) | done************************* |
 
+### Visual redesign — "Big Baws Style Guide" (agreed via mockup with the user, 2026-09-13, see ticket 067's outcome note)
+| 115 | Visual design system foundation (type, colour, base components) | backlog |
+| 116 | Chase screen (the board) visual redesign | backlog |
+| 117 | Chaser Final + Steal visual redesign | backlog |
+| 118 | Team Final visual redesign | backlog |
+| 119 | Lobby visual redesign | backlog |
+
+### User-reported polish & bugs, round 2 (live session 2026-09-13, after 105-114 shipped)
+| 120 | Lineup screen shows redundant "1st" + "Up first" on the same card | backlog |
+| 121 | Cash Builder doesn't show the correct-answer text when the contestant gets it right | backlog |
+| 122 | No transition into the Team Final — the last Chase drops straight into it | backlog |
+
 \*\*\* 056: scope was narrowed with the user before implementation (per AGENTS.md's UI sign-off rule) from "always there, every phase" to **only the phases where the Chaser and a contestant are face-to-face**: Offer, Chase, and the Chaser Final — not Lobby, Chaser Selection/Reveal, Roles Reveal, Lineup, Cash Builder, or Team Final. Placement is inline on the left side of each of those three screens (matching where the box already sat in Offer, per ticket 052) rather than a global fixed-position overlay, so `ChaserPanel.vue` is instantiated once per "table" screen instead of a single App-level mount; quip display state (`chaserQuipText`/`chaserQuipKey`) is still centralized in `App.vue` and passed down, with each screen able to feed it local auto-quips (`@auto-quip`) alongside the real `chaserQuip` broadcast from ticket 055. `OfferScreen.vue`'s inline chaser box/portrait/bubble markup was extracted into the shared component as scoped. Verified manually with two browser clients through a full round (Lobby → chaser pick → Offer, incl. a live Chaser-typed quip arriving on the other client → Chase → Team Final (panel correctly absent) → Chaser Final); found and logged an unrelated pre-existing bug in the process (`bug-008`, `CashBuilderScreen.vue` answer input).
 
 \*\*\*\* 058: found already implemented in code (server + client) but left marked `backlog` in this table — corrected 2026-09-12, no new work needed.
