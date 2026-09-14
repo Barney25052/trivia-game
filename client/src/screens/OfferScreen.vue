@@ -169,7 +169,7 @@ function submitHigh() {
                             placeholder="Low offer"
                             @keyup.enter="submitLow"
                         />
-                        <button class="startButton" @click="submitLow">Set low offer</button>
+                        <button class="btn btn-primary" @click="submitLow">Set low offer</button>
                         <p v-if="lowError" class="playerName offerErrorText">{{ lowError }}</p>
                     </div>
                     <div v-else-if="!hasHigh" class="offerInputRow">
@@ -181,7 +181,7 @@ function submitHigh() {
                             placeholder="High offer"
                             @keyup.enter="submitHigh"
                         />
-                        <button class="startButton" @click="submitHigh">Set high offer</button>
+                        <button class="btn btn-primary" @click="submitHigh">Set high offer</button>
                         <p v-if="highError" class="playerName offerErrorText">{{ highError }}</p>
                     </div>
                     <p v-else class="playerName">Offers sent — waiting for {{ contestantName }} to pick…</p>
@@ -192,15 +192,15 @@ function submitHigh() {
                         <div class="offerTierRow">
                             <button
                                 v-if="offer.middle !== 0"
-                                class="startButton offerTierButton"
+                                class="btn btn-primary offerTierButton"
                                 @click="emit('choose', 'low')"
                             >
                                 <span :class="{ 'offer-amount-negative': offer.low <= 0 }">Low — {{ formatAmount(offer.low) }}</span>
                             </button>
-                            <button class="startButton offerTierButton" @click="emit('choose', 'middle')">
+                            <button class="btn btn-primary offerTierButton" @click="emit('choose', 'middle')">
                                 Middle — {{ formatAmount(offer.middle) }}
                             </button>
-                            <button class="startButton offerTierButton" @click="emit('choose', 'high')">
+                            <button class="btn btn-primary offerTierButton" @click="emit('choose', 'high')">
                                 High — {{ formatAmount(offer.high) }}
                             </button>
                         </div>

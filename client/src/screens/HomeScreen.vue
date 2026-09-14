@@ -47,8 +47,8 @@ function handleAddQuestions() {
         <input v-model="playerName" placeholder="Your name" :class = "{ 'input-error': nameEmptyError}" @animationend="nameEmptyError=false"/>
         <input v-model="roomCode" placeholder="Room Code" :class = "{ 'input-error': codeEmptyError}" @animationend="codeEmptyError=false"/>
         <div class="homeButtonHolder">
-          <button @click="handleJoin" class="joinButton">Join Lobby</button>
-          <button @click="handleCreate" class="createButton">Create Lobby</button>
+          <button @click="handleJoin" class="btn btn-primary joinButton">Join Lobby</button>
+          <button @click="handleCreate" class="btn btn-outline createButton">Create Lobby</button>
         </div>
         <button @click="handleAddQuestions" class="addQuestionsLink">Add questions</button>
       </div>

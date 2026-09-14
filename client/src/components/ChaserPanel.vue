@@ -130,7 +130,7 @@ function submitQuip() {
                 :maxlength="MAX_QUIP_LENGTH"
                 @keyup.enter="submitQuip"
             />
-            <button class="startButton chaserPanelSend" :disabled="sendDisabled" @click="submitQuip">
+            <button class="btn btn-primary chaserPanelSend" :disabled="sendDisabled" @click="submitQuip">
                 Send
             </button>
         </div>

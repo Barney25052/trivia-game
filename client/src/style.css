@@ -206,27 +206,12 @@ button:disabled {
   justify-content: center;
 }
 
-.joinButton {
-  width: 150px;
-  background-color: var(--color-azure);
-  color: var(--color-white);
-  margin: 10px
-}
-
-.joinButton:hover {
-  background-color: var(--color-azure-hover);
-}
-
+/* Ticket 126: now composed with .btn.btn-primary/.btn-outline — sizing only,
+   the old hardcoded azure fill/border is retired. */
+.joinButton,
 .createButton {
   width: 150px;
-  background-color: transparent;
-  border: 2px solid var(--color-azure);
-  color: var(--color-white);
-  margin: 10px
-}
-
-.createButton:hover {
-  background-color: rgba(var(--color-azure-rgb), 0.2);
+  margin: 10px;
 }
 
 input {
@@ -416,18 +401,6 @@ h1, h2, h3, h4 {
 
 .lobbySeat.isEmpty .lobbySeatName {
   opacity: 0.45;
-}
-
-.startButton {
-  margin: 10px auto;
-  display: block;
-  background-color: var(--color-azure);
-  color: var(--color-white);
-  width: 150px;
-}
-
-.startButton:hover {
-  background-color: var(--color-azure-hover);
 }
 
 .settingsButton {
