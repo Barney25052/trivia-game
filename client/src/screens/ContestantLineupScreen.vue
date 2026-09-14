@@ -42,7 +42,6 @@ function ordinal(position) {
                     v-if="contestant.seatId === mySeatId"
                     class="contestantYou"
                 >(you)</span>
-                <span v-if="contestant.position === 1" class="lineupFirstTag">Up first</span>
             </div>
         </div>
     </div>
