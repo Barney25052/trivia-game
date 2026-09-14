@@ -92,6 +92,18 @@ function formatAmount(amount) {
 
 const myAnswerIndex = ref(null);
 
+// Pops the picked answer's own text into a speech bubble over whichever
+// side picked it (ticket 127) — mirrors CashBuilderScreen/TeamFinalScreen's
+// bubble, but simpler: no independent min-life timer is needed since
+// myAnswerIndex is only ever cleared when a genuinely new question arrives
+// (the watch below), never synchronously alongside the submission itself
+// the way a correct Cash Builder answer can advance same-tick.
+const myAnswerBubbleKey = ref(0);
+const myAnswerText = computed(() => {
+    if (myAnswerIndex.value === null || !props.currentQuestion) return "";
+    return props.currentQuestion.options[myAnswerIndex.value] ?? "";
+});
+
 const resultForCurrentQuestion = computed(() => {
     if (!props.chaseQuestionResult || !props.currentQuestion) return null;
     if (props.chaseQuestionResult.questionId !== props.currentQuestion.questionId) return null;
@@ -190,6 +202,7 @@ const optionFontClass = computed(() => {
 function selectOption(index) {
     if (!isParticipant.value || hasAnswered.value || revealed.value || !props.currentQuestion) return;
     myAnswerIndex.value = index;
+    myAnswerBubbleKey.value += 1;
     emit("submit-chase-answer", { answerIndex: index, questionId: props.currentQuestion.questionId });
 }
 
@@ -297,9 +310,6 @@ onUnmounted(() => {
 <template>
   <div class="chaseTable">
     <h2 class="lobbyTitle chaseTableTitle">The Chase</h2>
-    <p class="playerName chaseOffboardNote" :class="{ 'chaseOffboardNote-hidden': chaserIsOnBoard }">
-      The Chaser is off the board — one correct answer to enter.
-    </p>
 
     <div class="chaseGround">
       <template v-if="!chaseOutcome">
@@ -311,6 +321,8 @@ onUnmounted(() => {
               :character-id="chaserCharacterId"
               :quip-text="chaserQuipText"
               :quip-key="chaserQuipKey"
+              :answer-text="isChaser ? myAnswerText : ''"
+              :answer-key="myAnswerBubbleKey"
               :is-chaser="isChaser"
               :countdown-seconds="chaserCountdownSeconds"
               :countdown-urgent="lockoutUrgent"
@@ -331,6 +343,9 @@ onUnmounted(() => {
           </div>
 
           <div class="board-portrait-wrap">
+            <Transition name="chaser-bubble-pop">
+              <div v-if="isContestant && myAnswerText" :key="myAnswerBubbleKey" class="chaserPanelBubble">{{ myAnswerText }}</div>
+            </Transition>
             <div class="board-portrait-circle">
               <CharacterFace :character="activeContestantCharacter" :reaction="reactions[activeContestantSeatId] ?? 'neutral'" />
             </div>
@@ -374,7 +389,6 @@ onUnmounted(() => {
             </div>
 
             <p v-if="isParticipant && hasAnswered && !revealed" class="playerName chaseWaitingStatus">Locked in…</p>
-            <p v-else-if="isParticipant && !hasAnswered && !revealed" class="playerName chaseWaitingStatus">Pick your answer!</p>
             <p v-else-if="!isParticipant && !revealed" class="playerName chaseWaitingStatus">{{ activeContestantName }} and the Chaser are answering…</p>
           </template>
           <p v-else class="playerName">Waiting for the next question…</p>

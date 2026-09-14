@@ -239,9 +239,17 @@ input {
   max-width: 500px;
   margin: 40px auto;
 }
+/* Ticket 127: was max-width:500px — this base class's own consumers
+   (ChaserSelectionScreen, ResultsScreen, CashBuilderScreen, OfferScreen) all
+   left most of the screen as unused page background on any normal desktop
+   width. Widened so their content actually uses the available space; each
+   screen's own internal max-widths (.voteList, .lineupList, .moneyPlaque,
+   .offerBoard, etc.) already keep individual elements from stretching
+   awkwardly wide, so this only grows the breathing room around them. */
 .lobby {
   display:block;
-  max-width: 500px;
+  width: 90%;
+  max-width: 700px;
   height: 90%;
   margin: 40px auto;
 }
@@ -730,7 +738,7 @@ h1, h2, h3, h4 {
 }
 
 #app {
-  height: 95%;
+  height: 100%;
   overflow: none;
 }
 
@@ -1047,7 +1055,8 @@ h1, h2, h3, h4 {
 }
 
 .cashBuilder {
-  max-width: 820px;
+  width: 90%;
+  max-width: 1000px;
 }
 
 .cashBuilderBody {
@@ -1309,7 +1318,8 @@ h1, h2, h3, h4 {
 }
 
 .offerScreen {
-  max-width: 900px;
+  width: 90%;
+  max-width: 1100px;
 }
 
 .offerLayout {
@@ -1768,10 +1778,12 @@ h1, h2, h3, h4 {
    contestant profile right, question + answers along the bottom. Deliberately
    not responsive: designed for a full 16:9 desktop window, no @media rules. */
 .chaseTable {
-  width: 960px;
-  margin: 20px auto;
+  width: 100%;
+  height: 100%;
   box-sizing: border-box;
-  padding: 0 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
   position: relative;
   /* Establishes a fresh stacking context for this screen's own content, not
      against body's own background (see .cashBuilderScreenFlash for the same
@@ -1785,21 +1797,6 @@ h1, h2, h3, h4 {
 
 .chaseTableTitle {
   text-align: center;
-}
-
-.chaseOffboardNote {
-  text-align: center;
-  font-size: 14px;
-  opacity: 0.7;
-}
-
-/* Ticket 111: this note used to be v-if'd in and out of the DOM as the Chaser
-   crosses on/off the board mid-round, which visibly dropped the whole
-   .chaseTableRow (both portraits + the board) up by the note's own height the
-   moment it disappeared. It now always renders and only toggles visibility,
-   so its line is permanently reserved and nothing below it jumps. */
-.chaseOffboardNote-hidden {
-  visibility: hidden;
 }
 
 .chaseTableRow {
@@ -2120,12 +2117,15 @@ h1, h2, h3, h4 {
    bottom normally; the target row of boxes sits fixed between them and always
    spans the full row width. During a team steal, the steal question swaps up
    to the top and the team takes over the bottom. */
+/* Ticket 127: full-bleed, not a fixed 700px column — matches the same fix
+   applied to .chaseTable. */
 .chaserFinalRoot {
-  width: 700px;
-  max-width: 92vw;
+  width: 100%;
+  height: 100%;
   box-sizing: border-box;
-  margin: 30px auto;
-  padding: 0 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
   position: relative;
   isolation: isolate;
 }
@@ -2895,13 +2895,17 @@ h1, h2, h3, h4 {
    contestant's (right) side, meeting in a neutral zone around the board —
    the board/question box sit on top of this with their own opaque
    backgrounds, so the gradient only actually shows through the padding
-   around them. */
+   around them. Full-bleed (ticket 127): fills all of .chaseTable's
+   remaining height via flex:1, no border/radius — this reads as the scene's
+   own backdrop, not a bounded card floating on the page background. */
 .chaseGround {
   position: relative;
   overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   background: linear-gradient(90deg, var(--ink-chase) 0%, var(--ink-chase) 32%, var(--color-bg-page) 68%, var(--color-bg-page) 100%);
-  border: 2px solid var(--ink-line);
-  border-radius: 14px;
   padding: 24px;
 }
 
@@ -3029,12 +3033,15 @@ h1, h2, h3, h4 {
    Vue mounts this block), then ChaseScreen.vue delays the existing
    .chaseOutcomeBanner Transition by a few hundred ms so the banner reads as
    following the beat rather than appearing on top of it. */
+/* Ticket 127: no border/radius — was a second bordered box nested inside
+   .chaseGround's own now-full-bleed ground, the same "framed box floating in
+   empty space" look this ticket removes everywhere else. Its own vertical
+   gradient (caught red vs escaped blue vignette) still reads as a distinct
+   dramatic beat without needing an outline to mark its edges. */
 .chaseCutscene {
   position: relative;
   height: 220px;
   overflow: hidden;
-  border-radius: 14px;
-  border: 2px solid var(--ink-line);
 }
 
 .chaseCutscene-caught {
@@ -3157,12 +3164,17 @@ h1, h2, h3, h4 {
    reacts to it in CSS). Houses the Chaser banner/steal-prompt swap, the
    tension-fill bar, and the (untouched) target-box row together so all
    three sit on the same ground. */
+/* Ticket 127: no border/radius, flex:1 to fill .chaserFinalRoot's remaining
+   height — the same "bordered box floating in empty space" fix as
+   .chaseGround. */
 .chaserFinalStage {
   position: relative;
   overflow: hidden;
-  border-radius: 14px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   background-color: var(--ink-chase);
-  border: 2px solid var(--ink-line);
   padding: 20px 20px 24px;
   margin: 20px 0;
   transition: background-color 0.5s ease;
