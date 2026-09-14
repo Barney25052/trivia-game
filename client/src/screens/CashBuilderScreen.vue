@@ -59,6 +59,14 @@ const seenQuestion = ref(false);
 const inputBox = ref(null);
 const screenFlash = ref("");
 const revealedCorrectAnswer = ref("");
+// Ticket 121: a correct answer only ever triggered the green screen flash,
+// with no confirmation of what the accepted answer actually was — real gap
+// for fuzzy-matched open-ended answers, where what you typed and what the
+// server matched it to can differ. Separate ref (not reusing
+// revealedCorrectAnswer) since the two have different lifetimes: the wrong
+// reveal holds until the next question arrives, this clears on the same
+// short timer as the correct flash itself.
+const correctAnswerText = ref("");
 
 let cooldownInterval = null;
 let questionInterval = null;
@@ -135,9 +143,14 @@ watch(() => props.currentQuestion, (question) => {
             screenFlash.value = "";
         }
         revealedCorrectAnswer.value = "";
-        // bubbleText is intentionally NOT cleared here (ticket 107) — it has
-        // its own minimum-life timer above, independent of when the next
-        // question arrives.
+        // correctAnswerText is intentionally NOT cleared here, same reason as
+        // screenFlash above and bubbleText (ticket 107): confirmed live that
+        // the server's advanceQuestion() fires synchronously on a correct
+        // answer (server/src/rooms/handlers/messageHandlers.ts submitAnswer),
+        // so the next currentQuestion can arrive within the same tick as this
+        // watch running — clearing it here left the confirmation visible for
+        // ~0ms. Its own 700ms timeout below (matching the correct flash's
+        // cadence) is the only thing that clears it.
         startQuestionTimer();
     } else {
         awaitingNext.value = false;
@@ -159,11 +172,14 @@ watch(() => props.answerResult, (result) => {
     if (screenFlashTimeout) clearTimeout(screenFlashTimeout);
     if (result.correct) {
         revealedCorrectAnswer.value = "";
+        correctAnswerText.value = result.correctAnswer;
         screenFlash.value = "cashBuilder-flash-correct";
         screenFlashTimeout = setTimeout(() => {
             screenFlash.value = "";
+            correctAnswerText.value = "";
         }, 700);
     } else {
+        correctAnswerText.value = "";
         revealedCorrectAnswer.value = result.correctAnswer;
         screenFlash.value = "cashBuilder-flash-wrong";
     }
@@ -213,10 +229,17 @@ onUnmounted(() => {
                 </div>
                 <p class="playerName cashBuilderMeta">{{ questionsLabel }}</p>
 
-                <div class="cashBuilderQuestionArea" :class="{ 'cashBuilderQuestionArea-wrong': revealedCorrectAnswer }">
+                <div
+                    class="cashBuilderQuestionArea"
+                    :class="{ 'cashBuilderQuestionArea-wrong': revealedCorrectAnswer, 'cashBuilderQuestionArea-correct': correctAnswerText }"
+                >
                     <template v-if="revealedCorrectAnswer">
                         <span class="cashBuilderRevealLabel">✗ WRONG!</span>
                         <p class="cashBuilderRevealAnswer">The answer was <strong>{{ revealedCorrectAnswer }}</strong></p>
+                    </template>
+                    <template v-else-if="correctAnswerText">
+                        <span class="cashBuilderRevealLabel cashBuilderRevealLabel-correct">✓ Correct!</span>
+                        <p class="cashBuilderRevealAnswer"><strong>{{ correctAnswerText }}</strong></p>
                     </template>
                     <template v-else-if="currentQuestion">
                         <p class="cashBuilderQuestion">{{ currentQuestion.prompt }}</p>

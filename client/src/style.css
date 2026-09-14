@@ -1215,6 +1215,16 @@ ul {
   animation: cash-builder-reveal-pop 0.2s ease-out;
 }
 
+/* Ticket 121: a correct answer's confirmation text, alongside the existing
+   green screen flash — same card treatment as the wrong case, re-accented
+   green instead of red. */
+.cashBuilderQuestionArea-correct {
+  background-color: rgba(var(--color-black-rgb), 0.2);
+  border: 3px solid var(--color-green);
+  border-radius: 16px;
+  animation: cash-builder-reveal-pop 0.2s ease-out;
+}
+
 .cashBuilderRevealLabel {
   display: block;
   /* Ticket 115: an outcome-reveal label ("✗ WRONG!") — outcome-banner role. */
@@ -1226,6 +1236,11 @@ ul {
   color: var(--color-danger);
   text-shadow: 0 0 10px rgba(var(--color-danger-rgb), 0.9), 0 2px 0 rgba(var(--color-black-rgb), 0.25);
   text-transform: uppercase;
+}
+
+.cashBuilderRevealLabel-correct {
+  color: var(--color-green);
+  text-shadow: 0 0 10px rgba(var(--color-green-rgb), 0.9), 0 2px 0 rgba(var(--color-black-rgb), 0.25);
 }
 
 .cashBuilderRevealAnswer {
