@@ -1568,7 +1568,7 @@ ul {
    percentages of a positioned ancestor, resolved from that ancestor's own
    explicit size — every screen sizes its avatar box in pixels, e.g.
    .offerContestantMaskBox at 220px, .lobbyCharacterPreview at 120px,
-   .lobbyBust at 70x63, .teamFinalAvatarWrap at 64px) is already reserved by
+   .lobbyBust at 70x63, .teamFinalAvatarWrap at 110px) is already reserved by
    the browser purely from CSS, before any layer image loads — confirmed live
    via getBoundingClientRect while every source was still unloaded/erroring,
    across both the div-based (108) and img-based layers. So a layer never
@@ -1977,8 +1977,16 @@ ul {
   animation: offer-space-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Team Final — buzz-in round (ticket 080): question/answer up top,
-   contestants sitting on the team pot like a table at the bottom. */
+/* Team Final — buzz-in round (ticket 080), redesigned as a physical table
+   scene (ticket 118). Builds on 115/117's shared primitives (frame-free
+   portraits, .cf-hud, .wrong-panel, .open-question-box, .buzzer-btn,
+   .chaserPanelBubble, the .head/.eyes wobble reaction) instead of inventing
+   new ones — see tickets/118-team-final-visual-redesign.md and the
+   ticket-118 footnote in tickets/README.md for the mockup-vs-ticket-prose
+   calls made here. .teamFinalPlayer/.teamFinalAvatarWrap/.teamFinalPlayerName
+   below are also reused as-is by ChaserFinalScreen's Steal team row (ticket
+   117) — sizing them up here intentionally grows that row too, matching the
+   design conversation's "bigger avatars" call across both final screens. */
 .teamFinalRoot {
   width: 700px;
   max-width: 92vw;
@@ -1992,78 +2000,63 @@ ul {
   isolation: isolate;
 }
 
-.teamFinalScore {
-  text-align: center;
-}
-
-.teamFinalQuestionArea {
-  min-height: 160px;
-  box-sizing: border-box;
+/* Full-bleed target visualization: one flex-divided bar per point of
+   teamScore, fixed to the true viewport (per the ticket's explicit note not
+   to scope this to an inner wrapper the way the mockup's own demo page had
+   to). chaserScore is always 0 during this phase (see ChaserFinalScreen's
+   identical targetBoxes comment), so these bars only ever grow in count,
+   never "fill in" a colour the way 117's target boxes do. */
+.teamFinalTargetBg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  border-radius: 15px;
-  background-color: rgba(var(--color-white-rgb), 0.1);
-  padding: 20px;
-  margin: 20px 0;
+  pointer-events: none;
+}
+
+.teamFinalTargetBar {
+  flex: 1;
+  background: rgba(var(--contestant-blue-glow-rgb), 0.05);
+  border-right: 2px solid rgba(var(--color-white-rgb), 0.04);
+}
+.teamFinalTargetBar:nth-child(even) { background: rgba(var(--contestant-blue-glow-rgb), 0.1); }
+.teamFinalTargetBar:last-child { border-right: none; }
+
+/* What "the score just went up" looks like: a new bar rises into the
+   background rather than just appearing — Vue's own TransitionGroup enter
+   transition, keyed by a plain array index (bars are only ever appended,
+   never removed mid-round, so no leave transition is needed). */
+.team-final-target-bar-enter-active {
+  animation: team-final-target-bar-in 0.5s ease;
+  transform-origin: bottom;
+}
+@keyframes team-final-target-bar-in {
+  0%   { opacity: 0; transform: scaleY(0.3); }
+  60%  { opacity: 1; transform: scaleY(1.08); }
+  100% { opacity: 1; transform: scaleY(1); }
+}
+
+.teamFinalQuestionBlock {
   text-align: center;
+  margin: 20px 0;
 }
-
-.teamFinalQuestionArea-wrong {
-  background-color: var(--color-danger-pale);
-  border: 3px solid var(--color-danger-strong);
-}
-
-.teamFinalQuestion {
-  color: var(--color-white);
-  font-family: var(--font-body);
-  font-weight: 400;
-  font-style: normal;
-  font-size: 24px;
-  margin: 0;
-}
-
-.teamFinalRevealLabel {
-  color: var(--color-danger);
-  /* Ticket 115: a reveal/outcome label ("WRONG!") — outcome-banner role. */
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-style: normal;
-  font-size: 22px;
-}
-
-.teamFinalRevealAnswer {
-  color: var(--color-black);
-  margin: 0;
-}
-
-.teamFinalBuzzButton {
-  width: 220px;
-  height: 60px;
-  font-size: 20px;
-}
-
-.teamFinalInput {
-  width: 90%;
-  max-width: 400px;
-}
+.teamFinalQuestionBlock .oq-prompt { color: var(--color-white); }
+.teamFinalQuestionBlock .buzzer-btn { margin: 14px auto 0; }
 
 .teamFinalTable {
   position: relative;
-  margin-top: 60px;
+  margin-top: 70px;
 }
 
-.teamFinalPlayers {
+.teamFinalSeatsRow {
   display: flex;
   justify-content: center;
   align-items: flex-end;
   flex-wrap: wrap;
-  gap: 18px;
+  gap: 50px;
   position: relative;
-  z-index: 1;
-  margin-bottom: -10px;
+  z-index: 2;
+  margin-bottom: -34px;
 }
 
 .teamFinalPlayer {
@@ -2072,40 +2065,23 @@ ul {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 70px;
+  gap: 10px;
 }
 
 .teamFinalPlayer-eliminated {
   opacity: 0.6;
 }
 
-.teamFinalPlayerGlow {
-  position: absolute;
-  top: -14px;
-  left: 50%;
-  width: 90px;
-  height: 90px;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--contestant-blue-glow-rgb), 0.9), transparent 70%);
-  opacity: 0;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.teamFinalPlayerGlow-active {
-  animation: team-final-buzz-glow 0.9s ease-in-out infinite;
-}
-
-@keyframes team-final-buzz-glow {
-  0%, 100% { opacity: 0.35; }
-  50%      { opacity: 1; }
-}
+/* Buzzing plays the same independent head-wobble/eyes-squeeze reaction as
+   poking a Lobby seat or a successful Chaser Final steal — never a
+   whole-body squash. */
+.teamFinalPlayer.buzzing .head { animation: head-wobble 0.5s ease; }
+.teamFinalPlayer.buzzing .eyes { animation: eyes-squeeze 0.4s ease 0.05s; }
 
 .teamFinalAvatarWrap {
   position: relative;
-  width: 64px;
-  height: 64px;
+  width: 110px;
+  height: 110px;
 }
 
 .teamFinalBubble {
@@ -2113,15 +2089,54 @@ ul {
 }
 
 .teamFinalPlayerName {
-  font-size: 12px;
-  padding: 2px;
+  font-size: 19px;
+  font-weight: 700;
+  padding: 0;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 70px;
+  max-width: 130px;
 }
 
+/* The table itself — a solid slab with a raised 3D bottom edge (the same
+   lip-shadow trick as .buzzer-btn/.answer-btn), pulled up under the seats
+   row (via its own negative margin above) so the contestants read as
+   standing behind it. Lights up (border + glow) whenever someone's
+   answering, table-wide rather than per-seat — the spotlight idea from the
+   design conversation was tried and abandoned, this carries the signal
+   instead. */
+.teamFinalTableSlab {
+  position: relative;
+  z-index: 1;
+  margin: -34px auto 0;
+  width: 100%;
+  max-width: 640px;
+  height: 120px;
+  background: var(--ink-raised);
+  border-top: 4px solid var(--ink-line);
+  border-radius: 12px 12px 6px 6px;
+  box-shadow: 0 10px 0 rgba(var(--color-black-rgb), 0.45), 0 16px 22px rgba(var(--color-black-rgb), 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+.teamFinalTableSlab-lit {
+  border-top-color: var(--contestant-blue-glow);
+  box-shadow: 0 10px 0 rgba(var(--color-black-rgb), 0.45), 0 0 34px 8px rgba(var(--contestant-blue-glow-rgb), 0.55), 0 16px 22px rgba(var(--color-black-rgb), 0.5);
+}
+
+.teamFinalTableAmount {
+  font-family: var(--font-pixel);
+  font-size: 52px;
+  color: var(--color-gold);
+}
+
+/* Kept for ResultsScreen.vue, which still shows the final team pot in this
+   plain white boxed form (not yet redesigned) — TeamFinalScreen itself now
+   shows the pot on its dark table slab above (.teamFinalTableAmount) instead
+   of this box, so this pairing keeps its original black-on-white look. */
 .teamFinalPotBox {
   box-sizing: border-box;
   background-color: var(--color-white);
@@ -3317,7 +3332,11 @@ ul {
   .chaserFinalStage, .chaserFinalStageVignette, .chaserFinalTensionFill,
   .oq-dots i,
   .teamFinalAvatarWrap.chaserFinalStealWinner .head,
-  .teamFinalAvatarWrap.chaserFinalStealWinner .eyes {
+  .teamFinalAvatarWrap.chaserFinalStealWinner .eyes,
+  .teamFinalPlayer.buzzing .head,
+  .teamFinalPlayer.buzzing .eyes,
+  .team-final-target-bar-enter-active,
+  .teamFinalTableSlab {
     animation: none !important;
     transition: none !important;
   }

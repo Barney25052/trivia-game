@@ -4,7 +4,6 @@ import CharacterFace from "../components/CharacterFace.vue";
 
 const props = defineProps({
     teamScore: { type: Number, default: 0 },
-    chaserScore: { type: Number, default: 0 },
     teamPot: { type: Number, default: 0 },
     players: { type: Array, default: () => [] },
     mySeatId: { type: String, default: "" },
@@ -43,22 +42,18 @@ onUnmounted(() => {
 const isChaser = computed(() => props.mySeatId !== "" && props.mySeatId === props.chaserSeatId);
 const teamPlayers = computed(() => props.players.filter((p) => p.seatId !== props.chaserSeatId));
 
-// Mirrors ChaserFinalScreen's target row: one box per point of teamScore,
-// filled by chaserScore. During the team's own section chaserScore is still
-// 0, so it renders as the empty target the team is filling as they answer
-// correctly.
-const targetBoxes = computed(() =>
-    Array.from({ length: Math.max(props.teamScore, 1) }, (_, i) => ({
-        index: i + 1,
-        filled: i + 1 <= props.chaserScore
-    }))
-);
-
 const isBuzzWinner = computed(() => props.finalBuzzSeatId !== "" && props.finalBuzzSeatId === props.mySeatId);
 const buzzWinnerName = computed(
     () => teamPlayers.value.find((p) => p.seatId === props.finalBuzzSeatId)?.name ?? "A teammate"
 );
 const potText = computed(() => "$" + props.teamPot.toLocaleString("en-US"));
+
+// Ticket 118: full-bleed background bars, one per point of teamScore (see
+// style.css's .teamFinalTargetBg comment — chaserScore is always 0 here, so
+// this only ever grows). Keyed by plain index so Vue's TransitionGroup below
+// only plays the rise-in animation for the newly-appended bar, not the ones
+// already on screen.
+const targetBars = computed(() => Array.from({ length: props.teamScore }, (_, i) => i));
 
 const answerInput = ref("");
 const inputBox = ref(null);
@@ -169,63 +164,63 @@ watch(isBuzzWinner, (winner) => {
 
 <template>
   <div class="teamFinalRoot">
+    <TransitionGroup tag="div" name="team-final-target-bar" class="teamFinalTargetBg" aria-hidden="true">
+      <div v-for="i in targetBars" :key="i" class="teamFinalTargetBar"></div>
+    </TransitionGroup>
     <div class="finalScreenFlash" :class="screenFlash"></div>
-    <h2 class="lobbyTitle">The Team Final</h2>
-    <p class="playerName teamFinalScore">Time left: {{ secondsLeft }}s · Team score: {{ teamScore }}</p>
 
-    <div class="finalTargetRow">
-      <div
-          v-for="box in targetBoxes"
-          :key="box.index"
-          class="finalTargetBox"
-          :class="{ 'finalTargetBox-filled': box.filled }"
-      >{{ box.index }}</div>
+    <h2 class="lobbyTitle">The Team Final</h2>
+
+    <div class="cf-hud">
+      <span>TIME LEFT <b>{{ secondsLeft }}s</b></span>
+      <span>TEAM SCORE <b>{{ teamScore }}</b></span>
     </div>
 
-    <div v-if="isChaser" class="teamFinalQuestionArea">
+    <div v-if="isChaser" class="teamFinalQuestionBlock">
       <p class="playerName">Chaser, your round is next — you're up after the team.</p>
     </div>
 
-    <div v-else class="teamFinalQuestionArea" :class="{ 'teamFinalQuestionArea-wrong': revealedCorrectAnswer }">
-      <template v-if="revealedCorrectAnswer">
-        <span class="teamFinalRevealLabel">✗ WRONG!</span>
-        <p class="teamFinalRevealAnswer">The answer was <strong>{{ revealedCorrectAnswer }}</strong></p>
-      </template>
+    <template v-else>
+      <div v-if="revealedCorrectAnswer" class="wrong-panel">
+        <span class="wrong-label">✗ WRONG!</span>
+        <p class="wrong-answer">The answer was <strong>{{ revealedCorrectAnswer }}</strong></p>
+      </div>
       <template v-else-if="finalQuestion">
-        <p class="teamFinalQuestion">{{ finalQuestion.prompt }}</p>
-
-        <button
-            v-if="!isBuzzWinner && finalBuzzSeatId === ''"
-            class="startButton teamFinalBuzzButton"
-            @click="buzz"
-        >Buzz in!</button>
-
-        <p v-else-if="!isBuzzWinner" class="playerName">{{ buzzWinnerName }} is answering…</p>
-
-        <input
-            v-else
-            v-model="answerInput"
-            class="teamFinalInput"
-            placeholder="Type your answer..."
-            ref="inputBox"
-            @keyup.enter="submit"
-        />
+        <div v-if="isBuzzWinner" class="open-question-box accent-blue">
+          <span class="oq-eyebrow">Your answer</span>
+          <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
+          <div class="oq-row">
+            <input
+                v-model="answerInput"
+                class="oq-input"
+                placeholder="Type your answer..."
+                ref="inputBox"
+                @keyup.enter="submit"
+            />
+            <button class="oq-submit" @click="submit">Submit</button>
+          </div>
+        </div>
+        <div v-else-if="finalBuzzSeatId === ''" class="teamFinalQuestionBlock">
+          <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
+          <button class="buzzer-btn" @click="buzz">BUZZ IN</button>
+        </div>
+        <div v-else class="open-question-box">
+          <span class="oq-eyebrow accent-neutral">{{ buzzWinnerName }} is answering</span>
+          <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
+          <p class="oq-thinking">Waiting<span class="oq-dots"><i></i><i></i><i></i></span></p>
+        </div>
       </template>
       <p v-else class="playerName">Waiting for the first question…</p>
-    </div>
+    </template>
 
     <div class="teamFinalTable">
-      <div class="teamFinalPlayers">
+      <div class="teamFinalSeatsRow">
         <div
             v-for="p in teamPlayers"
             :key="p.seatId"
             class="teamFinalPlayer"
-            :class="{ 'teamFinalPlayer-eliminated': p.isEliminated }"
+            :class="{ 'teamFinalPlayer-eliminated': p.isEliminated, buzzing: p.seatId === finalBuzzSeatId }"
         >
-          <div
-              class="teamFinalPlayerGlow"
-              :class="{ 'teamFinalPlayerGlow-active': p.seatId === finalBuzzSeatId }"
-          ></div>
           <Transition name="chaser-bubble-pop">
             <div
                 v-if="p.seatId === mySeatId && bubbleText"
@@ -239,8 +234,8 @@ watch(isBuzzWinner, (winner) => {
           </div>
         </div>
       </div>
-      <div class="teamFinalPotBox">
-        <span class="teamFinalPotAmount">{{ potText }}</span>
+      <div class="teamFinalTableSlab" :class="{ 'teamFinalTableSlab-lit': finalBuzzSeatId !== '' }">
+        <span class="teamFinalTableAmount">{{ potText }}</span>
       </div>
     </div>
   </div>
