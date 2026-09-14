@@ -84,7 +84,7 @@ function handleCharacterSelect(characterId) {
             <p class="playerName">{{ allReady ? "All ready!" : "Waiting for everyone to be ready…" }}</p>
             <button
                 v-if="chaser?.seatId != mySeatId && !myRevealReady"
-                class="revealContinue"
+                class="btn btn-primary revealContinue"
                 @click="emit('ready')"
             >Ready</button>
         </div>
