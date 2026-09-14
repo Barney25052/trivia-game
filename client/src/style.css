@@ -21,7 +21,6 @@
   --color-green: #31c31e;
   --color-green-rgb: 49, 195, 30;
   --color-green-hover: #19b42b;
-  --color-green-pale: #cdecc4;
   --color-green-flash-rgb: 46, 204, 113;
 
   /* Ticket 115: same value as --color-green, kept as a separate name because
@@ -641,15 +640,21 @@ h1, h2, h3, h4 {
 
 
 
-ul {
+/* Ticket 123: was a bare `ul` element selector (the vote list is this
+   file's only unscoped consumer — RolesRevealScreen.vue's own `<ul>` sets
+   its own background:transparent, fully overriding it either way) — named
+   properly per the no-cruft rule while restyling. Dark raised card (115's
+   .open-question-box/.lobbyCharacterPicker language) instead of the old
+   plain white card. */
+.voteList {
   height: 50%;
   list-style: none;
-  border-radius: 10px;
+  border-radius: 14px;
   padding: 10px;
-  background-color: var(--color-white);
+  background: var(--ink-raised);
+  border: 1px solid var(--ink-line);
   overflow-y: auto;
   overflow-x: hidden;
-  box-shadow: 0 4px 10px rgba(var(--color-black-rgb), 0.25);
 }
 
 .voteRow {
@@ -657,15 +662,25 @@ ul {
   justify-content: space-between;
   align-items: center;
   padding: 10px;
-  border-radius: 10px;
+  border-bottom: 1px solid var(--ink-line);
 }
 
+.voteRow:last-child {
+  border-bottom: none;
+}
+
+/* Blue, not the old pale green — green is reserved for "correct" everywhere
+   else in the app (115's colour rule); "this is my pick" isn't a
+   correctness signal, so it borrows the same blue used for a contestant's
+   own identity elsewhere (e.g. the Offer screen's contestant box). */
 .voteRow.voteTarget {
-  background-color: var(--color-green-pale);
+  background-color: rgba(var(--contestant-blue-glow-rgb), 0.12);
+  border-left: 3px solid var(--contestant-blue-glow);
+  padding-left: 7px;
 }
 
 .voteName {
-  color: var(--color-black);
+  color: var(--color-white);
   font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
@@ -673,9 +688,11 @@ ul {
 }
 
 .voteStatus {
-  color: var(--color-black);
-  font-family: var(--font-body);
+  color: var(--color-gold);
+  font-family: var(--font-pixel);
   font-size: 16px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
   margin-right: 10px;
 }
 
@@ -691,7 +708,7 @@ ul {
   align-items: center;
   justify-content: center;
   height: 100%;
-  background: linear-gradient(135deg, var(--gradient-page-start), var(--gradient-page-end));
+  background-color: var(--color-bg-page);
 }
 
 .wheelViewport {
@@ -699,7 +716,8 @@ ul {
   height: 180px;
   width: 320px;
   overflow: hidden;
-  background-color: rgba(var(--color-white-rgb), 0.85);
+  background: var(--ink-raised);
+  border: 1px solid var(--ink-line);
   border-radius: 15px;
   mask-image: linear-gradient(to bottom, transparent, var(--color-black) 25%, var(--color-black) 75%, transparent);
   -webkit-mask-image: linear-gradient(to bottom, transparent, var(--color-black) 25%, var(--color-black) 75%, transparent);
@@ -714,7 +732,9 @@ ul {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-black);
+  /* Ticket 123: white, not black — .wheelViewport's background moved from
+     near-white to the dark --ink-raised card. */
+  color: var(--color-white);
   /* Ticket 115: a candidate name in a spin-reveal mechanic, matching the
      mockup's own .chaser-pick treatment for chaser names, not a plain
      roster name (those stay Rubik, e.g. .contestantName below). */

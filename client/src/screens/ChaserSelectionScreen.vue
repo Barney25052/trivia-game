@@ -17,7 +17,7 @@ const haveVoted = computed(() => {
 <template>
     <div class = "lobby">
       <h2 class = "lobbyTitle">Picking the Chaser…</h2>
-      <ul>
+      <ul class="voteList">
         <li
           v-for="player in players"
           :key="player.seatId"
@@ -34,7 +34,7 @@ const haveVoted = computed(() => {
             </span>
             <button
               v-if="!haveVoted"
-              class="voteButton"
+              class="btn btn-primary voteButton"
               @click="emit('chaserVote', { targetSeatId: player.seatId })"
             >
               Vote
