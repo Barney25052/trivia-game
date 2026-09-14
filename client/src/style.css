@@ -31,6 +31,7 @@
   --success-green: var(--color-green);
 
   --color-gold: #ffe27a;
+  --color-gold-rgb: 255, 226, 122;
 
   --color-danger: #ff3b2f;
   --color-danger-rgb: 255, 59, 47;
@@ -745,15 +746,14 @@ h1, h2, h3, h4 {
 }
 
 
+/* Ticket 124: now composed with .btn.btn-primary — the old hover override
+   (a flat black fill) predated the chunky button family and clashed with
+   its own transform/shadow hover treatment, so it's retired rather than
+   layered underneath. */
 .nextButton {
-  margin: auto auto;
+  margin: 20px auto 0;
   display: block;
   width: 300px;
-}
-
-.nextButton:hover {
-  background-color: var(--color-black);
-  color: var(--color-white)
 }
 
 #app {
@@ -998,8 +998,20 @@ h1, h2, h3, h4 {
   gap: 8px;
   width: 160px;
   padding: 15px;
-  background-color: var(--color-white);
+  background: var(--ink-raised);
+  border: 1px solid var(--ink-line);
   border-radius: 15px;
+}
+
+/* Ticket 124: .contestantName/.contestantYou are shared with
+   RolesRevealScreen.vue's own .contestantCard, which is still a genuine
+   white card (untouched, out of this ticket's scope) — so the base
+   .contestantName rule below stays black-on-white for that screen. This
+   scoped override is what makes text readable specifically inside the new
+   dark .lineupCard, covering both ContestantLineupScreen.vue and (via reuse)
+   TeamFinalIntroScreen.vue/ResultsScreen.vue. */
+.lineupCard .contestantName {
+  color: var(--color-white);
 }
 
 .lineupCard-first {
@@ -2108,27 +2120,6 @@ h1, h2, h3, h4 {
   color: var(--color-gold);
 }
 
-/* Kept for ResultsScreen.vue, which still shows the final team pot in this
-   plain white boxed form (not yet redesigned) — TeamFinalScreen itself now
-   shows the pot on its dark table slab above (.teamFinalTableAmount) instead
-   of this box, so this pairing keeps its original black-on-white look. */
-.teamFinalPotBox {
-  box-sizing: border-box;
-  background-color: var(--color-white);
-  border: 4px solid var(--color-gold);
-  border-radius: 14px;
-  padding: 18px 10px 12px;
-  text-align: center;
-}
-
-.teamFinalPotAmount {
-  color: var(--color-black);
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-style: normal;
-  font-size: 40px;
-}
-
 /* Chaser Final (ticket 081) — Chaser panel up top / question+answer down
    bottom normally; the target row of boxes sits fixed between them and always
    spans the full row width. During a team steal, the steal question swaps up
@@ -2268,20 +2259,46 @@ h1, h2, h3, h4 {
   background: linear-gradient(160deg, var(--chaser-red-glow), var(--chaser-red-dark));
 }
 
-.resultsPlayerList {
-  margin: 10px 0;
+/* Ticket 124: the team pot finally gets the shared "prize plaque" (115) —
+   this is its first real use anywhere in the app. Small top margin only;
+   .moneyPlaque's own sizing is left alone. */
+.resultsPotPlaque {
+  margin: 10px auto 20px;
 }
 
-.resultsPlayerRow {
-  font-size: 22px;
+/* Ticket 124: reuses .lineupCard/.lineupAvatar/.lineupOrdinal wholesale
+   (ContestantLineupScreen.vue's card family) instead of the old plain text
+   list, now ranked by cashBuilderCorrectAnswers instead of turn order. */
+.resultsPlayerMoney {
+  font-family: var(--font-pixel);
+  color: var(--color-gold);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A static gold highlight for the top scorer — deliberately NOT
+   .lineupCard-first's looping press-me pulse: that animation is fine for
+   Lineup's brief ~7s hold, but this screen stays on until the player clicks
+   Main Menu, and a permanently-looping pulse would break the app's own
+   "motion is feedback-only, never ambient" rule (feedback_visual_direction.md). */
+.resultsCard-topScore {
+  border-width: 3px;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 16px rgba(var(--color-gold-rgb), 0.5);
+}
+
+.resultsCard-caught {
+  opacity: 0.6;
 }
 
 .resultsStatus-back {
   color: var(--color-green);
+  font-size: 14px;
 }
 
 .resultsStatus-caught {
   color: var(--chaser-red-bright);
+  font-size: 14px;
 }
 
 /* Add-question screen (ticket 092) — a quiet home-page entry point into
@@ -2552,6 +2569,7 @@ h1, h2, h3, h4 {
 }
 
 .moneyPlaque .who {
+  display: block;
   position: relative;
   font-family: var(--font-body);
   font-weight: 600;
@@ -2562,6 +2580,7 @@ h1, h2, h3, h4 {
 }
 
 .moneyPlaque .amount {
+  display: block;
   position: relative;
   font-family: var(--font-display);
   font-size: 30px;
