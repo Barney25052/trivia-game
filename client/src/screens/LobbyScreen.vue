@@ -82,7 +82,12 @@ function saveCharacter() {
 
 // Mirrors server/src/gameConfig.ts ROOM_SETTINGS.max_clients — duplicated to size the empty seats around the lobby circle.
 const MAX_SEATS = 6;
-const SEAT_RADIUS = 130;
+// Ticket 119: bumped alongside the ring growing from 380px to 440px
+// (.lobbyCircle in style.css) so seat content (crown + bust + name) sits
+// with real clearance inside the ring's silhouette instead of flush against
+// its edge — the position math itself (the angle formula below) is
+// unchanged, only this distance.
+const SEAT_RADIUS = 150;
 
 const seats = computed(() => Array.from({ length: MAX_SEATS }, (_, i) => props.players[i] ?? null));
 
@@ -123,24 +128,27 @@ async function copyRoomCode() {
 <template>
     <div class="lobbyRow">
       <h1 class = "lobbyTitle">Host's Lobby</h1>
-      <h3 class = "roomCode">
-        Room Code: {{room.roomId}}
-        <button class="roomCodeCopyButton" @click="copyRoomCode" :aria-label="copied ? 'Copied' : 'Copy room code'">
-          <svg v-if="!copied" viewBox="0 0 24 24" class="roomCodeCopyIcon" aria-hidden="true">
-            <rect x="7" y="7" width="13" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
-            <path d="M4 15 L4 5 A1 1 0 0 1 5 4 L15 4" fill="none" stroke="currentColor" stroke-width="2" />
-          </svg>
-          <svg v-else viewBox="0 0 24 24" class="roomCodeCopyIcon" aria-hidden="true">
-            <path d="M4 12 L9 18 L20 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </button>
-      </h3>
+      <div class="lobbyRoomBadgeRow">
+        <div class="ticket-badge">
+          <span class="code">{{ room.roomId }}</span>
+          <span class="divider"></span>
+          <button class="roomCodeCopyButton" @click="copyRoomCode" :aria-label="copied ? 'Copied' : 'Copy room code'">
+            <svg v-if="!copied" viewBox="0 0 24 24" class="roomCodeCopyIcon" aria-hidden="true">
+              <rect x="7" y="7" width="13" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M4 15 L4 5 A1 1 0 0 1 5 4 L15 4" fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+            <svg v-else viewBox="0 0 24 24" class="roomCodeCopyIcon" aria-hidden="true">
+              <path d="M4 12 L9 18 L20 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
       <div class="lobbyCustomiserColumn">
         <div class="lobbyCharacterPicker">
           <h3 class="settingsTitle">Customize your look</h3>
 
-          <div class="lobbyCharacterPreview">
+          <div class="board-portrait-circle lobbyCharacterPreview">
             <CharacterFace v-if="assetsReady" :character="previewCharacter" reaction="neutral" />
           </div>
 
@@ -214,7 +222,7 @@ async function copyRoomCode() {
 
           <button
             type="button"
-            class="startButton lobbyCharacterSaveButton"
+            class="btn btn-primary lobbyCharacterSaveButton"
             :disabled="!isDirty"
             @click="saveCharacter"
           >{{ isDirty ? "Save" : "Saved" }}</button>
@@ -225,15 +233,10 @@ async function copyRoomCode() {
         <div class="lobbyCircle">
           <button
             v-if="isHost"
-            class="lobbyTable lobbyStartButton"
+            class="lobby-start-btn"
             aria-label="Start game"
             @click="emit('start')"
-          >
-            <svg viewBox="0 0 24 24" class="lobbyStartIcon" aria-hidden="true">
-              <path d="M8 5 L19 12 L8 19 Z" />
-            </svg>
-          </button>
-          <div v-else class="lobbyTable"></div>
+          ><span class="lobby-play-triangle"></span></button>
           <div
             v-for="(seatPlayer, i) in seats"
             :key="i"
@@ -241,25 +244,19 @@ async function copyRoomCode() {
             :class="{ isEmpty: !seatPlayer }"
             :style="seatPositions[i]"
           >
-            <div class="lobbyBust" :class="{ empty: !seatPlayer }">
-              <div
-                class="lobbyBustInner"
-                :class="{ poked: seatPlayer && pokedSeatId === seatPlayer.seatId }"
-                @click="seatPlayer && poke(seatPlayer.seatId)"
+            <svg v-if="seatPlayer?.isHost" viewBox="0 0 100 60" class="lobbyCrown" aria-hidden="true">
+              <path d="M8,52 L18,14 L38,34 L50,8 L62,34 L82,14 L92,52 Z" />
+            </svg>
+            <div
+                v-if="seatPlayer"
+                class="board-portrait-circle lobbySeatCircle"
+                :class="{ poked: pokedSeatId === seatPlayer.seatId }"
+                @click="poke(seatPlayer.seatId)"
                 @animationend="pokedSeatId = null"
-              >
-                <div v-if="seatPlayer" class="lobbyBustAvatar">
-                  <CharacterFace v-if="assetsReady" :character="seatPlayer.character" reaction="neutral" />
-                </div>
-                <svg v-else viewBox="0 0 100 90" class="lobbyBustSvg" aria-hidden="true">
-                  <circle cx="50" cy="30" r="24" />
-                  <circle cx="50" cy="100" r="46" />
-                </svg>
-                <svg v-if="seatPlayer?.isHost" viewBox="0 0 100 60" class="lobbyCrown" aria-hidden="true">
-                  <path d="M8,52 L18,14 L38,34 L50,8 L62,34 L82,14 L92,52 Z" />
-                </svg>
-              </div>
+            >
+              <CharacterFace v-if="assetsReady" :character="seatPlayer.character" reaction="neutral" />
             </div>
+            <div v-else class="lobbyEmptyCircle"></div>
             <div class="lobbySeatName">{{ seatPlayer ? seatPlayer.name : "Open seat" }}</div>
           </div>
         </div>

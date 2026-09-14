@@ -95,14 +95,6 @@
   --color-azure-hover: #134a99;
   --color-azure-rgb: 26, 95, 196;
 
-  /* Party palette for per-player avatar chips (lobby, contestant cards) —
-     decorative variety only, never used for buttons/text/semantic state. */
-  --avatar-coral: #d9542b;
-  --avatar-teal: #16897c;
-  --avatar-amber: #c98a12;
-  --avatar-pink: #b23a72;
-  --avatar-purple: #6a4fd1;
-
   /* Contestant character colour palette (ticket 102) — one shared set of 9
      swatches reused across all three recolourable channels (hair, face,
      shirt); see the "shared palette" judgment call documented in
@@ -282,25 +274,14 @@ h1, h2, h3, h4 {
   text-align: center;
 }
 
-.roomCode {
+/* Ticket 119: the room code reads as a ticket/badge (115's shared
+   .ticket-badge, code/divider already built for exactly this) instead of a
+   plain white pill — this row just centers it under the title. */
+.lobbyRoomBadgeRow {
   grid-column: 1 / -1;
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 10px;
-  color: var(--color-black);
-  /* Ticket 115: room codes are an explicit VT323 example in the type system
-     (HUD/pixel bits) — overrides the h3 base rule's Luckiest Guy. */
-  font-family: var(--font-pixel);
-  font-size: 25px;
-  text-align: center;
-  white-space: nowrap;
-  background-color: var(--color-white);
-  border-radius: 10px;
-  padding: 10px 16px;
   margin: 20px auto;
-  width: fit-content;
-  box-shadow: 0 4px 10px rgba(var(--color-black-rgb), 0.25);
 }
 
 .roomCodeCopyButton {
@@ -340,52 +321,23 @@ h1, h2, h3, h4 {
   padding: 10px;
 }
 
+/* Ticket 119: the ring itself is now the physical table — the same raised
+   3D block trick as 115's buttons/118's table slab (a solid bottom "lip" via
+   the second box-shadow), sized generously (440px, up from 380px) so seat
+   content sits with real clearance inside its silhouette rather than flush
+   against the edge (see LobbyScreen.vue's SEAT_RADIUS comment). The old
+   separate `.lobbyTable` visual disc is gone — this ring's own background
+   now serves that role, with `.lobby-start-btn` (115's raised-3D-press
+   family, built for exactly this) floating centered on top for the host. */
 .lobbyCircle {
   position: relative;
-  width: 380px;
-  height: 380px;
+  width: 440px;
+  height: 440px;
   margin: 30px auto 50px;
-}
-
-.lobbyTable {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 190px;
-  height: 190px;
-  transform: translate(-50%, -50%);
   border-radius: 50%;
-  background-color: rgba(var(--color-white-rgb), 0.06);
-  border: 2px solid rgba(var(--color-white-rgb), 0.12);
-}
-
-.lobbyStartButton {
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-white);
-}
-
-.lobbyStartButton:hover {
-  background-color: var(--color-azure);
-  transform: translate(-50%, -50%) translateY(-6px);
-  box-shadow: 0 10px 20px rgba(var(--color-black-rgb), 0.35);
-}
-
-.lobbyStartButton:hover .lobbyStartIcon {
-  opacity: 1;
-}
-
-.lobbyStartIcon {
-  width: 64px;
-  height: 64px;
-  fill: currentColor;
-  margin-left: 6px;
-  opacity: 0.55;
-  transition: opacity 0.15s ease;
+  background: var(--ink-raised);
+  border: 3px solid var(--ink-line);
+  box-shadow: 0 14px 0 rgba(var(--color-black-rgb), 0.4), 0 22px 30px rgba(var(--color-black-rgb), 0.5);
 }
 
 .lobbySeat {
@@ -395,87 +347,27 @@ h1, h2, h3, h4 {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  width: 90px;
+  width: 100px;
 }
 
-.lobbyBust {
-  position: relative;
-  width: 70px;
-  height: 63px;
-  color: var(--color-azure);
-}
-
-.lobbyBustInner {
-  width: 100%;
-  height: 100%;
+/* Frame-free circle (115), reusing .board-portrait-circle directly rather
+   than a bespoke bordered box — the size modifier here is the only new
+   rule, matching the pattern .chaser-wrap already sets on the same shared
+   class. Compound selector (not a bare .lobbySeatCircle rule) is load-
+   bearing, not stylistic: .board-portrait-circle's own width:100%/height:100%
+   is declared later in this file, so an equal-specificity single-class rule
+   here would lose that cascade tiebreak and collapse to 0 height against
+   .lobbySeat's auto-height flex column (confirmed live — the circle
+   rendered with a real width but zero height until this was compounded).
+   Clicking/poking plays the shared head-wobble/eyes-squeeze reaction
+   (below), replacing the old whole-bust `.lobbyBustInner.poked` squash
+   entirely — not layered alongside it. */
+.board-portrait-circle.lobbySeatCircle {
+  width: 84px;
+  height: 84px;
   cursor: pointer;
-}
-
-.lobbyBust.empty .lobbyBustInner {
-  cursor: default;
-}
-
-.lobbyBustSvg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.lobbyBustSvg circle {
-  fill: currentColor;
-}
-
-.lobbyBust.empty .lobbyBustSvg circle {
-  fill: none;
-  stroke: rgba(var(--color-white-rgb), 0.35);
-  stroke-width: 3;
-  stroke-dasharray: 6 5;
-}
-
-.lobbyBustAvatar {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  border-radius: 50%;
-  overflow: hidden;
-  background-color: var(--color-grey-avatar-bg);
-  border: 3px solid currentColor;
-}
-
-.lobbyCrown {
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  width: 38px;
-  height: 23px;
-  transform: translate(-50%, 0) rotate(-9deg);
-  fill: var(--color-gold);
-}
-
-.lobbySeatName {
-  color: var(--color-white);
-  font-size: 14px;
-  font-weight: 600;
-  text-align: center;
-  max-width: 90px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.lobbySeat.isEmpty .lobbySeatName {
-  opacity: 0.45;
-}
-
-.lobbySeat:nth-child(3) .lobbyBust { color: var(--avatar-coral); }
-.lobbySeat:nth-child(4) .lobbyBust { color: var(--avatar-teal); }
-.lobbySeat:nth-child(5) .lobbyBust { color: var(--avatar-amber); }
-.lobbySeat:nth-child(6) .lobbyBust { color: var(--avatar-pink); }
-.lobbySeat:nth-child(7) .lobbyBust { color: var(--avatar-purple); }
-
-.lobbyBust:not(.empty) {
+  user-select: none;
+  -webkit-user-select: none;
   animation: lobby-bust-pop 0.35s ease;
 }
 
@@ -485,14 +377,45 @@ h1, h2, h3, h4 {
   100% { transform: scale(1); }
 }
 
-.lobbyBustInner.poked {
-  animation: lobby-bust-poke 0.4s ease;
+.lobbySeatCircle.poked .head { animation: head-wobble 0.5s ease; }
+.lobbySeatCircle.poked .eyes { animation: eyes-squeeze 0.4s ease 0.05s; }
+
+/* Empty seat — a dashed-outline circle at the same size as an occupied
+   seat's frame-free circle, restyled from the old bordered-box placeholder
+   to match the new circle language. */
+.lobbyEmptyCircle {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 3px dashed rgba(var(--color-white-rgb), 0.3);
+  box-sizing: border-box;
 }
 
-@keyframes lobby-bust-poke {
-  0%   { transform: scale(1, 1); }
-  40%  { transform: scale(0.85, 1.15); }
-  100% { transform: scale(1, 1); }
+.lobbyCrown {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  width: 34px;
+  height: 20px;
+  transform: translate(-50%, 0) rotate(-9deg);
+  fill: var(--color-gold);
+  z-index: 1;
+}
+
+.lobbySeatName {
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lobbySeat.isEmpty .lobbySeatName {
+  opacity: 0.45;
 }
 
 .startButton {
@@ -533,14 +456,27 @@ h1, h2, h3, h4 {
   gap: 10px;
 }
 
+/* Ticket 119: chunky flat-press chrome (115) for the settings dropdown's two
+   mode buttons — the dropdown card itself stays its existing light/white
+   treatment (not specifically redesigned by this ticket), so these keep
+   light-appropriate colours rather than switching to the dark-theme tokens
+   used elsewhere. */
 .modeButton {
   width: 150px;
   margin: 5px;
+  border-radius: 10px;
+  border: 3px solid var(--btn-ink);
+  background: var(--color-white);
+  color: var(--btn-ink);
+  font-weight: 700;
+  box-shadow: 3px 3px 0 rgba(var(--color-black-rgb), 0.25);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
+.modeButton:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 rgba(var(--color-black-rgb), 0.25); }
 
 .modeButton.selected {
-  background-color: var(--color-azure);
-  color: var(--color-white);
+  background-color: var(--contestant-blue-glow);
+  color: var(--btn-ink);
 }
 
 .lobbyRow {
@@ -566,75 +502,93 @@ h1, h2, h3, h4 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 15px;
-  border: 2px solid rgba(var(--color-white-rgb), 0.2);
-  border-radius: 12px;
+  padding: 20px;
+  background: var(--ink-raised);
+  border: 1px solid var(--ink-line);
+  border-radius: 14px;
 }
 
-.lobbyCharacterPreview {
-  width: 120px;
-  height: 120px;
+/* Frame-free circle (115) via .board-portrait-circle, sized here — same
+   pattern as .lobbySeatCircle/.chaser-wrap on the same shared class. */
+/* Compound selector, not bare .lobbyCharacterPreview — see the identical
+   cascade note on .board-portrait-circle.lobbySeatCircle above; the same
+   0-height collapse applies here since .lobbyCharacterPicker is also an
+   auto-height flex column. */
+.board-portrait-circle.lobbyCharacterPreview {
+  width: 100px;
+  height: 100px;
   margin: 0 0 10px;
-  border-radius: 15px;
-  background-color: rgba(var(--contestant-blue-glow-rgb), 0.15);
-  border: 3px solid var(--contestant-blue-glow);
-  overflow: hidden;
 }
 
 .lobbyCharacterLabel {
   width: 100%;
-  margin: 8px 0 4px;
-  color: var(--color-white);
+  margin: 10px 0 6px;
+  color: var(--text-soft);
+  font-family: var(--font-pixel);
   font-size: 14px;
-  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-align: center;
 }
 
 .lobbyCharacterRow {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
 }
 
+/* Chunky-circle-swatch treatment (115's button chrome, applied to every
+   customizer row, not just the colour swatches the mockup demoed). */
 .lobbyCharacterSwatchButton {
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  background-color: var(--ink-line);
+  border: 3px solid var(--btn-ink);
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 2px 2px 0 rgba(var(--color-black-rgb), 0.35);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.lobbyCharacterSwatchButton:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 rgba(var(--color-black-rgb), 0.35); }
+
+.lobbyCharacterSwatchButton.selected {
+  background-color: var(--contestant-blue-glow);
+  color: var(--btn-ink);
+}
+
+.lobbyCharacterColourSwatch {
   width: 34px;
   height: 34px;
   margin: 0;
   padding: 0;
-  background-color: rgba(var(--color-white-rgb), 0.1);
-  border: 2px solid rgba(var(--color-white-rgb), 0.3);
-  color: var(--color-white);
-  font-size: 14px;
-}
-
-.lobbyCharacterSwatchButton.selected {
-  background-color: var(--color-azure);
-  border-color: var(--color-white);
-}
-
-.lobbyCharacterColourSwatch {
-  width: 28px;
-  height: 28px;
-  margin: 0;
-  padding: 0;
   border-radius: 50%;
-  border: 2px solid rgba(var(--color-white-rgb), 0.3);
+  border: 3px solid rgba(var(--color-white-rgb), 0.25);
+  cursor: pointer;
 }
 
 .lobbyCharacterColourSwatch.selected {
   border-color: var(--color-white);
-  box-shadow: 0 0 0 2px var(--color-azure);
+  box-shadow: 0 0 0 3px var(--contestant-blue-glow);
 }
 
 .lobbyCharacterSaveButton {
   width: 150px;
-  margin-top: 15px;
+  margin-top: 6px;
 }
 
 .lobbyCharacterSaveButton:disabled {
   background-color: var(--color-grey-disabled-bg);
   color: var(--color-grey-disabled-text);
+  border-color: var(--color-grey-disabled-text);
+  box-shadow: none;
   cursor: default;
 }
 
@@ -1567,8 +1521,8 @@ ul {
 /* Ticket 109: .offerFaceWrap/.offerFaceLayer's box (width/height as
    percentages of a positioned ancestor, resolved from that ancestor's own
    explicit size — every screen sizes its avatar box in pixels, e.g.
-   .offerContestantMaskBox at 220px, .lobbyCharacterPreview at 120px,
-   .lobbyBust at 70x63, .teamFinalAvatarWrap at 110px) is already reserved by
+   .offerContestantMaskBox at 220px, .lobbyCharacterPreview at 100px,
+   .lobbySeatCircle at 84px, .teamFinalAvatarWrap at 110px) is already reserved by
    the browser purely from CSS, before any layer image loads — confirmed live
    via getBoundingClientRect while every source was still unloaded/erroring,
    across both the div-based (108) and img-based layers. So a layer never
@@ -2882,9 +2836,12 @@ ul {
    mockup leaves alone under reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   .bill { animation: none !important; opacity: 0; }
-  .plaque-squeeze.squeezing, .bust-pokeable .head, .bust-pokeable .eyes { animation: none !important; }
+  .plaque-squeeze.squeezing, .bust-pokeable .head, .bust-pokeable .eyes,
+  .lobbySeatCircle.poked .head, .lobbySeatCircle.poked .eyes {
+    animation: none !important;
+  }
   .moneyPlaque.wiping .plaque-wipe { animation: none !important; }
-  .spark, .buzzer-btn, .lobby-start-btn, .answer-btn {
+  .spark, .buzzer-btn, .lobby-start-btn, .answer-btn, .lobbySeatCircle {
     animation: none !important;
     transition: none !important;
   }
