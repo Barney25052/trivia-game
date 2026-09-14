@@ -61,6 +61,20 @@ export interface FinalStealAnswerPayload {
     answer: string;
 }
 
+/** Broadcast the instant a Cash Builder answer is submitted — the typed guess
+ * from the active contestant's seat (ticket 128). Cash Builder is a solo
+ * scoring round, not a race against another side on the same question, so
+ * unlike the Chase/steal answer channels this is broadcast regardless of
+ * correctness: the existing public `reaction` cue already tells the room
+ * whether a guess was right or wrong the instant it lands, so withholding
+ * the guessed text itself would not have protected anything. Never carries
+ * the correct answer directly — just what was typed. */
+export interface CashBuilderAnswerPayload {
+    questionId: number;
+    seatId: string;
+    answer: string;
+}
+
 /** Broadcast to the whole room the moment a steal attempt resolves, correct or
  * wrong — the reveal moment, so carrying the canonical answer is allowed
  * (ticket 095). `pushedBack` true when the Chaser was knocked back; when they

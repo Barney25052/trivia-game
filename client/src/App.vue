@@ -63,6 +63,7 @@ const getReadyCooldownMs = ref(0);
 const cashBuilderDurationMs = ref(60_000);
 const currentQuestion = ref(null);
 const answerResult = ref(null);
+const cashBuilderAnswer = ref(null);
 const finalTeamQuestion = ref(null);
 const finalBuzzSeatId = ref("");
 const finalChaserQuestion = ref(null);
@@ -187,6 +188,7 @@ function applyPhase(phase) {
   if (phase !== GamePhase.CashBuilder) {
     getReadyCooldownMs.value = 0;
     answerResult.value = null;
+    cashBuilderAnswer.value = null;
   }
   if (phase !== GamePhase.Offer) {
     currentOffer.value = null;
@@ -315,6 +317,10 @@ async function joinLobby(playerName, roomCode) {
 
     room.value.onMessage("answerResult", (message) => {
       answerResult.value = message;
+    });
+
+    room.value.onMessage("cashBuilderAnswer", (message) => {
+      cashBuilderAnswer.value = message;
     });
 
     room.value.onMessage("chaseQuestionResult", (message) => {
@@ -695,6 +701,7 @@ function sendChaserQuip(text) {
       :cashBuilderMoney="activeContestantMoney"
       :cashBuilderCorrectAnswers="activeContestantCorrectAnswers"
       :answerResult="answerResult"
+      :cashBuilderAnswer="cashBuilderAnswer"
       :reactions="reactionsBySeat"
       @submit-answer="submitAnswer"
     />

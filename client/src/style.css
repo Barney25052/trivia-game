@@ -1774,14 +1774,18 @@ h1, h2, h3, h4 {
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Fixed-width "at the table" layout (ticket 085) — Chaser left, board centre,
-   contestant profile right, question + answers along the bottom. Deliberately
-   not responsive: designed for a full 16:9 desktop window, no @media rules. */
+/* "At the table" layout (ticket 085) — Chaser left, board centre, contestant
+   profile right, question + answers along the bottom. Deliberately not
+   responsive: designed for a full 16:9 desktop window, no @media rules.
+   Ticket 128: no padding here — any padding on this element would leave a
+   plain-background gap around .chaseGround's own edges (the page's navy
+   showing through on all four sides of the gradient, reading as a border
+   even with no actual border property), so the full-bleed inset for the
+   game's own content lives on .chaseGround itself instead. */
 .chaseTable {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  padding: 20px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -1879,6 +1883,7 @@ h1, h2, h3, h4 {
 }
 
 .chaseQuestion {
+  color: var(--color-white);
   font-family: var(--font-body);
   font-weight: 400;
   font-style: normal;
@@ -2958,16 +2963,23 @@ h1, h2, h3, h4 {
 }
 
 /* ---------- question box: a real card, with the wipe-in entrance beat ----------
-   Neutral --ink-raised, not the chase-tinted --ink-raised-adjacent red — the
-   question itself belongs to neither side. Height never changes across the
-   entrance sequence: .chaseOptions-row stays laid out the whole time, just
-   invisible (opacity/visibility below, never display:none), so nothing
-   above/below the box reflows. */
+   Neutral, not the chase-tinted --ink-raised-adjacent red — the question
+   itself belongs to neither side. Height never changes across the entrance
+   sequence: .chaseOptions-row stays laid out the whole time, just invisible
+   (opacity/visibility below, never display:none), so nothing above/below
+   the box reflows.
+   Ticket 128: darker than the standard --ink-raised (#23303e) — this box
+   sits directly on .chaseGround's own gradient (ranging from --ink-chase to
+   --color-bg-page, both dark), and .chaseQuestion had no explicit text
+   colour at all, so it fell back to the browser's default black — nearly
+   unreadable against the card. Darkened the card AND gave the text an
+   explicit white colour below, rather than relying on contrast from a
+   lighter card alone. */
 .chaseQuestionBox {
   position: relative;
   padding: 24px 28px;
   border-radius: 14px;
-  background: var(--ink-raised);
+  background: #131a22;
   border: 1px solid rgba(var(--color-white-rgb), 0.08);
   display: flex;
   flex-direction: column;

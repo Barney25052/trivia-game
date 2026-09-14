@@ -17,6 +17,12 @@ const props = defineProps({
     cashBuilderMoney: { type: Number, default: 0 },
     cashBuilderCorrectAnswers: { type: Number, default: 0 },
     answerResult: { type: Object, default: null },
+    // Broadcast the instant any client submits a Cash Builder answer (ticket
+    // 128) — {questionId, seatId, answer}, reaches every client including
+    // spectators, not just the active contestant's own. See
+    // server/src/shared/MessageTypes.ts's CashBuilderAnswerPayload comment
+    // for why this one is safe to broadcast regardless of correctness.
+    cashBuilderAnswer: { type: Object, default: null },
     // Per-seat face reaction store (ticket 103): seatId -> expression, see
     // App.vue's reactionsBySeat.
     reactions: { type: Object, default: () => ({}) }
@@ -24,7 +30,9 @@ const props = defineProps({
 const emit = defineEmits(["submit-answer"]);
 
 // Each submitted answer (correct, wrong, or an empty pass) pops into a speech
-// bubble anchored to the profile.
+// bubble anchored to the profile — driven by the cashBuilderAnswer broadcast
+// so it renders identically for the active contestant and every spectator
+// (ticket 128), not just locally on the submitter's own client.
 //
 // Ticket 107 (same family as ticket 099's Team/Chaser Final fix): on a
 // correct answer the next question can arrive within the same tick as the
@@ -44,6 +52,14 @@ function clearBubble() {
     }
     bubbleText.value = "";
 }
+
+watch(() => props.cashBuilderAnswer, (message) => {
+    if (!message) return;
+    bubbleText.value = message.answer || "(passed)";
+    bubbleKey.value += 1;
+    if (bubbleTimeout) clearTimeout(bubbleTimeout);
+    bubbleTimeout = setTimeout(clearBubble, ANSWER_BUBBLE_HOLD_MS);
+});
 
 const answerInput = ref("");
 const cooldownLeft = ref(0);
@@ -116,12 +132,9 @@ function submit() {
     const trimmed = answerInput.value.trim();
     if (inputDisabled.value || !props.currentQuestion) return; //Let empty inputs count as it lets the player pass the question
     emit("submit-answer", { answer: trimmed, questionId: props.currentQuestion.questionId });
-    bubbleText.value = trimmed || "(passed)";
-    bubbleKey.value += 1;
-    // Restart the min-life timer on every submission so a same-seat resubmit
-    // re-keys and holds cleanly instead of accumulating overlapping timeouts.
-    if (bubbleTimeout) clearTimeout(bubbleTimeout);
-    bubbleTimeout = setTimeout(clearBubble, ANSWER_BUBBLE_HOLD_MS);
+    // The bubble itself is driven by the cashBuilderAnswer broadcast watch
+    // above, not set here directly — it reaches this same client's own
+    // screen the same way it reaches every spectator's.
     answerInput.value = "";
     awaitingNext.value = true;
 }

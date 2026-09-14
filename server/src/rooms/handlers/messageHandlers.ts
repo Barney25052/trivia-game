@@ -570,6 +570,18 @@ export function submitAnswer(client: any, message: any, room: any) {
     }
     room.broadcastAnswerReaction(seatId, isCorrect);
 
+    // Cash Builder is a solo scoring round, not a race — the existing public
+    // `reaction` cue above already tells the room whether this guess was
+    // right or wrong the instant it lands, so broadcasting the guessed text
+    // itself (regardless of correctness) withholds nothing a spectator
+    // couldn't already piece together, and lets the answer bubble pop on
+    // every client, not just the submitter's own (ticket 128).
+    room.broadcast("cashBuilderAnswer", {
+        questionId: currentQuestion.id,
+        seatId,
+        answer: message.answer.trim()
+    });
+
     client.send("answerResult", {
         correct: isCorrect,
         correctAnswer: currentQuestion.answer,
