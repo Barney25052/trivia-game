@@ -165,7 +165,7 @@ describe("final round question delivery (ticket 077)", () => {
         assert.strictEqual(chaserResult, NOTHING, "the Chaser must not receive the team's finalQuestion");
     });
 
-    it("startFinalChaser sends finalQuestion(chaser) only to the Chaser; the team side gets nothing further", async () => {
+    it("startFinalChaser sends finalQuestion(chaser) to the whole room (ticket 117 Watching state) — same prompt, never an answer", async () => {
         const room = await colyseus.createRoom<GameState>("trivia", {
             cashBuilderDurationMs: 80,
             chaserSelectionDurationMs: 80,
@@ -182,21 +182,18 @@ describe("final round question delivery (ticket 077)", () => {
         const { contestantClient, chaserFinalQuestion, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
         await teamFinalQuestion;
 
-        // A second finalQuestion on the team side would mean the Chaser's
-        // question leaked to the team — listen before the timer can fire.
-        const NOTHING = Symbol("team got nothing further");
-        const teamOutcome = Promise.race([
-            contestantClient.waitForMessage("finalQuestion"),
-            sleep(300).then(() => NOTHING)
-        ]);
+        // The team now sees the Chaser's prompt too (ticket 117) — listen
+        // before the phase even flips so a fast server can't win the race.
+        const teamSeesChaserQuestion = contestantClient.waitForMessage("finalQuestion");
 
         await waitForPhase(room, GamePhase.ChaserFinal);
         const chaserMessage = await chaserFinalQuestion;
-        const teamResult = await teamOutcome;
+        const teamMessage = await teamSeesChaserQuestion;
 
         assert.strictEqual(chaserMessage.side, "chaser");
         assert.ok(typeof chaserMessage.questionId === "number");
-        assert.strictEqual(teamResult, NOTHING, "team clients must not receive the Chaser's finalQuestion");
+        assert.deepStrictEqual(teamMessage, chaserMessage, "the team must see the exact same prompt/questionId as the Chaser");
+        assert.ok(!("answer" in teamMessage), "the broadcast must never carry the Chaser's typed guess");
     });
 
     it("no payload ever carries an answer string", async () => {

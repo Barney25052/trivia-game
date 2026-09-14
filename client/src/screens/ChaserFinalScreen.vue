@@ -103,6 +103,16 @@ const targetBoxes = computed(() =>
     }))
 );
 
+// Ticket 117: full-bleed dark tension-fill bar behind the whole stage — a
+// new layer, not a replacement for the target boxes above. Reacts straight
+// off the same chaserScore/teamScore props as targetBoxes, so a pushed-back
+// steal (chaserScore dropping) shrinks this the same way a correct Chaser
+// answer grows it — no separate "reverse" case to build. Same Math.max(...,
+// 1) guard as targetBoxes to avoid a divide-by-zero before teamScore is set.
+const tensionFillPercent = computed(() =>
+    Math.min(100, Math.max(0, (props.chaserScore / Math.max(props.teamScore, 1)) * 100))
+);
+
 const chaserAnswerInput = ref("");
 const chaserInputBox = ref(null);
 // A brief fallback only: the Chaser's own `answerResult` (wrong) and the
@@ -193,9 +203,19 @@ const stealSecondsLeft = computed(() =>
 const stealAnswerInput = ref("");
 const stealInputBox = ref(null);
 const stealLocked = ref(false);
-const stealOutcomeText = ref("");
+// Ticket 117: split from one combined sentence into a label + body pair so
+// the template can render the steal-success-panel/wrong-panel's two-line
+// layout (a big label, then a plain-text body) without any string surgery —
+// same information as before, just structured for the new markup.
+const stealOutcomeLabel = ref("");
+const stealOutcomeBody = ref("");
+// Only set on a wrong steal — kept separate from stealOutcomeBody so the
+// template can bold just the answer itself (matches TeamFinalScreen's own
+// "The answer was <strong>X</strong>" pattern) instead of the answer being
+// buried inside a plain interpolated sentence.
+const stealCorrectAnswer = ref("");
 // null = not yet resolved, true/false once finalStealResolved lands — drives
-// both the outcome line's color and the green/red flash below.
+// both the outcome panel's color and the green/red flash below.
 const stealOutcomeCorrect = ref(null);
 
 // The submitter's typed guess (ticket 095/096): a whole-room broadcast, so
@@ -275,7 +295,9 @@ watch(() => props.finalSteal, (steal) => {
         manuallyClosed.value = false;
         stealAnswerInput.value = "";
         stealLocked.value = false;
-        stealOutcomeText.value = "";
+        stealOutcomeLabel.value = "";
+        stealOutcomeBody.value = "";
+        stealCorrectAnswer.value = "";
         stealOutcomeCorrect.value = null;
         stealAnswerSeatId.value = "";
         clearStealAnswerBubble();
@@ -310,11 +332,15 @@ watch(() => props.finalStealResolved, (result) => {
     if (!result) return;
     stealLocked.value = true;
     stealOutcomeCorrect.value = result.correct;
-    stealOutcomeText.value = result.correct
-        ? (result.pushedBack
-            ? "Stolen! The Chaser is pushed back."
-            : "Correct! The Chaser was already at zero — the target goes up.")
-        : `Wrong — the answer was ${result.correctAnswer}`;
+    if (result.correct) {
+        stealOutcomeLabel.value = result.pushedBack ? "Stolen!" : "Correct!";
+        stealOutcomeBody.value = result.pushedBack
+            ? "The Chaser is pushed back."
+            : "The Chaser was already at zero — the target goes up.";
+    } else {
+        stealOutcomeLabel.value = "✗ WRONG!";
+        stealCorrectAnswer.value = result.correctAnswer;
+    }
     startHoldCountdown();
 });
 
@@ -326,54 +352,69 @@ function submitSteal() {
     stealLocked.value = true;
 }
 
-// Reuses the existing chaseLockoutFlash full-viewport layer for the "steal is
-// live" pulse, then swaps to a solid green/red tint via chaserFinalStealFlash
-// -correct/-wrong once the outcome is known. Ticket 100 folded those two
-// classes' declarations into the shared rule next to .cashBuilderScreenFlash
-// in style.css (identical fixed-layer/fade/color rule as the Team Final's own
-// new .finalScreenFlash) — this computed still returns the same class names,
-// so no behavior changes here, just where the CSS lives.
+// Ticket 117: the open steal window no longer gets a full-viewport pulse —
+// the imposing stage's own ground/vignette easing to the team's navy (see
+// chaserFinalStageClass below) carries that "it's the team's moment now"
+// signal instead, so .chaseLockoutFlash has no callers left anywhere (see the
+// tickets/README.md ticket-117 footnote) and its declaration is removed from
+// style.css. This still flashes a solid green/red tint via
+// .chaserFinalStealFlash-correct/-wrong once the outcome is known — same
+// shared rule (next to .cashBuilderScreenFlash/.finalScreenFlash, ticket 100)
+// as before, just without the null-outcome branch.
 const stealFlashClass = computed(() => {
-    if (!stealActive.value) return "";
-    if (stealOutcomeCorrect.value === null) return "chaseLockoutFlash";
+    if (!stealActive.value || stealOutcomeCorrect.value === null) return "";
     return stealOutcomeCorrect.value
         ? "chaserFinalStealFlash chaserFinalStealFlash-correct"
         : "chaserFinalStealFlash chaserFinalStealFlash-wrong";
 });
+
+// Ticket 117: the stage's ground eases from the Chaser's red (--ink-chase) to
+// the team's plain navy the instant a steal opens, and its red vignette fades
+// to 0 — "it's the team's moment now" — then reverses once the steal
+// resolves and chaserFinalTop swaps back to the Chaser's own banner.
+const chaserFinalStageClass = computed(() => (stealActive.value ? "chaserFinalStage-steal" : ""));
 </script>
 
 <template>
   <div class="chaserFinalRoot">
     <h2 class="lobbyTitle chaserFinalTitle">The Chaser Final</h2>
-    <p class="playerName chaserFinalScore">
-      Time left: {{ secondsLeft }}s · Chaser {{ chaserScore }} — Target {{ teamScore }}
-    </p>
 
-    <div class="chaserFinalTop">
-      <div v-if="stealActive" class="chaserFinalStealQuestion">
-        <span class="teamFinalRevealLabel">STEAL!</span>
-        <p class="teamFinalQuestion">{{ finalSteal.prompt }}</p>
+    <div class="chaserFinalStage" :class="chaserFinalStageClass">
+      <div class="chaserFinalStageVignette"></div>
+      <div class="chaserFinalTensionFill" :style="{ width: tensionFillPercent + '%' }"></div>
+
+      <div class="chaserFinalTop">
+        <div v-if="stealActive" class="chaserFinalStealPromptTop">
+          <span class="chaserFinalStealLabel">Steal!</span>
+          <p class="oq-prompt chaserFinalStealPrompt">{{ finalSteal.prompt }}</p>
+        </div>
+        <ChaserPanel
+            v-else
+            banner-portrait
+            :character-id="chaserCharacterId"
+            :quip-text="chaserQuipText"
+            :quip-key="chaserQuipKey"
+            :answer-text="chaserAnswerBubbleText"
+            :answer-key="chaserAnswerBubbleKey"
+            :is-chaser="isChaser"
+            :quip-input="false"
+            @send-quip="emit('send-quip', $event)"
+        />
       </div>
-      <ChaserPanel
-          v-else
-          :character-id="chaserCharacterId"
-          :quip-text="chaserQuipText"
-          :quip-key="chaserQuipKey"
-          :answer-text="chaserAnswerBubbleText"
-          :answer-key="chaserAnswerBubbleKey"
-          :is-chaser="isChaser"
-          :quip-input="false"
-          @send-quip="emit('send-quip', $event)"
-      />
+
+      <div class="finalTargetRow">
+        <div
+            v-for="box in targetBoxes"
+            :key="box.index"
+            class="finalTargetBox"
+            :class="{ 'finalTargetBox-filled': box.filled }"
+        >{{ box.index }}</div>
+      </div>
     </div>
 
-    <div class="finalTargetRow">
-      <div
-          v-for="box in targetBoxes"
-          :key="box.index"
-          class="finalTargetBox"
-          :class="{ 'finalTargetBox-filled': box.filled }"
-      >{{ box.index }}</div>
+    <div class="cf-hud">
+      <span>TIME LEFT <b>{{ secondsLeft }}s</b></span>
+      <span>CHASER <b>{{ chaserScore }}</b> — TARGET <b>{{ teamScore }}</b></span>
     </div>
 
     <div v-if="stealFlashClass" :class="stealFlashClass"></div>
@@ -394,7 +435,10 @@ const stealFlashClass = computed(() => {
                   class="chaserPanelBubble chaserFinalStealBubble"
               >{{ stealAnswerText }}</div>
             </Transition>
-            <div class="teamFinalAvatarWrap">
+            <div
+                class="teamFinalAvatarWrap"
+                :class="{ chaserFinalStealWinner: p.seatId === stealAnswerSeatId && stealOutcomeCorrect === true }"
+            >
               <CharacterFace :character="p.character" :reaction="reactions[p.seatId] ?? 'neutral'" />
             </div>
             <p class="playerName teamFinalPlayerName">{{ p.name }}</p>
@@ -402,49 +446,71 @@ const stealFlashClass = computed(() => {
         </div>
 
         <template v-if="holdActive">
-          <p
-              v-if="stealOutcomeText"
-              class="playerName chaserFinalStealOutcome"
-              :class="{
-                'chaserFinalStealOutcome-correct': stealOutcomeCorrect === true,
-                'chaserFinalStealOutcome-wrong': stealOutcomeCorrect === false
-              }"
-          >{{ stealOutcomeText }}</p>
+          <div v-if="stealOutcomeCorrect === true" class="steal-success-panel">
+            <span class="steal-success-label">{{ stealOutcomeLabel }}</span>
+            <p class="steal-success-text">{{ stealOutcomeBody }}</p>
+          </div>
+          <div v-else-if="stealOutcomeCorrect === false" class="wrong-panel">
+            <span class="wrong-label">{{ stealOutcomeLabel }}</span>
+            <p class="wrong-answer">The answer was <strong>{{ stealCorrectAnswer }}</strong></p>
+          </div>
           <p class="playerName chaserFinalStealCountdown">{{ holdSecondsLeft }}</p>
         </template>
         <template v-else>
-          <p class="playerName">Steal! {{ stealSecondsLeft }}s left</p>
-          <input
-              v-if="!isChaser"
-              v-model="stealAnswerInput"
-              class="teamFinalInput"
-              placeholder="Type your answer..."
-              :disabled="stealLocked"
-              ref="stealInputBox"
-              @keyup.enter="submitSteal"
-          />
+          <div v-if="!isChaser" class="open-question-box accent-gold">
+            <span class="oq-eyebrow">Steal! · {{ stealSecondsLeft }}s left — anyone can answer</span>
+            <p class="oq-prompt">{{ finalSteal.prompt }}</p>
+            <div class="oq-row">
+              <input
+                  v-model="stealAnswerInput"
+                  class="oq-input"
+                  placeholder="Type your answer..."
+                  :disabled="stealLocked"
+                  ref="stealInputBox"
+                  @keyup.enter="submitSteal"
+              />
+              <button class="oq-submit" :disabled="stealLocked" @click="submitSteal">Submit</button>
+            </div>
+          </div>
+          <p v-else class="playerName">Steal! {{ stealSecondsLeft }}s left</p>
         </template>
       </template>
 
       <template v-else-if="isChaser">
         <template v-if="finalQuestion">
-          <template v-if="!chaserWaitingForSteal">
-            <p class="teamFinalQuestion">{{ finalQuestion.prompt }}</p>
-            <input
-                v-model="chaserAnswerInput"
-                class="teamFinalInput"
-                placeholder="Type your answer..."
-                ref="chaserInputBox"
-                @keyup.enter="submitChaserAnswer"
-            />
-          </template>
-          <p v-else class="playerName">Wrong! Waiting to see if the team steals…</p>
+          <div v-if="!chaserWaitingForSteal" class="open-question-box accent-red">
+            <span class="oq-eyebrow">Your answer</span>
+            <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
+            <div class="oq-row">
+              <input
+                  v-model="chaserAnswerInput"
+                  class="oq-input"
+                  placeholder="Type your answer..."
+                  ref="chaserInputBox"
+                  @keyup.enter="submitChaserAnswer"
+              />
+              <button class="oq-submit" @click="submitChaserAnswer">Submit</button>
+            </div>
+          </div>
+          <div v-else class="wrong-panel">
+            <span class="wrong-label">✗ WRONG!</span>
+            <p class="wrong-answer">Waiting to see if the team steals…</p>
+          </div>
         </template>
         <p v-else class="playerName">Waiting for the first question…</p>
       </template>
 
+      <!-- Ticket 117 "Watching" state: the prompt is safe to show (only the
+           Chaser's typed guess must stay hidden), so non-Chaser clients now
+           see the same finalQuestion.prompt the Chaser is working from,
+           instead of a blank "is answering" placeholder. -->
       <template v-else>
-        <p class="playerName">The Chaser is answering…</p>
+        <div v-if="finalQuestion" class="open-question-box">
+          <span class="oq-eyebrow accent-neutral">Watching</span>
+          <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
+          <p class="oq-thinking">The Chaser is answering<span class="oq-dots"><i></i><i></i><i></i></span></p>
+        </div>
+        <p v-else class="playerName">Waiting for the first question…</p>
       </template>
     </div>
   </div>

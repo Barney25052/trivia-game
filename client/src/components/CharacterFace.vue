@@ -103,37 +103,46 @@ const shirtColour = computed(() => characterColourVar(decoded.value.shirtColour)
 <template>
     <div class="offerFaceWrap">
         <div class="offerShoulders" :style="{ backgroundColor: shirtColour }"></div>
-        <div
-            class="offerFaceLayer offerFaceTint"
-            :style="{
-                backgroundColor: faceColour,
-                backgroundImage: `url(${faceImg})`,
-                maskImage: `url(${faceImg})`,
-                WebkitMaskImage: `url(${faceImg})`
-            }"
-        ></div>
-        <div
-            class="offerFaceLayer offerFaceTint"
-            :style="{
-                backgroundColor: hairColour,
-                backgroundImage: `url(${hairImg})`,
-                maskImage: `url(${hairImg})`,
-                WebkitMaskImage: `url(${hairImg})`
-            }"
-        ></div>
-        <img
-            :src="eyesImg"
-            class="offerFaceLayer"
-            :class="{ offerFaceLayerHidden: eyesLoadFailed }"
-            alt=""
-            @error="eyesLoadFailed = true"
-        />
-        <img
-            :src="mouthImg"
-            class="offerFaceLayer"
-            :class="{ offerFaceLayerHidden: mouthLoadFailed }"
-            alt=""
-            @error="mouthLoadFailed = true"
-        />
+        <!-- Ticket 117: face/hair/eyes/mouth grouped under .head (shoulders stay
+             outside it) so the shared head-wobble/eyes-squeeze reaction — used
+             here for a successful Chaser Final steal — has something to hook
+             into. See style.css's .head/.bust-pokeable.poked comment: this
+             wrapper must stay unconditionally position:absolute (already true
+             of .head itself) so the layers' own percentage offsets keep
+             resolving against the same box they always did. -->
+        <div class="head">
+            <div
+                class="offerFaceLayer offerFaceTint"
+                :style="{
+                    backgroundColor: faceColour,
+                    backgroundImage: `url(${faceImg})`,
+                    maskImage: `url(${faceImg})`,
+                    WebkitMaskImage: `url(${faceImg})`
+                }"
+            ></div>
+            <div
+                class="offerFaceLayer offerFaceTint"
+                :style="{
+                    backgroundColor: hairColour,
+                    backgroundImage: `url(${hairImg})`,
+                    maskImage: `url(${hairImg})`,
+                    WebkitMaskImage: `url(${hairImg})`
+                }"
+            ></div>
+            <img
+                :src="eyesImg"
+                class="offerFaceLayer eyes"
+                :class="{ offerFaceLayerHidden: eyesLoadFailed }"
+                alt=""
+                @error="eyesLoadFailed = true"
+            />
+            <img
+                :src="mouthImg"
+                class="offerFaceLayer"
+                :class="{ offerFaceLayerHidden: mouthLoadFailed }"
+                alt=""
+                @error="mouthLoadFailed = true"
+            />
+        </div>
     </div>
 </template>

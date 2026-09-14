@@ -240,9 +240,14 @@ export class TriviaRoom extends Room {
     this.broadcast("reaction", { seatId, expression });
   }
 
-  /** Delivers a final-round question to exactly one side's clients — never a
-   * room broadcast (ticket 077): the Chaser must never receive a team prompt,
-   * or vice versa. `question` is null when that side's bank is exhausted. */
+  /** Delivers a final-round question. The team side stays one-sided (ticket
+   * 077): the Chaser must never get an advance look at the team's prompt. The
+   * Chaser side is a whole-room send (ticket 117's "Watching" state) — only
+   * the Chaser's typed guess has to stay hidden (AGENTS.md "never broadcast
+   * before reveal" covers answers/correctness, not the prompt itself), so the
+   * team can now watch the same question the Chaser is working on instead of
+   * staring at a blank state. `question` is null when that side's bank is
+   * exhausted. */
   private sendFinalQuestion(side: "team" | "chaser", question: BankQuestion | null) {
     const payload = {
       side,
@@ -255,7 +260,7 @@ export class TriviaRoom extends Room {
         continue;
       }
       const isChaser = seatId === this.state.chaserSeatId;
-      if ((side === "chaser") === isChaser) {
+      if (side === "chaser" || !isChaser) {
         client.send("finalQuestion", payload);
       }
     }

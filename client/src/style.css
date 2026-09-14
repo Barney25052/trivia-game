@@ -46,6 +46,7 @@
   --contestant-blue-glow-rgb: 51, 209, 255;
 
   --chaser-red-dark: #b31212;
+  --chaser-red-dark-rgb: 179, 18, 18;
   --chaser-red-glow: #ff4b4b;
   --chaser-red-bright: #ff8585;
   --chaser-silhouette: #3a0d0d;
@@ -56,6 +57,7 @@
      under the target-box row rather than reusing the reveal-screen reds. */
   --chaser-deep: #5c0a0a;
   --chaser-edge: #ff6a3d;
+  --chaser-edge-rgb: 255, 106, 61;
 
   --gradient-page-start: #189ccd;
   --gradient-page-end: #0a72da;
@@ -76,6 +78,13 @@
   --ink-raised: #23303e;
   --ink-line: #34424f;
 
+  /* Ticket 117: secondary/body text on a raised dark card (.wrong-panel's
+     "the answer was...", .steal-success-panel's outcome line) — dimmer than
+     --color-white but still legible, distinct from the near-invisible inline
+     #8494a2 used for .oq-eyebrow.accent-neutral/.oq-thinking's much fainter
+     "no special meaning yet" role. */
+  --text-soft: #c7d3dd;
+
   /* Ticket 115: dark navy ink used as the border/text colour on the new
      chunky button family (flat-press + raised-3D-press) — distinct from
      --color-text-dark, repeats across every new button/input/badge rule
@@ -93,10 +102,6 @@
   --avatar-amber: #c98a12;
   --avatar-pink: #b23a72;
   --avatar-purple: #6a4fd1;
-
-  /* Deep navy for the chase lockout pulse (ticket 087) — reads as "danger,
-     clock ticking" across the whole viewport, not just a panel flash. */
-  --color-lockout-blue-rgb: 4, 20, 51;
 
   /* Contestant character colour palette (ticket 102) — one shared set of 9
      swatches reused across all three recolourable channels (hair, face,
@@ -1785,29 +1790,14 @@ ul {
   box-sizing: border-box;
   padding: 0 20px;
   position: relative;
-  /* Establishes a fresh stacking context so the lockout flash's z-index: -1
-     is compared only against this screen's own content, not against body's
-     background (see .cashBuilderScreenFlash for the same pattern). */
+  /* Establishes a fresh stacking context for this screen's own content, not
+     against body's own background (see .cashBuilderScreenFlash for the same
+     pattern) — a leftover precaution from the full-viewport lockout flash
+     this screen used to render (removed in ticket 116; ticket 117 removed
+     its last remaining user, ChaserFinalScreen.vue's steal-flash, too). Kept
+     since other absolutely-positioned layers on this screen still benefit
+     from the same fresh stacking context. */
   isolation: isolate;
-}
-
-/* Full-viewport lockout pulse (ticket 087). Ticket 116 removed this layer's
-   only use on the Chase board itself (replaced by the small countdown-chip
-   badge on the portraits) — but ChaserFinalScreen.vue's steal-flash still
-   reuses this exact class/keyframe (ticket 096), so both stay defined here
-   for that screen; only ChaseScreen.vue's own template stopped rendering it.
-   Ticket 117 (Chaser Final redesign) owns whatever happens to this next. */
-.chaseLockoutFlash {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  animation: chase-lockout-bg 0.5s ease-in-out infinite;
-}
-
-@keyframes chase-lockout-bg {
-  0%, 100%  { background-color: rgba(var(--color-lockout-blue-rgb), 0); }
-  50%       { background-color: rgba(var(--color-lockout-blue-rgb), 0.85); }
 }
 
 .chaseTableTitle {
@@ -2163,35 +2153,32 @@ ul {
   isolation: isolate;
 }
 
-.chaserFinalScore {
-  text-align: center;
-}
-
 .chaserFinalTop {
   display: flex;
   justify-content: center;
-  /* Ticket 111: this slot swaps between ChaserPanel (~294px tall live) and
-     .chaserFinalStealQuestion (much shorter) on every steal open/close —
-     confirmed via direct measurement that the swap alone was dropping
-     .finalTargetRow/.chaserFinalBottom below by ~200px. min-height matches
-     ChaserPanel's own natural height so the slot never shrinks below it, and
-     align-items centers whichever side is showing within that reserved
-     space, so the row below stays put either way. */
+  /* Ticket 111: this slot swaps between ChaserPanel (~272px tall live in its
+     ticket-117 banner-portrait mode) and .chaserFinalStealPromptTop (much
+     shorter) on every steal open/close — confirmed via direct measurement
+     that the swap alone was dropping .finalTargetRow/.chaserFinalBottom
+     below by ~200px before this reserved min-height was added. align-items
+     centers whichever side is showing within that reserved space, so the
+     row below stays put either way. */
   align-items: center;
   min-height: 300px;
   margin: 20px 0;
 }
 
-.chaserFinalStealQuestion {
-  box-sizing: border-box;
-  width: 100%;
-  text-align: center;
-  border-radius: 15px;
-  background-color: rgba(var(--color-white-rgb), 0.1);
-  padding: 20px;
-}
-
 .finalTargetRow {
+  /* Ticket 117: position:relative (no offset — purely a stacking fix, not a
+     layout change) lifts this row into the same painted-by-DOM-order layer
+     as .chaserFinalTensionFill/.chaserFinalStageVignette (both position:
+     absolute) within ChaserFinalScreen's .chaserFinalStage. Without it, a
+     plain static box paints *behind* a positioned z-index:auto sibling per
+     the CSS2.1 stacking order regardless of DOM order — confirmed live, the
+     tension-fill was painting over target box 1 instead of sitting behind
+     it as the ticket specifies. No effect on TeamFinalScreen's own use of
+     this class (no positioned siblings there to begin with). */
+  position: relative;
   display: flex;
   width: 100%;
   gap: 6px;
@@ -2246,25 +2233,16 @@ ul {
   z-index: 2;
 }
 
-/* Resolved-outcome flash (ticket 096) — swaps in for .chaseLockoutFlash once
-   a steal's outcome is known, same fixed full-viewport layer + fade pattern
-   as .cashBuilderScreenFlash. Ticket 100 pulled the .chaserFinalStealFlash /
-   -correct / -wrong declarations themselves up into that shared rule (see
-   .cashBuilderScreenFlash) since all three screens' flashes are identical —
-   this class name still exists and still works exactly as before, just
-   defined there instead of here. */
-.chaserFinalStealOutcome {
-  font-size: 20px;
-}
-
-.chaserFinalStealOutcome-correct {
-  color: var(--color-green);
-}
-
-.chaserFinalStealOutcome-wrong {
-  color: var(--chaser-red-bright);
-}
-
+/* Resolved-outcome flash (ticket 096) — still fires alongside the
+   ticket-117 .steal-success-panel/.wrong-panel below, same fixed
+   full-viewport layer + fade pattern as .cashBuilderScreenFlash. Ticket 100
+   pulled the .chaserFinalStealFlash/-correct/-wrong declarations themselves
+   up into that shared rule (see .cashBuilderScreenFlash) since all three
+   screens' flashes are identical — this class name still exists and still
+   works exactly as before, just defined there instead of here. Ticket 117
+   removed the old plain-text .chaserFinalStealOutcome(-correct/-wrong) line
+   this flash used to sit alongside — the outcome now renders as a proper
+   panel instead. */
 .chaserFinalStealCountdown {
   font-family: var(--font-pixel);
   font-weight: 700;
@@ -2746,6 +2724,35 @@ ul {
 .oq-submit:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 rgba(var(--color-black-rgb), 0.3); }
 .oq-submit:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(var(--color-black-rgb), 0.3); }
 
+/* Ticket 117: the open-question-box family's fourth/"no accent" state — the
+   Chaser Final's new "Watching" indicator (a non-Chaser client reading the
+   same finalQuestion.prompt the Chaser has, with no input of its own). Uses
+   the plain #8494a2 already inlined by .oq-eyebrow.accent-neutral above
+   rather than the new --text-soft token (that one's for readable body copy
+   on a card; this is a much fainter "nothing to do yet" hint). */
+.oq-thinking {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: #8494a2;
+  margin: 0;
+}
+.oq-dots { display: inline-flex; gap: 3px; margin-left: 6px; }
+.oq-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #8494a2;
+  font-style: normal;
+  display: inline-block;
+  animation: oq-dot-pulse 1.2s ease-in-out infinite;
+}
+.oq-dots i:nth-child(2) { animation-delay: 0.2s; }
+.oq-dots i:nth-child(3) { animation-delay: 0.4s; }
+@keyframes oq-dot-pulse {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50%      { opacity: 1; transform: translateY(-3px); }
+}
+
 /* ---------- motion: particle burst (event-triggered only, never ambient) ----------
    A handful of small glyphs fly out from a point and fade: "$" ( .bill ) for
    money, "★" ( .spark ) for a triumphant/escape moment. Spawning/removing the
@@ -2813,10 +2820,13 @@ ul {
    briefly resolve against .head's own otherwise-unsized box (near 0x0,
    since all its children are position:absolute and contribute nothing to
    its layout size) instead of the wrapper around it, and appear to vanish
-   for the animation's duration. CharacterFace.vue does not yet have a .head
-   wrapper at all (its layers sit directly in .offerFaceWrap) — whichever
-   ticket wires this reaction into it needs to add one, grouping the
-   face/hair/eyes/mouth layers only (shoulders stay planted, outside .head). */
+   for the animation's duration. Ticket 117 added CharacterFace.vue's .head
+   wrapper (it did not have one before), grouping the face/hair/eyes/mouth
+   layers only (shoulders stay planted, outside .head), and wired the
+   reaction into a successful Chaser Final steal via its own
+   .teamFinalAvatarWrap.chaserFinalStealWinner trigger below — the same
+   generic .head/.eyes keyframes, its own differently-named trigger class,
+   exactly per this comment's own plan. */
 .head {
   position: absolute;
   inset: 0;
@@ -2825,11 +2835,13 @@ ul {
 
 .bust-pokeable { cursor: pointer; user-select: none; -webkit-user-select: none; }
 
-.bust-pokeable.poked .head {
+.bust-pokeable.poked .head,
+.teamFinalAvatarWrap.chaserFinalStealWinner .head {
   animation: head-wobble 0.5s ease;
 }
 
-.bust-pokeable.poked .eyes {
+.bust-pokeable.poked .eyes,
+.teamFinalAvatarWrap.chaserFinalStealWinner .eyes {
   animation: eyes-squeeze 0.4s ease 0.05s;
 }
 
@@ -3120,4 +3132,193 @@ ul {
   .chaseCutsceneChaser-escaped { transform: translate(0, -50%); }
   .chaseCutsceneContestant-caught, .chaseCutsceneContestant-escaped { opacity: 1; transform: translate(0, -50%); }
   .chaseCutsceneFlash { opacity: 0; }
+}
+
+/* ============================================================
+   Chaser Final + Steal redesign (ticket 117) — ChaserFinalScreen.vue.
+   Builds on 115/116's tokens (--ink-chase/--chaser-deep/--chaser-edge, the
+   frame-free portrait family, .open-question-box) rather than inventing new
+   ones. See tickets/117-chaser-final-and-steal-visual-redesign.md and the
+   ticket-117 footnote in tickets/README.md for the mockup-vs-ticket-prose
+   calls made here.
+   ============================================================ */
+
+/* An imposing red ground for the Chaser's own turn, easing to the team's
+   plain navy the instant a steal opens (ChaserFinalScreen.vue toggles the
+   one .chaserFinalStage-steal modifier class; everything else here just
+   reacts to it in CSS). Houses the Chaser banner/steal-prompt swap, the
+   tension-fill bar, and the (untouched) target-box row together so all
+   three sit on the same ground. */
+.chaserFinalStage {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background-color: var(--ink-chase);
+  border: 2px solid var(--ink-line);
+  padding: 20px 20px 24px;
+  margin: 20px 0;
+  transition: background-color 0.5s ease;
+}
+
+.chaserFinalStage-steal {
+  background-color: var(--color-bg-page);
+}
+
+.chaserFinalStageVignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(var(--chaser-red-dark-rgb), 0.35), transparent 70%);
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.chaserFinalStage-steal .chaserFinalStageVignette {
+  opacity: 0;
+}
+
+/* Full-bleed dark bar behind the whole stage, growing from the left as
+   chaserScore climbs toward teamScore (width set inline by
+   ChaserFinalScreen's tensionFillPercent) — a new layer, not a replacement
+   for .finalTargetRow's own boxes, which stay exactly as they were. Also the
+   one place in the game this shrinks back down: a successful steal pushes
+   chaserScore back, and this reacts to that the same way it reacts to it
+   growing — no separate "reverse" styling needed. */
+.chaserFinalTensionFill {
+  position: absolute;
+  inset: 0;
+  width: 25%;
+  background: var(--chaser-deep);
+  transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chaserFinalTensionFill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -2px;
+  width: 3px;
+  height: 100%;
+  background: var(--chaser-edge);
+  box-shadow: 0 0 18px 3px rgba(var(--chaser-edge-rgb), 0.85);
+}
+
+/* The Chaser's own-turn banner (ChaserPanel's bannerPortrait mode) — a bare,
+   frame-free cutout, not a boxed/circled portrait, mirroring ChaseScreen's
+   own Caught/Escaped cutscene treatment (.chaseCutsceneChaser) rather than
+   either of ChaserPanel's other two portrait modes. */
+.chaserStageBanner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 0 16px;
+}
+
+.chaserStageBannerImg {
+  width: 190px;
+  height: 190px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 14px 18px rgba(var(--color-black-rgb), 0.55));
+}
+
+.chaserPanelName-banner {
+  margin-top: 8px;
+  padding: 0;
+  font-family: var(--font-pixel);
+  font-size: 26px;
+  letter-spacing: 3px;
+  color: var(--color-white);
+}
+
+/* Replaces the Chaser banner entirely (not shown alongside it) the instant a
+   steal opens — ChaserFinalScreen.vue's chaserFinalTop already swaps the
+   two (v-if="stealActive" / v-else ChaserPanel); this just restyles the
+   steal side of that swap. */
+.chaserFinalStealPromptTop {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  padding: 26px 20px 4px;
+}
+
+.chaserFinalStealLabel {
+  display: inline-block;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  letter-spacing: 3px;
+  color: var(--color-gold);
+  text-transform: uppercase;
+}
+
+.chaserFinalStealPrompt {
+  color: var(--color-white);
+  max-width: 480px;
+  margin: 8px auto 0;
+}
+
+/* Scoreboard data, not prose — the "Time left"/"Chaser N — Target N" line
+   moves fully into VT323 as one HUD strip. A shared class, not a
+   chaserFinal-prefixed one-off: ticket 118's Team Final reuses .cf-hud
+   verbatim for its own "Time left"/"Team score" line. */
+.cf-hud {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  margin: 0 0 20px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: var(--text-soft);
+}
+.cf-hud b {
+  color: var(--color-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Shared wrong/success outcome cards — one dark raised card, re-accented red
+   (wrong) or green (a steal succeeded — never gold: gold means "opportunity
+   live", green means "correct", per 115's colour rule). Used here for both
+   the Chaser's own wrong-answer/waiting-for-steal state and a resolved
+   steal's outcome; ticket 118's Team Final wrong-answer state reuses
+   .wrong-panel too instead of building a second one. */
+.wrong-panel,
+.steal-success-panel {
+  background: var(--ink-raised);
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.wrong-panel { border: 3px solid var(--chaser-red-glow); }
+.steal-success-panel { border: 3px solid var(--success-green); }
+
+.wrong-label,
+.steal-success-label {
+  font-family: var(--font-display);
+  font-size: 28px;
+  text-shadow: 0 2px 0 rgba(var(--color-black-rgb), 0.4);
+}
+.wrong-label { color: var(--chaser-red-glow); }
+.steal-success-label { color: var(--success-green); }
+
+.wrong-answer,
+.steal-success-text {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+.wrong-answer strong { color: var(--color-gold); }
+
+@media (prefers-reduced-motion: reduce) {
+  .chaserFinalStage, .chaserFinalStageVignette, .chaserFinalTensionFill,
+  .oq-dots i,
+  .teamFinalAvatarWrap.chaserFinalStealWinner .head,
+  .teamFinalAvatarWrap.chaserFinalStealWinner .eyes {
+    animation: none !important;
+    transition: none !important;
+  }
 }

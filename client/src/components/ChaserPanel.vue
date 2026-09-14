@@ -35,7 +35,17 @@ const props = defineProps({
     // entirely; a number shows it. See ChaseScreen.vue's lockoutBadgeSide for
     // how the caller decides whether this side gets the badge.
     countdownSeconds: { type: Number, default: null },
-    countdownUrgent: { type: Boolean, default: false }
+    countdownUrgent: { type: Boolean, default: false },
+    // Ticket 117: opts into the "imposing stage" treatment for the Chaser
+    // Final's own-turn banner — a bare, frame-free cutout portrait (no box,
+    // no circle) with a big drop-shadow and a VT323 name underneath, mirroring
+    // ChaseScreen.vue's Caught/Escaped cutscene portrait (.chaseCutsceneChaser)
+    // rather than either of the other two modes below. Takes priority over
+    // circlePortrait if both were ever set (they never are — only
+    // ChaserFinalScreen's own-turn banner sets this, and only the Chase
+    // board sets circlePortrait). Defaults to false so every other caller
+    // (Offer, the Chase board) is unaffected.
+    bannerPortrait: { type: Boolean, default: false }
 });
 const emit = defineEmits(["send-quip"]);
 
@@ -66,7 +76,15 @@ function submitQuip() {
 
 <template>
     <div class="chaserPanel">
-        <div v-if="circlePortrait" class="board-portrait-wrap chaser-wrap">
+        <div v-if="bannerPortrait" class="chaserStageBanner">
+            <img
+                v-if="portrait"
+                :src="portrait"
+                :alt="displayName"
+                class="chaserStageBannerImg"
+            />
+        </div>
+        <div v-else-if="circlePortrait" class="board-portrait-wrap chaser-wrap">
             <div class="board-portrait-circle">
                 <img
                     v-if="portrait"
@@ -97,7 +115,11 @@ function submitQuip() {
         <Transition name="chaser-bubble-pop">
             <div v-if="answerText" :key="answerKey" class="chaserPanelBubble chaserPanelAnswerBubble">{{ answerText }}</div>
         </Transition>
-        <p v-if="displayName" class="playerName chaserPanelName">{{ displayName }}</p>
+        <p
+            v-if="displayName"
+            class="playerName chaserPanelName"
+            :class="{ 'chaserPanelName-banner': bannerPortrait }"
+        >{{ displayName }}</p>
 
         <div v-if="isChaser && quipInput" class="chaserPanelInputRow">
             <input
