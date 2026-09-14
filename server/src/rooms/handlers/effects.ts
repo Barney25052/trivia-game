@@ -10,6 +10,7 @@ import {
   CHASER_SELECTION,
   LINEUP,
   REACTION,
+  TEAM_FINAL_INTRO,
 } from "../../gameConfig.js";
 
 export function applyEffects(effects: FlowEffect[], room: any, context: any): void {
@@ -62,6 +63,15 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           console.log(`Contestant lineup — showing the turn order for ${duration}ms`);
           room.activeTimer = room.scheduleTimer(duration, () => {
             room.dispatch({ type: "lineupComplete" });
+          });
+          break;
+        }
+
+        case "startTeamFinalIntro": {
+          const duration = room.teamFinalIntroDurationMs ?? TEAM_FINAL_INTRO.durationMs;
+          console.log(`Team Final intro — holding for ${duration}ms before the real round starts`);
+          room.activeTimer = room.scheduleTimer(duration, () => {
+            room.dispatch({ type: "teamFinalIntroComplete" });
           });
           break;
         }

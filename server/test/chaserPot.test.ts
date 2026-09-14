@@ -108,7 +108,8 @@ describe("chaserPot lifecycle", () => {
       chaserRevealDurationMs: 80,
       chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -133,7 +134,8 @@ describe("chaserPot lifecycle", () => {
       chaserRevealDurationMs: 80,
       chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80
     });
     room.mcQuestionSource = stubChaseSource();
 
@@ -182,7 +184,8 @@ describe("chaserPot lifecycle", () => {
       chaserRevealDurationMs: 80,
       chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80
     });
     room.mcQuestionSource = stubChaseSource();
 
@@ -224,7 +227,8 @@ describe("chaserPot lifecycle", () => {
       chaserRevealDurationMs: 80,
       chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80
     });
     room.mcQuestionSource = stubChaseSource();
 

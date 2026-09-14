@@ -145,7 +145,8 @@ describe("roomFlow", () => {
       chaserRevealDurationMs: 80,
       chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 100,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -279,7 +280,8 @@ describe("roomFlow", () => {
       chaserRevealDurationMs: 80,
       chaserCharacterRevealDurationMs: 200,
       revealReadyCooldownMs: 80,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80
     });
     room.mcQuestionSource = stubChaseSource();
 
@@ -344,7 +346,8 @@ describe("roomFlow", () => {
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
-      lineupDurationMs: 200
+      lineupDurationMs: 200,
+      teamFinalIntroDurationMs: 80
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -376,7 +379,8 @@ describe("roomFlow", () => {
       cashBuilderDurationMs: 80,
       chaserSelectionDurationMs: 80,
       chaserRevealDurationMs: 80,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -415,6 +419,7 @@ describe("roomFlow", () => {
       chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80,
       teamFinalDurationMs: 80
     });
     room.mcQuestionSource = stubChaseSource();
@@ -499,7 +504,8 @@ alice.send("startGame");
       chaserRevealDurationMs: 80,
       chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80
     });
     room.mcQuestionSource = stubChaseSource();
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -547,7 +553,8 @@ alice.send("startGame");
       chaserRevealDurationMs: 80,
       chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80
     });
     room.mcQuestionSource = stubChaseSource();
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -624,6 +631,7 @@ alice.send("startGame");
       chaserCharacterRevealDurationMs: 80,
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80,
       teamFinalDurationMs: 80
     });
     room.mcQuestionSource = stubChaseSource();
@@ -670,7 +678,8 @@ alice.send("startGame");
     const room = await colyseus.createRoom<GameState>("trivia", {
       chaserSelectionDurationMs: 500,
       chaserRevealDurationMs: 80,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -709,7 +718,8 @@ assert.strictEqual(room.state.chaserSeatId, seatIdOf(room, bob));
     const room = await colyseus.createRoom<GameState>("trivia", {
       chaserSelectionDurationMs: 500,
       chaserRevealDurationMs: 80,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -757,7 +767,8 @@ assert.strictEqual(room.state.chaserSeatId, seatIdOf(room, bob));
     const room = await colyseus.createRoom<GameState>("trivia", {
       chaserSelectionDurationMs: 500,
       chaserRevealDurationMs: 80,
-      lineupDurationMs: 80
+      lineupDurationMs: 80,
+      teamFinalIntroDurationMs: 80
     });
 
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -799,7 +810,8 @@ alice.send("chaserVote", { targetSeatId: seatIdOf(room, bob) });
         chaserRevealDurationMs: 80,
         chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
-        lineupDurationMs: 80
+        lineupDurationMs: 80,
+        teamFinalIntroDurationMs: 80
       });
       room.mcQuestionSource = stubChaseSource();
       const alice = await colyseus.connectTo(room, { playerName: "Alice" });
@@ -1013,7 +1025,8 @@ alice.send("chaserVote", { targetSeatId: seatIdOf(room, bob) });
         chaserRevealDurationMs: 80,
         chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
-        lineupDurationMs: 80
+        lineupDurationMs: 80,
+        teamFinalIntroDurationMs: 80
       });
       room.mcQuestionSource = stubChaseSource();
       const alice = await colyseus.connectTo(room, { playerName: "Alice" });

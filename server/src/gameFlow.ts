@@ -10,6 +10,7 @@ export type FlowEvent =
     | { type: "revealAllReady" }
     | { type: "lineupComplete" }
     | { type: "lineupAbandoned" }
+    | { type: "teamFinalIntroComplete" }
     | { type: "readyCooldownDone" }
     | { type: "cashBuilderTimeout" }
     | { type: "chaserCharacterRevealComplete" }
@@ -47,6 +48,7 @@ export type FlowEffect =
     | { type: "startRolesReveal" }
     | { type: "startChaserCharacterReveal" }
     | { type: "startLineup" }
+    | { type: "startTeamFinalIntro" }
     | { type: "startReadyCooldown"; seatId: string; round: number }
     | { type: "startCashBuilder"; seatId: string; round: number }
     | { type: "startOffer"; seatId: string }
@@ -187,6 +189,14 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
             };
         }
 
+        case "teamFinalIntroComplete": {
+            ensurePhase(event, context, GamePhase.TeamFinalIntro);
+            return {
+                nextPhase: GamePhase.TeamFinal,
+                effects: [{ type: "startFinalTeam" }]
+            };
+        }
+
         case "readyCooldownDone": {
             ensurePhase(event, context, GamePhase.CashBuilder);
             return {
@@ -262,8 +272,8 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
                 return { nextPhase: GamePhase.CashBuilder, effects };
             }
 
-            effects.push({ type: "startFinalTeam" });
-            return { nextPhase: GamePhase.TeamFinal, effects };
+            effects.push({ type: "startTeamFinalIntro" });
+            return { nextPhase: GamePhase.TeamFinalIntro, effects };
         }
 
         /**
@@ -290,8 +300,8 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
                 effects.push({ type: "startCashBuilder", seatId: next, round: context.activeRound + 1 });
                 return { nextPhase: GamePhase.CashBuilder, effects };
             }
-            effects.push({ type: "startFinalTeam" });
-            return { nextPhase: GamePhase.TeamFinal, effects };
+            effects.push({ type: "startTeamFinalIntro" });
+            return { nextPhase: GamePhase.TeamFinalIntro, effects };
         }
 
         /**
@@ -308,6 +318,7 @@ export function transition(event: FlowEvent, context: GameFlowContext): GameFlow
                 GamePhase.CashBuilder,
                 GamePhase.Offer,
                 GamePhase.Chase,
+                GamePhase.TeamFinalIntro,
                 GamePhase.TeamFinal,
                 GamePhase.ChaserFinal
             ];

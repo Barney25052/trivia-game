@@ -68,6 +68,7 @@ async function reachOfferReady(
         chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80,
+        teamFinalIntroDurationMs: 80,
         chaseAnswerWindowMs: opts?.chaseAnswerWindowMs ?? CHASE_QUESTION.answerWindowMs
     });
     room.mcQuestionSource = stubChaseSource();
@@ -405,8 +406,9 @@ describe("chase flow (ticket 064)", () => {
         }
 
         // Only one contestant in this 2-player room — once they're caught there's
-        // no next contestant, so the round moves straight to the team final.
-        assert.strictEqual(room.state.currentPhase, GamePhase.TeamFinal);
+        // no next contestant, so the round moves through the teamFinalIntro
+        // pacing beat (ticket 122) straight to the team final.
+        await waitForPhase(room, GamePhase.TeamFinal);
         assert.strictEqual(room.state.players.get(contestantSeatId).isEliminated, true);
 
         assert.ok(reactions.length > 0, "a reaction was broadcast for the caught contestant");
@@ -450,8 +452,9 @@ describe("chase flow (ticket 064)", () => {
         }
 
         // Only one contestant in this 2-player room — once they escape there's
-        // no next contestant, so the round moves straight to the team final.
-        assert.strictEqual(room.state.currentPhase, GamePhase.TeamFinal);
+        // no next contestant, so the round moves through the teamFinalIntro
+        // pacing beat (ticket 122) straight to the team final.
+        await waitForPhase(room, GamePhase.TeamFinal);
         assert.strictEqual(room.state.players.get(contestantSeatId).madeItBack, true);
         assert.strictEqual(room.state.teamPot, 0, "the low-tier offer for this round was $0");
 

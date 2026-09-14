@@ -14,6 +14,7 @@ import ContestantLineupScreen from "./screens/ContestantLineupScreen.vue";
 import CashBuilderScreen from "./screens/CashBuilderScreen.vue";
 import OfferScreen from "./screens/OfferScreen.vue";
 import ChaseScreen from "./screens/ChaseScreen.vue";
+import TeamFinalIntroScreen from "./screens/TeamFinalIntroScreen.vue";
 import TeamFinalScreen from "./screens/TeamFinalScreen.vue";
 import ChaserFinalScreen from "./screens/ChaserFinalScreen.vue";
 import ResultsScreen from "./screens/ResultsScreen.vue";
@@ -122,6 +123,7 @@ const currentScreen = computed(() => {
     case GamePhase.ChaserCharacterReveal: return "chaserCharacterReveal";
     case GamePhase.Offer: return "offer";
     case GamePhase.Chase: return "chase";
+    case GamePhase.TeamFinalIntro: return "teamFinalIntro";
     case GamePhase.TeamFinal: return "teamFinal";
     case GamePhase.ChaserFinal: return "chaserFinal";
     case GamePhase.GameEnd: return "gameEnd";
@@ -737,6 +739,11 @@ function sendChaserQuip(text) {
       @submit-chase-answer="sendChaseAnswer"
       @auto-quip="showChaserQuip"
       @send-quip="sendChaserQuip"
+    />
+    <TeamFinalIntroScreen
+      v-if="currentScreen=='teamFinalIntro'"
+      :contestants="lineupContestants"
+      :mySeatId="mySeatId"
     />
     <TeamFinalScreen
       v-if="currentScreen=='teamFinal'"

@@ -146,6 +146,7 @@ describe("final round question delivery (ticket 077)", () => {
             chaserCharacterRevealDurationMs: 80,
             revealReadyCooldownMs: 80,
             lineupDurationMs: 80,
+            teamFinalIntroDurationMs: 80,
             teamFinalDurationMs: 10000,
             chaserFinalDurationMs: 10000
         });
@@ -173,6 +174,7 @@ describe("final round question delivery (ticket 077)", () => {
             chaserCharacterRevealDurationMs: 80,
             revealReadyCooldownMs: 80,
             lineupDurationMs: 80,
+            teamFinalIntroDurationMs: 80,
             teamFinalDurationMs: 100,
             chaserFinalDurationMs: 10000
         });
@@ -204,6 +206,7 @@ describe("final round question delivery (ticket 077)", () => {
             chaserCharacterRevealDurationMs: 80,
             revealReadyCooldownMs: 80,
             lineupDurationMs: 80,
+            teamFinalIntroDurationMs: 80,
             teamFinalDurationMs: 10000,
             chaserFinalDurationMs: 10000
         });
@@ -225,6 +228,7 @@ describe("final round question delivery (ticket 077)", () => {
             chaserCharacterRevealDurationMs: 80,
             revealReadyCooldownMs: 80,
             lineupDurationMs: 80,
+            teamFinalIntroDurationMs: 80,
             teamFinalDurationMs: 60,
             chaserFinalDurationMs: 60
         });
@@ -252,6 +256,7 @@ describe("final round question delivery (ticket 077)", () => {
             chaserCharacterRevealDurationMs: 80,
             revealReadyCooldownMs: 80,
             lineupDurationMs: 80,
+            teamFinalIntroDurationMs: 80,
             teamFinalDurationMs: 150,
             chaserFinalDurationMs: 10000
         });
@@ -358,6 +363,7 @@ describe("final round — team buzz-in and answers (ticket 078)", () => {
         chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80,
+        teamFinalIntroDurationMs: 80,
         teamFinalDurationMs: 10000,
         chaserFinalDurationMs: 10000,
         finalWrongAnswerRevealMs: 100
@@ -600,6 +606,7 @@ describe("final round — Chaser answer engine and steal (ticket 079)", () => {
         chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80,
+        teamFinalIntroDurationMs: 80,
         teamFinalDurationMs: 80,
         chaserFinalDurationMs: 10000,
         stealWindowMs: 150,
@@ -816,6 +823,7 @@ describe("Phase 5 integration — full final round end-to-end (ticket 082)", () 
         chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80,
+        teamFinalIntroDurationMs: 80,
         teamFinalDurationMs: 10000,
         chaserFinalDurationMs: 10000,
         finalWrongAnswerRevealMs: 60,
@@ -960,6 +968,7 @@ describe("final round — Chaser clock pause/resume (ticket 094)", () => {
         chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80,
+        teamFinalIntroDurationMs: 80,
         teamFinalDurationMs: 80,
         stealResolveHoldMs: 80
     };
@@ -1089,6 +1098,7 @@ describe("final round — steal transport and outcome hold (ticket 095)", () => 
         chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80,
+        teamFinalIntroDurationMs: 80,
         teamFinalDurationMs: 80,
         chaserFinalDurationMs: 10000,
         stealWindowMs: 300,
@@ -1313,6 +1323,7 @@ describe("final round — Chaser clock reaches GameEnd across multiple steals (t
         chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80,
+        teamFinalIntroDurationMs: 80,
         teamFinalDurationMs: 80
     };
 

@@ -31,6 +31,7 @@ import {
   REACTION,
   REVEAL_READY,
   ROOM_SETTINGS,
+  TEAM_FINAL_INTRO,
 } from "../gameConfig.js";
 import {
   startGame,
@@ -90,6 +91,7 @@ export class TriviaRoom extends Room {
   chaserCharacterRevealDurationMs: number = CHASER_CHARACTER_REVEAL.durationMs;
   revealReadyCooldownMs: number = REVEAL_READY.cooldownMs;
   lineupDurationMs: number = LINEUP.durationMs;
+  teamFinalIntroDurationMs: number = TEAM_FINAL_INTRO.durationMs;
   teamFinalDurationMs: number = FINAL_ROUND.teamDurationMs;
   chaserFinalDurationMs: number = FINAL_ROUND.chaserDurationMs;
   finalWrongAnswerRevealMs: number = FINAL_ROUND.wrongAnswerRevealMs;

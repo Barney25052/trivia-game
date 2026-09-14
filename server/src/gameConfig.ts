@@ -10,6 +10,7 @@ const FINAL_STEAL_WINDOW_MS = 20_000;
 const FINAL_STEAL_RESOLVE_HOLD_MS = 3_000;
 const REVEAL_READY_COOLDOWN_MS = 5_000;
 const LINEUP_DURATION_MS = 7_000;
+const TEAM_FINAL_INTRO_DURATION_MS = 5_000;
 
 export const TIMER_CLAMP = {
     minMs: 100,
@@ -187,6 +188,15 @@ export const LINEUP = {
     durationMs: LINEUP_DURATION_MS,
     minMs: TIMER_CLAMP.minMs,
     maxMs: LINEUP_DURATION_MS * TIMER_CLAMP.maxFactor
+} as const;
+
+/** A short holding beat between the last Chase resolving and the real Team
+ * Final starting (ticket 122) — mirrors LINEUP's role as a pacing pause, not
+ * a real screen to read for long. */
+export const TEAM_FINAL_INTRO = {
+    durationMs: TEAM_FINAL_INTRO_DURATION_MS,
+    minMs: TIMER_CLAMP.minMs,
+    maxMs: TEAM_FINAL_INTRO_DURATION_MS * TIMER_CLAMP.maxFactor
 } as const;
 
 export const PLAYER_NAME = {

@@ -9,6 +9,7 @@ import {
     LINEUP,
     RATE_LIMIT,
     REVEAL_READY,
+    TEAM_FINAL_INTRO,
 } from "../../gameConfig.js";
 
 const clamp = (value: number, minMs: number, maxMs: number): number =>
@@ -62,6 +63,13 @@ export function clampRoomOptions(room: TriviaRoom, options: any): void {
             options.lineupDurationMs,
             LINEUP.minMs,
             LINEUP.maxMs
+        );
+    }
+    if (typeof options?.teamFinalIntroDurationMs === "number") {
+        room.teamFinalIntroDurationMs = clamp(
+            options.teamFinalIntroDurationMs,
+            TEAM_FINAL_INTRO.minMs,
+            TEAM_FINAL_INTRO.maxMs
         );
     }
     if (typeof options?.teamFinalDurationMs === "number") {

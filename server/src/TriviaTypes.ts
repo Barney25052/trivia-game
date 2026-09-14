@@ -8,6 +8,7 @@ export enum GamePhase {
     ChaserCharacterReveal = "chaserCharacterReveal",
     Offer = "offer",
     Chase = "chase",
+    TeamFinalIntro = "teamFinalIntro",
     TeamFinal = "finalTeam",
     ChaserFinal = "finalChaser",
     GameEnd = "gameEnd"

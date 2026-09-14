@@ -328,13 +328,13 @@ describe("gameFlow transition", () => {
             ]);
         });
 
-        it("escape by the last contestant -> finalTeam", () => {
+        it("escape by the last contestant -> teamFinalIntro", () => {
             const ctx = context({ currentPhase: GamePhase.Chase, activeContestantSeatId: "carol", activeRound: 3, currentOfferAmount: 5000 });
             const result = transition({ type: "chaseEscape" }, ctx);
-            assert.strictEqual(result.nextPhase, GamePhase.TeamFinal);
+            assert.strictEqual(result.nextPhase, GamePhase.TeamFinalIntro);
             assert.deepStrictEqual(result.effects, [
                 { type: "addToTeamPot", seatId: "carol", amount: 5000 },
-                { type: "startFinalTeam" }
+                { type: "startTeamFinalIntro" }
             ]);
         });
     });
@@ -350,13 +350,13 @@ describe("gameFlow transition", () => {
             ]);
         });
 
-        it("caught by the last contestant -> finalTeam, contestant eliminated", () => {
+        it("caught by the last contestant -> teamFinalIntro, contestant eliminated", () => {
             const ctx = context({ currentPhase: GamePhase.Chase, activeContestantSeatId: "carol", activeRound: 3 });
             const result = transition({ type: "chaseCaught" }, ctx);
-            assert.strictEqual(result.nextPhase, GamePhase.TeamFinal);
+            assert.strictEqual(result.nextPhase, GamePhase.TeamFinalIntro);
             assert.deepStrictEqual(result.effects, [
                 { type: "eliminateContestant", seatId: "carol" },
-                { type: "startFinalTeam" }
+                { type: "startTeamFinalIntro" }
             ]);
         });
 
@@ -398,13 +398,13 @@ describe("gameFlow transition", () => {
             ]);
         });
 
-        it("forfeit by the last contestant -> finalTeam", () => {
+        it("forfeit by the last contestant -> teamFinalIntro", () => {
             const ctx = context({ currentPhase: GamePhase.Chase, contestantsOrder: ["carol"], activeContestantSeatId: "carol", activeRound: 3 });
             const result = transition({ type: "contestantForfeit" }, ctx);
-            assert.strictEqual(result.nextPhase, GamePhase.TeamFinal);
+            assert.strictEqual(result.nextPhase, GamePhase.TeamFinalIntro);
             assert.deepStrictEqual(result.effects, [
                 { type: "eliminateContestant", seatId: "carol" },
-                { type: "startFinalTeam" }
+                { type: "startTeamFinalIntro" }
             ]);
         });
 
@@ -452,6 +452,7 @@ describe("gameFlow transition", () => {
                 GamePhase.CashBuilder,
                 GamePhase.Offer,
                 GamePhase.Chase,
+                GamePhase.TeamFinalIntro,
                 GamePhase.TeamFinal,
                 GamePhase.ChaserFinal
             ];
@@ -469,6 +470,22 @@ describe("gameFlow transition", () => {
             assert.throws(
                 () => transition({ type: "chaserForfeit" }, context({ currentPhase: GamePhase.ChaserSelection })),
                 /chaserForfeit is not valid in phase chaserSelection/
+            );
+        });
+    });
+
+    describe("teamFinalIntro", () => {
+        it("teamFinalIntroComplete -> finalTeam", () => {
+            const ctx = context({ currentPhase: GamePhase.TeamFinalIntro });
+            const result = transition({ type: "teamFinalIntroComplete" }, ctx);
+            assert.strictEqual(result.nextPhase, GamePhase.TeamFinal);
+            assert.deepStrictEqual(result.effects, [{ type: "startFinalTeam" }]);
+        });
+
+        it("throws if not in teamFinalIntro", () => {
+            assert.throws(
+                () => transition({ type: "teamFinalIntroComplete" }, context({ currentPhase: GamePhase.Chase })),
+                /teamFinalIntroComplete is not valid in phase chase/
             );
         });
     });
@@ -525,7 +542,8 @@ describe("gameFlow transition", () => {
                 { type: "chaseEscape" },           // alice makes it back
                 { type: "cashBuilderTimeout" },
                 { type: "contestantChoice", offer: "low" },
-                { type: "chaseEscape" }            // carol makes it back -> finalTeam
+                { type: "chaseEscape" },           // carol makes it back -> teamFinalIntro
+                { type: "teamFinalIntroComplete" } // -> finalTeam
             ];
 
             let ctx: GameFlowContext = context({ activeRound: 0 });
@@ -567,6 +585,7 @@ describe("gameFlow transition", () => {
                 GamePhase.CashBuilder,
                 GamePhase.Offer,          // round 2 -> straight to offer, no reveal replay
                 GamePhase.Chase,
+                GamePhase.TeamFinalIntro, // the pacing interstitial before the real final
                 GamePhase.TeamFinal
             ]);
             assert.strictEqual(ctx.activeContestantSeatId, "carol");

@@ -77,6 +77,7 @@ async function createForfeitRoom(
         chaserCharacterRevealDurationMs: 80,
         revealReadyCooldownMs: 80,
         lineupDurationMs: 80,
+        teamFinalIntroDurationMs: 80,
         teamFinalDurationMs: 80
     });
     const carol = await colyseus.connectTo(room, { playerName: "Carol" });
@@ -372,6 +373,7 @@ describe("leaveFlow (integration)", () => {
             chaserCharacterRevealDurationMs: 80,
             revealReadyCooldownMs: 80,
             lineupDurationMs: 80,
+            teamFinalIntroDurationMs: 80,
             teamFinalDurationMs: 200
         });
         const dave = await colyseus.connectTo(room, { playerName: "Dave" });
@@ -542,6 +544,7 @@ describe("leaveFlow (integration)", () => {
             chaserCharacterRevealDurationMs: 80,
             revealReadyCooldownMs: 80,
             lineupDurationMs: 400,
+            teamFinalIntroDurationMs: 80,
             teamFinalDurationMs: 80
         });
         const carol = await colyseus.connectTo(room, { playerName: "Carol" });
