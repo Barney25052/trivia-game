@@ -140,3 +140,11 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: either a genuinely single-process deploy (matching AGENTS.md's and ticket 132's explicit "single-process app, PM2 exec_mode: fork" assumption), or, if multi-instance is actually intended (e.g. targeting Colyseus Cloud's own hosted platform, which this config's header comment suggests it was templated from), real support for it — shared presence/driver, per-instance ports + reverse proxy, and process-local counters converted to use shared state.
 - Repro steps: on a multi-core machine, `cd server && npm run build && pm2 start ecosystem.config.cjs`, then `pm2 list`/`pm2 logs` — observe `os.cpus().length` instances attempt to start.
 - Status: triaged — ticket 152
+
+
+## `bug-020` — Reconnection retry storm on page reload/navigate-away while connected to a room
+- Found: 2026-09-15 · ticket 133 (found during manual UI verification; unrelated to that ticket's HomeScreen.vue scope) · `client/src/App.vue` (Colyseus `Room`/`Client` lifecycle)
+- What you saw: joining or creating a lobby, then reloading the page (or navigating away) while still connected, produces a burst of ~15 repeated `WebSocket connection ... failed` errors for a `reconnectionToken`-based URL, plus a final `net::ERR_CONNECTION_REFUSED`, before the client finally settles.
+- Expected: a clean single disconnect with no retry storm, consistent with AGENTS.md's documented "reload = forfeit the seat" model (sessionId is ephemeral; a reload joins as a new player, there's no reconnection story except the separate not-yet-built host-reconnect stretch goal).
+- Repro steps: 1. Join or create a lobby. 2. Reload the page (or navigate away) while still connected. 3. Watch the browser console for the repeated failed WebSocket/reconnection attempts.
+- Status: triaged — ticket 153
