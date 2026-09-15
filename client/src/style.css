@@ -244,7 +244,9 @@ input {
    onto the same chunky ink-bordered field chrome as the open-question-box
    family's .oq-input/Cash Builder's .cashBuilderInput (hard-offset shadow,
    3px --btn-ink border, 10px radius) instead of the old 25px-radius white
-   pill — this is the last screen still using that pre-115 input look. */
+   pill — at the time this was the last *known* screen still using that
+   pre-115 input look; the Offer screen's own .offerInput turned out to
+   still need the same move too and got it in ticket 134. */
 .homeNameInput,
 .homeRoomInput {
   display: block;
@@ -294,7 +296,7 @@ input {
    left most of the screen as unused page background on any normal desktop
    width. Widened so their content actually uses the available space; each
    screen's own internal max-widths (.voteList, .lineupList, .moneyPlaque,
-   .offerBoard, etc.) already keep individual elements from stretching
+   .offerTierPlaques, etc.) already keep individual elements from stretching
    awkwardly wide, so this only grows the breathing room around them. */
 .lobby {
   display:block;
@@ -1460,44 +1462,46 @@ h1, h2, h3, h4 {
   }
 }
 
-.offerBoard {
+/* Ticket 134: replaces the old .offerBoard vertical 7-space track (a
+   bespoke box mirroring the real Chase board's spaces, ticket 052) with the
+   shared moneyPlaque component itself — one plaque per tier, in a
+   left-to-right row that reads low -> middle -> high ascending, the same
+   order the Chaser and contestant reason about them in. Sizing/spacing
+   modifier only; .moneyPlaque (below, "money display: the 'prize plaque'")
+   still owns the border/fill/font. */
+.offerTierPlaques {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 220px;
+  align-items: center;
+  gap: 14px;
   flex-shrink: 0;
 }
 
-.offerBoardSpace {
-  position: relative;
-  height: 44px;
-  border-radius: 10px;
-  background-color: rgba(var(--color-white-rgb), 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.offerTierPlaque {
+  min-width: 150px;
 }
 
-.offerSpaceNumber {
-  position: absolute;
-  left: 10px;
-  color: var(--color-white);
-  font-family: var(--font-pixel);
-  font-weight: 400;
-  font-style: normal;
-  font-size: 16px;
-  opacity: 0.6;
+.offerTierPlaque .amount {
+  white-space: nowrap;
 }
 
-.offerSpaceAmount {
-  color: var(--color-gold);
-  font-family: var(--font-pixel);
-  font-weight: 400;
-  font-style: normal;
-  font-size: 22px;
+/* Shown in place of a tier's amount before it's revealed (or permanently for
+   the low tier when there's no low offer at all, ticket 058's $0-middle
+   case) — keeps the plaque's own height constant across both states instead
+   of the .amount line collapsing away when empty. */
+.offerAmountPending {
+  opacity: 0.35;
 }
 
 .offer-amount-negative {
+  color: var(--color-danger);
+}
+
+/* .moneyPlaque .amount's own color rule (below) outranks the single-class
+   rule above on specificity once a negative amount lives inside a tier
+   plaque (ticket 134) — re-declared here at matching specificity so a
+   negative low/middle/high amount still reads red instead of the plaque's
+   default ink colour. */
+.moneyPlaque .amount.offer-amount-negative {
   color: var(--color-danger);
 }
 
@@ -1607,12 +1611,30 @@ h1, h2, h3, h4 {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 12px;
 }
 
+/* Ticket 134: off the legacy plain-pill `input` rule (the same move ticket
+   133 made for the Home screen's name/room fields) onto the standard chunky
+   ink-bordered field chrome shared with Cash Builder's .cashBuilderInput and
+   the open-question-box family's .oq-input (hard-offset shadow, 3px
+   --btn-ink border, 10px radius) instead of the old 25px-radius white pill. */
 .offerInput {
-  width: 220px;
-  height: 55px;
+  display: block;
+  width: 240px;
+  height: auto;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-style: normal;
   font-size: 18px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 3px solid var(--btn-ink);
+  background-color: var(--color-white);
+  color: var(--color-text-dark);
+  box-shadow: 3px 3px 0 rgba(var(--color-black-rgb), 0.3);
 }
 
 .offerErrorText {

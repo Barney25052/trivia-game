@@ -19,18 +19,19 @@ const props = defineProps({
 });
 const emit = defineEmits(["setLow", "setHigh", "choose", "send-quip"]);
 
-// Mirrors server/src/gameConfig.ts OFFER + BOARD — duplicated client-side the
-// same way GamePhase is (see AGENTS.md gotchas): no shared module between the
-// two npm projects. The former HAPPY_HIGH_THRESHOLD/SAD_LOW_THRESHOLD mirror
+// Mirrors server/src/gameConfig.ts OFFER — duplicated client-side the same
+// way GamePhase is (see AGENTS.md gotchas): no shared module between the two
+// npm projects. The former HAPPY_HIGH_THRESHOLD/SAD_LOW_THRESHOLD mirror
 // (server/src/gameConfig.ts REACTION) is gone — the server now decides the
 // reaction itself and broadcasts it (ticket 103), so this screen no longer
-// needs to know the thresholds at all.
+// needs to know the thresholds at all. The BOARD.startLow/startMiddle/
+// startHigh mirror this screen used to also carry (for the old 7-space board
+// visual) is gone too as of ticket 134 — those numbers are still real
+// server-side config (they set the contestant's Chase starting space), just
+// no longer something this screen renders; ChaseScreen.vue's own BOARD_SPACES
+// is unrelated to this file and untouched.
 const LOW_STEP = 100;
 const HIGH_STEP = 1_000;
-const BOARD_SPACES = [7, 6, 5, 4, 3, 2, 1];
-const LOW_SPACE = 4;
-const MIDDLE_SPACE = 5;
-const HIGH_SPACE = 6;
 
 const lowInput = ref("");
 const highInput = ref("");
@@ -40,6 +41,10 @@ const highError = ref("");
 const hasMiddle = computed(() => props.offer?.middle !== null && props.offer?.middle !== undefined);
 const hasLow = computed(() => props.offer?.low !== null && props.offer?.low !== undefined);
 const hasHigh = computed(() => props.offer?.high !== null && props.offer?.high !== undefined);
+// A $0 middle has no real low offer (ticket 058) — the low tier plaque never
+// reveals an amount in that case, same as the old board's low space always
+// staying blank instead of duplicating the $0 shown at middle.
+const showLowAmount = computed(() => hasLow.value && props.offer?.middle !== 0);
 
 const isChaser = computed(() => props.mySeatId !== "" && props.mySeatId === props.chaserSeatId);
 const isPickingContestant = computed(() => props.offer && props.mySeatId === props.offer.seatId);
@@ -56,15 +61,6 @@ const contestantCharacter = computed(() => {
 function formatAmount(amount) {
     const abs = Math.abs(amount).toLocaleString("en-US");
     return amount < 0 ? `-$${abs}` : `$${abs}`;
-}
-
-function amountFor(space) {
-    if (space === MIDDLE_SPACE) return hasMiddle.value ? props.offer.middle : null;
-    // A $0 middle has no real low offer (ticket 058) — the board's low space
-    // stays blank instead of duplicating the $0 shown at middle.
-    if (space === LOW_SPACE) return hasLow.value && props.offer.middle !== 0 ? props.offer.low : null;
-    if (space === HIGH_SPACE) return hasHigh.value ? props.offer.high : null;
-    return null;
 }
 
 // The Chaser's auto-quips are no longer picked here — the server sends the line
@@ -135,16 +131,41 @@ function submitHigh() {
                     @send-quip="emit('send-quip', $event)"
                 />
 
-                <div class="offerBoard">
-                    <div v-for="space in BOARD_SPACES" :key="space" class="offerBoardSpace">
-                        <span class="offerSpaceNumber">{{ space }}</span>
+                <div class="offerTierPlaques">
+                    <div class="moneyPlaque offerTierPlaque">
+                        <span class="who">Low</span>
                         <Transition name="offer-pop">
                             <span
-                                v-if="amountFor(space) !== null"
-                                :key="space"
-                                class="offerSpaceAmount"
-                                :class="{ 'offer-amount-negative': amountFor(space) <= 0 }"
-                            >{{ formatAmount(amountFor(space)) }}</span>
+                                v-if="showLowAmount"
+                                key="low-amount"
+                                class="amount"
+                                :class="{ 'offer-amount-negative': offer.low <= 0 }"
+                            >{{ formatAmount(offer.low) }}</span>
+                            <span v-else key="low-pending" class="amount offerAmountPending">—</span>
+                        </Transition>
+                    </div>
+                    <div class="moneyPlaque offerTierPlaque">
+                        <span class="who">Middle</span>
+                        <Transition name="offer-pop">
+                            <span
+                                v-if="hasMiddle"
+                                key="middle-amount"
+                                class="amount"
+                                :class="{ 'offer-amount-negative': offer.middle <= 0 }"
+                            >{{ formatAmount(offer.middle) }}</span>
+                            <span v-else key="middle-pending" class="amount offerAmountPending">—</span>
+                        </Transition>
+                    </div>
+                    <div class="moneyPlaque offerTierPlaque">
+                        <span class="who">High</span>
+                        <Transition name="offer-pop">
+                            <span
+                                v-if="hasHigh"
+                                key="high-amount"
+                                class="amount"
+                                :class="{ 'offer-amount-negative': offer.high <= 0 }"
+                            >{{ formatAmount(offer.high) }}</span>
+                            <span v-else key="high-pending" class="amount offerAmountPending">—</span>
                         </Transition>
                     </div>
                 </div>
