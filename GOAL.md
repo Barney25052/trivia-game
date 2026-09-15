@@ -171,7 +171,7 @@ These are the Chase/CashBuilder/palette items the user asked to pull forward fro
 - [x] Handler authority + room-option clamping (tickets 023–024); per-player message rate limiting (037)
 - [x] Deployment: serve the built client from the server process (130)
 - [x] Protect `/monitor` with auth; tighten `/api/questions` CORS for production (131) — a related preflight-CORS gap found in review is tracked separately (151)
-- [ ] Cap concurrent rooms server-wide (132) — per-room `maxClients` and per-connection rate limiting already exist; this is the last of the three AGENTS.md "abuse caps"
+- [x] Cap concurrent rooms server-wide (132) — per-room `maxClients` and per-connection rate limiting already exist; this is the last of the three AGENTS.md "abuse caps". A PM2 config issue that could silently multiply this cap on a multi-core host was found in review — tracked separately (152)
 - [ ] TLS/wss behind a reverse proxy — deployment-environment concern (nginx/Caddy in front of the PM2 process), not application code; document once an actual deploy target is picked
 
 ### Stretch goals

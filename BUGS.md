@@ -132,3 +132,11 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Impact: a CSRF-adjacent gap — any origin's preflight succeeds, so the browser still sends the real `POST` (appending a row to the question bank) before the browser discards the unreadable response; ticket 131's protection on the real response body itself is unaffected and does work.
 - Repro steps: 1. `NODE_ENV=production CLIENT_ORIGIN=https://trivia.example.com MONITOR_USER=... MONITOR_PASS=... node build/index.js`. 2. `curl -si -X OPTIONS http://localhost:2567/api/questions -H "Origin: https://evil.example.com" -H "Access-Control-Request-Method: POST"`. 3. Observe the reflected origin header.
 - Status: triaged — ticket 151
+
+
+## `bug-019` — `ecosystem.config.cjs` multi-instance PM2 config contradicts the app's single-process assumption
+- Found: 2026-09-15 · ticket 132 · `server/ecosystem.config.cjs`
+- What you saw: `instances: os.cpus().length` under `exec_mode: "fork"` (the stock Colyseus Cloud template default, per the file's own header comment) launches one independent fork-mode process per CPU core on any multi-core host. There's no per-instance `PORT` assignment in `src/index.ts` and no shared Colyseus presence/driver configured (defaults to in-memory `LocalPresence`/`LocalDriver`) — so either most instances fail to bind the shared port, or, if somehow avoided, every process-local abuse guard (including ticket 132's new `liveRoomCount` room cap) only bounds its own process, silently multiplying the effective server-wide cap by the core count.
+- Expected: either a genuinely single-process deploy (matching AGENTS.md's and ticket 132's explicit "single-process app, PM2 exec_mode: fork" assumption), or, if multi-instance is actually intended (e.g. targeting Colyseus Cloud's own hosted platform, which this config's header comment suggests it was templated from), real support for it — shared presence/driver, per-instance ports + reverse proxy, and process-local counters converted to use shared state.
+- Repro steps: on a multi-core machine, `cd server && npm run build && pm2 start ecosystem.config.cjs`, then `pm2 list`/`pm2 logs` — observe `os.cpus().length` instances attempt to start.
+- Status: triaged — ticket 152
