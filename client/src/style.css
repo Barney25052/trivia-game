@@ -1670,6 +1670,12 @@ h1, h2, h3, h4 {
   50%      { border-color: var(--color-flash-red); background-color: var(--color-flash-red); }
 }
 
+/* Ticket 135: flat --ink-chase ground, matching the token's own documented
+   intent (115) that this screen shares --ink-chase with Chase/Chaser Final —
+   and specifically the flat-ground + radial-vignette combo .chaserFinalStage
+   already established for a solo-Chaser scene (no contestant on screen here
+   either), rather than .chaseGround's two-tone red/navy split which only
+   makes sense once both sides of the Chase are visible together. */
 .ccrScreen {
   position: relative;
   height: 100%;
@@ -1677,8 +1683,19 @@ h1, h2, h3, h4 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: var(--color-black);
+  background-color: var(--ink-chase);
   overflow: hidden;
+}
+
+/* Same radial-gradient formula as .chaserFinalStageVignette — reused, not
+   reinvented, for the same "solo Chaser scene" ground treatment. */
+.ccrScreen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(var(--chaser-red-dark-rgb), 0.35), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .ccrTitle {
@@ -1754,18 +1771,20 @@ h1, h2, h3, h4 {
 }
 
 .ccrName {
+  position: relative;
+  z-index: 1;
   margin-top: 30px;
   font-size: 56px;
   color: var(--color-white);
   text-align: center;
   opacity: 0;
-  transform: translateY(20px) scale(0.8);
+  transform: scale(0.3);
   -webkit-font-smoothing: antialiased;
   backface-visibility: hidden;
 }
 
 .ccrScreen.name .ccrName {
-  animation: chaser-character-name-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: reveal-text-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 @keyframes chaser-character-grow {
@@ -1780,11 +1799,21 @@ h1, h2, h3, h4 {
   100% { transform: scale(1); }
 }
 
-@keyframes chaser-character-name-in {
-  0%   { opacity: 0; transform: translateY(20px) scale(0.8); }
+/* Shares its scale-overshoot shape (0.3 -> 1.15 -> 1) and bounce easing with
+   the design system's other reveal pop-ins (.offer-space-pop,
+   .chase-answer-pop-in, .lobby-bust-pop) rather than a from-scratch curve —
+   but opacity reaches 1 by 15% instead of riding the same slow ramp as those
+   (which animate small icons/plaques, not a 56px display-font headline).
+   That fast-opacity shape is deliberate, not a stylistic choice: it's
+   exactly what fixed bug-011 (ticket 084) here, where this same name text
+   flashed black-with-a-white-outline while it sat at low opacity mid-
+   transform for longer. Named generically (not "ccr"-scoped) since any
+   future large-text reveal moment can reuse it as-is. */
+@keyframes reveal-text-pop {
+  0%   { opacity: 0; transform: scale(0.3); }
   15%  { opacity: 1; }
-  60%  { transform: translateY(-4px) scale(1.05); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+  60%  { transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* "At the table" layout (ticket 085) — Chaser left, board centre, contestant
