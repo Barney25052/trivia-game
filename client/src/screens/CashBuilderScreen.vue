@@ -309,7 +309,6 @@ function handleGlobalKeydown(e) {
     if (inputDisabled.value) return;
     if (document.activeElement === inputBox.value) return; // already focused, let it type normally
     inputBox.value?.focus();
-    console.log(e)
 }
 
 onUnmounted(() => {
