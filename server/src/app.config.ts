@@ -15,6 +15,7 @@ import path from "node:path";
 import { TriviaRoom } from "./rooms/TriviaRoom.js";
 import { loadBank, QUESTIONS_PATH } from "./questions/bank.js";
 import { appendQuestion, validateNewQuestion } from "./questions/bankAdmin.js";
+import { checkBasicAuth, resolveAllowedOrigin } from "./httpSecurity.js";
 
 const server = defineServer({
     /**
@@ -29,12 +30,56 @@ const server = defineServer({
      * Read more: https://expressjs.com/en/starter/basic-routing.html
      */
     express: (app) => {
+        // Startup warnings (ticket 131): production is expected to configure
+        // MONITOR_USER/MONITOR_PASS and CLIENT_ORIGIN. Warn once at boot
+        // rather than staying silent — the fail-closed behavior below means
+        // a missing var doesn't break anything, but it does mean nobody can
+        // reach /monitor, or that /api/questions rejects every browser
+        // request, until it's set.
+        if (process.env.NODE_ENV === "production") {
+            if (!process.env.MONITOR_USER || !process.env.MONITOR_PASS) {
+                console.warn(
+                    "[app.config] MONITOR_USER/MONITOR_PASS are not both set — " +
+                    "/monitor will deny every request (503) until both are configured."
+                );
+            }
+            if (!process.env.CLIENT_ORIGIN) {
+                console.warn(
+                    "[app.config] CLIENT_ORIGIN is not set — /api/questions will omit " +
+                    "Access-Control-Allow-Origin, blocking cross-origin browser requests."
+                );
+            }
+        }
+
         /**
          * Use @colyseus/monitor
-         * It is recommended to protect this route with a password
+         * Protected by hand-rolled HTTP Basic Auth in production (ticket
+         * 131), gated on NODE_ENV so local dev stays exactly as it was —
+         * no prompt. Credentials come from MONITOR_USER/MONITOR_PASS; if
+         * either is unset in production this fails closed (503) instead of
+         * leaving the panel open. The check reads process.env per request
+         * (not once at setup) so it always reflects the current env.
          * Read more: https://docs.colyseus.io/tools/monitoring/#restrict-access-to-the-panel-using-a-password
          */
-        app.use("/monitor", monitor());
+        const requireMonitorAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+            if (process.env.NODE_ENV !== "production") {
+                next();
+                return;
+            }
+            const monitorUser = process.env.MONITOR_USER;
+            const monitorPass = process.env.MONITOR_PASS;
+            if (!monitorUser || !monitorPass) {
+                res.status(503).send("Monitor is not configured");
+                return;
+            }
+            if (checkBasicAuth(req.headers.authorization, monitorUser, monitorPass)) {
+                next();
+                return;
+            }
+            res.setHeader("WWW-Authenticate", 'Basic realm="Trivia Monitor"');
+            res.status(401).send("Authentication required");
+        };
+        app.use("/monitor", requireMonitorAuth, monitor());
 
         /**
          * Use @colyseus/playground
@@ -46,9 +91,23 @@ const server = defineServer({
 
         // Add-question endpoint (ticket 091): the web path into the open-ended
         // bank. Dev-friendly CORS — the Vite client (:5173) posts cross-origin to
-        // :2567; production is same-origin once the client is served from here.
+        // :2567; production is same-origin once the client is served from here,
+        // but locked to CLIENT_ORIGIN (ticket 131) rather than "*" in case it's
+        // ever hit cross-origin, e.g. from a staging client.
         const allowCrossOrigin = (_req: express.Request, res: express.Response, next: express.NextFunction) => {
-            res.setHeader("Access-Control-Allow-Origin", "*");
+            const origin = resolveAllowedOrigin(process.env.NODE_ENV, process.env.CLIENT_ORIGIN);
+            if (origin) {
+                res.setHeader("Access-Control-Allow-Origin", origin);
+            } else {
+                // Colyseus's own core router sets a default
+                // Access-Control-Allow-Origin: * on every request before
+                // Express ever sees it (@colyseus/core's
+                // bindRouterToTransport, router/index.ts) — not calling
+                // setHeader here would silently leave that wildcard in
+                // place. Remove it explicitly so an unconfigured
+                // CLIENT_ORIGIN in production fails closed for real.
+                res.removeHeader("Access-Control-Allow-Origin");
+            }
             res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
             res.setHeader("Access-Control-Allow-Headers", "Content-Type");
             next();
