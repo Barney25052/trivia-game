@@ -263,7 +263,12 @@ export const MC_SOURCE = {
 } as const;
 
 export const ROOM_SETTINGS = {
-    max_clients: 6
+    max_clients: 6,
+    /** Hard cap on `trivia` rooms alive at once in this process (ticket 132)
+     * — an abuse guard against unbounded `client.create("trivia", ...)`
+     * calls, not a capacity/performance ceiling. Tune based on real traffic
+     * once deployed. */
+    maxConcurrentRooms: 50
 } as const;
 
 export const FINAL_ROUND = {

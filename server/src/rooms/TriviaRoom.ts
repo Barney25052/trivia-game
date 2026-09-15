@@ -55,6 +55,13 @@ import { clampRoomOptions } from "./handlers/clampOptions.js";
 
 const OFFER_TIERS: OfferTier[] = ["low", "middle", "high"];
 
+/** Live `TriviaRoom` count for this process (ticket 132): incremented once a
+ * new room clears the `ROOM_SETTINGS.maxConcurrentRooms` cap check in
+ * `onCreate`, decremented in `onDispose`. This is a single-process app (PM2
+ * `exec_mode: fork`, per `ecosystem.config.cjs`), so a module-scoped counter
+ * is a correct server-wide cap — no cross-process coordination to build. */
+let liveRoomCount = 0;
+
 interface OfferAmounts {
   low: number | null;
   middle: number;
@@ -146,6 +153,18 @@ export class TriviaRoom extends Room {
   private messageTimes: Map<string, number[]> = new Map();
 
   onCreate (options: any) {
+    // Abuse cap (ticket 132, AGENTS.md "cap active rooms and connections"):
+    // reject room creation once the server-wide live-room count is at the
+    // configured cap. Colyseus turns an onCreate throw into a client-facing
+    // join/create error rather than a silent hang.
+    if (liveRoomCount >= ROOM_SETTINGS.maxConcurrentRooms) {
+      console.log(
+        `Rejected room creation: at capacity (${liveRoomCount}/${ROOM_SETTINGS.maxConcurrentRooms} live rooms)`
+      );
+      throw new Error("Server is at capacity — please try again shortly.");
+    }
+    liveRoomCount += 1;
+
     clampRoomOptions(this, options);
     // Mirror the real (possibly clamped/overridden) cash-builder duration into
     // synced state (ticket 112, fixing bug-015) so CashBuilderScreen.vue can
@@ -757,6 +776,7 @@ export class TriviaRoom extends Room {
   }
 
   onDispose() {
+    liveRoomCount -= 1;
     console.log("room", this.roomId, "disposing...");
   }
 }
