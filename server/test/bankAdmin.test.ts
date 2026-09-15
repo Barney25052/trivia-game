@@ -1,9 +1,16 @@
 import assert from "assert";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { BANK_EDIT } from "../src/gameConfig.js";
-import { loadBank, QUESTIONS_PATH } from "../src/questions/bank.js";
+import { getBankDb, loadBank, openBankDb, setBankDb } from "../src/questions/bank.js";
 import { appendQuestion, validateNewQuestion } from "../src/questions/bankAdmin.js";
 import { getTestServer } from "./testServer.js";
+
+/** Inserts a row directly (bypassing appendQuestion) so tests can seed a
+ * known starting state for the isolated in-memory DB. */
+function insertRow(id: number, question: string, answer: string, alternatives: string[] = []): void {
+  getBankDb()
+    .prepare("INSERT INTO questions (id, question, answer, alternatives) VALUES (?, ?, ?, ?)")
+    .run(id, question, answer, JSON.stringify(alternatives));
+}
 
 describe("validateNewQuestion", () => {
   const validInput = () => ({
@@ -108,16 +115,28 @@ describe("validateNewQuestion", () => {
   });
 });
 
+// appendQuestion now does a real SQLite INSERT (ticket 138) rather than
+// returning a new in-memory array, so every test here runs against a fresh
+// isolated :memory: DB — never the real questions.db.
 describe("appendQuestion", () => {
+  beforeEach(() => {
+    setBankDb(openBankDb(":memory:"));
+  });
+
+  afterEach(() => {
+    setBankDb(undefined);
+  });
+
   it("assigns id = max(existing id) + 1 and appends the row", () => {
-    const bank = [
-      { id: 3, question: "Three?", answer: "3" },
-      { id: 17, question: "Seventeen?", answer: "17", alternatives: [] }
-    ];
-    const out = appendQuestion(bank, { question: "New?", answer: "New", alternatives: ["alt"] });
-    assert.strictEqual(out.question.id, 18);
-    assert.strictEqual(out.bank.length, 3);
-    assert.deepStrictEqual(out.bank[2], {
+    insertRow(3, "Three?", "3");
+    insertRow(17, "Seventeen?", "17");
+
+    const question = appendQuestion({ question: "New?", answer: "New", alternatives: ["alt"] });
+
+    assert.strictEqual(question.id, 18);
+    const bank = loadBank();
+    assert.strictEqual(bank.length, 3);
+    assert.deepStrictEqual(bank[2], {
       id: 18,
       question: "New?",
       answer: "New",
@@ -125,53 +144,52 @@ describe("appendQuestion", () => {
     });
   });
 
-  it("returns a new bank without mutating the input", () => {
-    const bank = [{ id: 1, question: "One?", answer: "1" }];
-    const snapshot = JSON.stringify(bank);
-    const out = appendQuestion(bank, { question: "Two?", answer: "2", alternatives: [] });
-    assert.notStrictEqual(out.bank, bank, "appendQuestion must return a new array");
-    assert.strictEqual(out.bank.length, 2);
-    assert.strictEqual(JSON.stringify(bank), snapshot, "input must not be mutated");
+  it("leaves existing rows untouched", () => {
+    insertRow(1, "One?", "1");
+    const before = loadBank();
+
+    appendQuestion({ question: "Two?", answer: "2", alternatives: [] });
+
+    const after = loadBank();
+    assert.strictEqual(after.length, 2);
+    assert.deepStrictEqual(after[0], before[0], "the pre-existing row must be unchanged");
   });
 
   it("starts ids at 1 for an empty bank", () => {
-    const out = appendQuestion([], { question: "First?", answer: "1", alternatives: [] });
-    assert.strictEqual(out.question.id, 1);
+    const question = appendQuestion({ question: "First?", answer: "1", alternatives: [] });
+    assert.strictEqual(question.id, 1);
   });
 
   it("keeps the appended row free of the legacy category field", () => {
-    const bank = [{ id: 1, category: "history", question: "Old?", answer: "Old" }];
-    const out = appendQuestion(bank, { question: "New?", answer: "New", alternatives: [] });
-    assert.ok(!("category" in out.question), "appended rows must never carry category");
-    assert.deepStrictEqual(out.question, { id: 2, question: "New?", answer: "New", alternatives: [] });
+    insertRow(1, "Old?", "Old");
+    const question = appendQuestion({ question: "New?", answer: "New", alternatives: [] });
+    assert.ok(!("category" in question), "appended rows must never carry category");
+    assert.deepStrictEqual(question, { id: 2, question: "New?", answer: "New", alternatives: [] });
   });
 });
 
 describe("POST /api/questions", function () {
   let server: Awaited<ReturnType<typeof getTestServer>>;
-  let originalBankContent: string;
 
   before(async () => {
     server = await getTestServer();
   });
 
+  // Isolated in-memory DB per test (ticket 138) — the running test server
+  // (booted once for the whole mocha process, see testServer.ts) shares the
+  // same bank.ts module, so pointing its DB singleton at a fresh :memory:
+  // connection here redirects the live /api/questions handler too, without
+  // ever touching the real server/data/questions.db.
   beforeEach(() => {
-    originalBankContent = readFileSync(QUESTIONS_PATH, "utf8");
+    setBankDb(openBankDb(":memory:"));
+    insertRow(1, "Seed question?", "Seed answer");
   });
 
   afterEach(() => {
-    writeFileSync(QUESTIONS_PATH, originalBankContent, "utf8");
+    setBankDb(undefined);
   });
 
-  // Belt-and-braces: even if a test (or hook) throws, never leave a mutated
-  // bank behind once the process exits.
-  after(() => {
-    if (originalBankContent !== undefined) {
-      writeFileSync(QUESTIONS_PATH, originalBankContent, "utf8");
-    }
-  });
-
-  it("201 — appends a valid question to the bank file", async () => {
+  it("201 — appends a valid question to the bank", async () => {
     const before = loadBank();
     const maxId = Math.max(0, ...before.map((q) => q.id));
 
@@ -197,11 +215,6 @@ describe("POST /api/questions", function () {
     assert.strictEqual(added?.answer, "Endpoint answer");
     assert.deepStrictEqual(added?.alternatives, ["alt one", "alt two"]);
     assert.ok(!("category" in added!), "appended row must not carry category");
-
-    const raw = readFileSync(QUESTIONS_PATH, "utf8");
-    assert.ok(raw.includes('"question": "Endpoint test question?"'), "the question must be written to the file");
-    assert.ok(raw.includes("\r\n"), "the CRLF line endings must be preserved");
-    assert.ok(!existsSync(`${QUESTIONS_PATH}.tmp`), "the temp file must be renamed away");
   });
 
   it("400 — rejects malformed payloads and leaves the bank untouched", async () => {
@@ -228,7 +241,5 @@ describe("POST /api/questions", function () {
     }
 
     assert.strictEqual(loadBank().length, beforeCount, "the bank must be untouched");
-    assert.strictEqual(readFileSync(QUESTIONS_PATH, "utf8"), originalBankContent, "the bank file must be byte-identical");
-    assert.ok(!existsSync(`${QUESTIONS_PATH}.tmp`), "no temp file may be left behind");
   });
 });

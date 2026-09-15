@@ -2,3 +2,11 @@ node_modules
 build
 .colyseus-cloud.json
 .devmode.json
+
+# Question bank SQLite DB (ticket 138) — generated data, not source. Seed it
+# from the committed data/questions.json via scripts/seedQuestionsDb.ts; see
+# AGENTS.md "Question bank".
+data/questions.db
+data/questions.db-journal
+data/questions.db-wal
+data/questions.db-shm

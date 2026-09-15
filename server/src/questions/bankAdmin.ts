@@ -1,5 +1,5 @@
 import { BANK_EDIT } from "../gameConfig.js";
-import { BankQuestion } from "./bank.js";
+import { BankQuestion, getBankDb } from "./bank.js";
 
 /** Accepted input for a new open-ended question (ticket 091). */
 export interface NewQuestionInput {
@@ -81,20 +81,27 @@ export function validateNewQuestion(input: unknown): NewQuestionValidation {
 }
 
 /**
- * Pure append: returns a new bank (the input is untouched) with the new
- * question at id = max(existing id) + 1. The appended row never carries a
- * `category` field — it is legacy and unused per GOAL.md.
+ * Inserts a new question into the SQLite question bank at
+ * id = max(existing id) + 1 and returns the inserted row. The read-then-
+ * insert is wrapped in a transaction so concurrent appends can't race each
+ * other onto the same id (this replaces the old JSON version's atomic
+ * write-temp-file-then-rename dance; the CRLF-preservation logic that dance
+ * needed is JSON-specific and has been removed entirely — nothing downstream
+ * still expects it). The appended row never carries a `category` field — it
+ * is legacy and unused per GOAL.md.
  */
-export function appendQuestion(
-    bank: BankQuestion[],
-    input: NewQuestionInput
-): { bank: BankQuestion[]; question: BankQuestion } {
-    const id = bank.reduce((max, q) => Math.max(max, q.id), 0) + 1;
-    const question: BankQuestion = {
-        id,
-        question: input.question,
-        answer: input.answer,
-        alternatives: input.alternatives
-    };
-    return { bank: [...bank, question], question };
+export function appendQuestion(input: NewQuestionInput): BankQuestion {
+    const db = getBankDb();
+    const insert = db.transaction((value: NewQuestionInput): BankQuestion => {
+        const row = db.prepare("SELECT MAX(id) AS maxId FROM questions").get() as { maxId: number | null };
+        const id = (row.maxId ?? 0) + 1;
+        db.prepare("INSERT INTO questions (id, question, answer, alternatives) VALUES (?, ?, ?, ?)").run(
+            id,
+            value.question,
+            value.answer,
+            JSON.stringify(value.alternatives)
+        );
+        return { id, question: value.question, answer: value.answer, alternatives: value.alternatives };
+    });
+    return insert(input);
 }

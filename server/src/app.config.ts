@@ -5,7 +5,6 @@ import {
     playground,
 } from "colyseus";
 import express from "express";
-import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -13,7 +12,6 @@ import path from "node:path";
  * Import your Room files
  */
 import { TriviaRoom } from "./rooms/TriviaRoom.js";
-import { loadBank, QUESTIONS_PATH } from "./questions/bank.js";
 import { appendQuestion, validateNewQuestion } from "./questions/bankAdmin.js";
 import { checkBasicAuth, resolveAllowedOrigin } from "./httpSecurity.js";
 
@@ -122,16 +120,7 @@ const server = defineServer({
                 return;
             }
             try {
-                const bank = loadBank();
-                const { bank: nextBank, question } = appendQuestion(bank, result.value);
-                const json = JSON.stringify({ questions: nextBank }, null, 2);
-                // The bank file is authored with CRLF line endings — write it
-                // back the same way so appending one row does not reformat the
-                // whole file. Atomic: write a temp file, then rename over.
-                const usesCrlf = readFileSync(QUESTIONS_PATH, "utf8").includes("\r\n");
-                const tmpPath = `${QUESTIONS_PATH}.tmp`;
-                writeFileSync(tmpPath, usesCrlf ? json.replace(/\n/g, "\r\n") : json, "utf8");
-                renameSync(tmpPath, QUESTIONS_PATH);
+                const question = appendQuestion(result.value);
                 console.log(`Added question ${question.id} to the bank`);
                 res.status(201).json({
                     id: question.id,
