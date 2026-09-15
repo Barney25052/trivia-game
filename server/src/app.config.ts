@@ -6,6 +6,8 @@ import {
 } from "colyseus";
 import express from "express";
 import { readFileSync, renameSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
 /**
  * Import your Room files
@@ -83,6 +85,24 @@ const server = defineServer({
                 res.status(500).json({ error: "Failed to persist the question" });
             }
         });
+
+        // Serve the built client (ticket 130): in production this process is
+        // the whole deployable — no separate Vite dev server or static host.
+        // Dev mode (NODE_ENV !== "production") is untouched; the client keeps
+        // running via Vite on :5173. Registered last so it never shadows
+        // /monitor or /api/questions above. The path is resolved from this
+        // module's own compiled location (not process.cwd(), which PM2 does
+        // not guarantee to be server/) so it survives the tsc build step:
+        // src/app.config.ts -> build/app.config.js, two levels up from
+        // build/ is the repo root, then into client/dist.
+        if (process.env.NODE_ENV === "production") {
+            const currentDir = path.dirname(fileURLToPath(import.meta.url));
+            const clientDistPath = path.join(currentDir, "../../client/dist");
+            app.use(express.static(clientDistPath));
+            app.get("*", (_req, res) => {
+                res.sendFile(path.join(clientDistPath, "index.html"));
+            });
+        }
     }
 
 });
