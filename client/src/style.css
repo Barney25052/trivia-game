@@ -189,11 +189,6 @@ button:disabled {
   padding-bottom: 10px;
 }
 
-.characterOption-selected {
-    background: var(--color-green);
-    color: var(--color-white);
-}
-
 .characterOption:disabled {
     cursor: not-allowed;
 }
@@ -886,15 +881,6 @@ h1, h2, h3, h4 {
   margin: 0px;
 }
 
-.revealChaserYou {
-  color: var(--color-gold);
-  font-family: var(--font-body);
-  font-weight: 400;
-  font-style: normal;
-  font-size: 20px;
-  margin-top: 4px;
-}
-
 .revealBottom {
   flex: 1;
   /* Ticket 125: flat --color-bg-page, not the old two-tone gradient —
@@ -1177,16 +1163,6 @@ h1, h2, h3, h4 {
   cursor: not-allowed;
 }
 
-.cashBuilderSubmit {
-  width: 220px;
-}
-
-.cashBuilderSubmit:disabled {
-  background-color: var(--color-grey-disabled-bg);
-  color: var(--color-grey-disabled-text);
-  cursor: default;
-}
-
 /* Ticket 129: modifier only — the moneyPlaque component (see "money display:
    the 'prize plaque'" below) owns the border/fill/font now, this just adds
    the vertical spacing .cashBuilderMain's stack needs (mirrors
@@ -1435,31 +1411,6 @@ h1, h2, h3, h4 {
 .chaserPanelSend:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.chaserSideLayout {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 30px;
-  width: 90%;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.chaserSideLayout .lobby {
-  margin: 40px 0;
-}
-
-@media (max-width: 900px) {
-  .chaserSideLayout {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .chaserSideLayout .lobby {
-    margin: 20px auto;
-  }
 }
 
 /* Ticket 134: replaces the old .offerBoard vertical 7-space track (a
@@ -2662,16 +2613,6 @@ h1, h2, h3, h4 {
   100% { transform: translateX(140%); }
 }
 
-/* A light squash "squeeze" on the plaque itself — paired with the wipe for a
-   correct-answer moment, or used alone for a purely delightful (no game
-   effect) click on a money plaque. */
-.plaque-squeeze.squeezing { animation: plaque-squeeze 0.3s ease; }
-@keyframes plaque-squeeze {
-  0%   { transform: scale(1, 1); }
-  40%  { transform: scale(1.08, 0.85); }
-  100% { transform: scale(1, 1); }
-}
-
 /* ---------- room code: a ticket, not a pill ---------- */
 
 .ticket-badge {
@@ -2938,7 +2879,7 @@ h1, h2, h3, h4 {
    mockup leaves alone under reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   .bill { animation: none !important; opacity: 0; }
-  .plaque-squeeze.squeezing, .bust-pokeable .head, .bust-pokeable .eyes,
+  .bust-pokeable .head, .bust-pokeable .eyes,
   .lobbySeatCircle.poked .head, .lobbySeatCircle.poked .eyes {
     animation: none !important;
   }
