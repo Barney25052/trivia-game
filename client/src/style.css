@@ -1050,8 +1050,16 @@ h1, h2, h3, h4 {
   justify-content: center;
 }
 
-.getReadyCountdown {
-  animation: press-me 1s ease-in-out infinite;
+/* Ticket 129: label + the shared countdown-digit chip (see "countdown: a
+   small chip..." below) stacked on their own — standalone, unlike
+   ChaseScreen's version of the same chip which overlaps a portrait and so
+   needs no layout of its own. */
+.cashBuilderCountdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 5px auto 20px;
 }
 
 .cashBuilder {
@@ -1081,34 +1089,35 @@ h1, h2, h3, h4 {
   z-index: 1;
 }
 
-.cashBuilderQuestionArea {
-  height: 175px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.cashBuilderQuestion {
-  color: var(--color-white);
-  font-family: var(--font-body);
-  font-weight: 400;
-  font-style: normal;
-  font-size: 24px;
-  text-align: center;
-  padding: 10px 20px;
-  margin: 0;
-}
-
 .cashBuilderMeta {
   font-size: 18px;
   padding: 5px;
 }
 
+/* Ticket 129: the chunky field chrome from open-question-box's own .oq-input
+   (see "open-ended answer box" below) — same look, kept under this screen's
+   own class name (rather than switching to .oq-input) since .cashBuilderInput
+   also carries the existing wrong-answer shake (.cashBuilderInput-wrong,
+   below) as-is. flex: 1 1 180px so it shares its row with the new
+   .oq-submit button (.cashBuilderAnswerRow below) exactly the way .oq-input
+   shares .oq-row elsewhere. */
 .cashBuilderInput {
-  width: 90%;
-  max-width: 500px;
+  flex: 1 1 180px;
+  display: block;
+  height: auto;
+  width: auto;
+  margin: 0;
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-style: normal;
+  font-size: 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 3px solid var(--btn-ink);
+  background-color: var(--color-white);
+  color: var(--color-text-dark);
+  box-shadow: 3px 3px 0 rgba(var(--color-black-rgb), 0.3);
 }
 
 .cashBuilderInput:disabled {
@@ -1126,31 +1135,20 @@ h1, h2, h3, h4 {
   cursor: default;
 }
 
+/* Ticket 129: modifier only — the moneyPlaque component (see "money display:
+   the 'prize plaque'" below) owns the border/fill/font now, this just adds
+   the vertical spacing .cashBuilderMain's stack needs (mirrors
+   .resultsPotPlaque, ticket 124's own first use of the plaque). */
 .cashBuilderPot {
-  color: var(--color-white);
-  /* Ticket 115: a standalone big-number pot display — Luckiest Guy, matching
-     the moneyPlaque component's .amount treatment. */
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-style: normal;
-  font-size: 48px;
-  text-align: center;
-  padding: 10px;
-  margin: 5px auto;
+  margin: 5px 0 15px;
 }
 
-.cashBuilderPot-flash {
-  animation: pot-flash 0.5s ease-in-out;
-}
-
-.cashBuilderTimer {
-  color: var(--color-white);
-  font-family: var(--font-pixel);
-  font-weight: 400;
-  font-style: normal;
-  font-size: 24px;
-  text-align: center;
-  margin: 5px auto 20px;
+/* Sits inside .open-question-box, after its prompt/reveal content — a little
+   extra breathing room above the row since .wrong-answer/.steal-success-text
+   (used here for the two reveal states) have no bottom margin of their own,
+   unlike .oq-prompt's built-in 14px. */
+.cashBuilderAnswerRow {
+  margin-top: 14px;
 }
 
 .cashBuilderSpectator {
@@ -1243,63 +1241,6 @@ h1, h2, h3, h4 {
   40% { transform: translateX(7px); }
   60% { transform: translateX(-4px); }
   80% { transform: translateX(4px); }
-}
-
-.cashBuilderQuestionArea-wrong {
-  background-color: rgba(var(--color-black-rgb), 0.2);
-  border: 3px solid var(--color-danger);
-  border-radius: 16px;
-  animation: cash-builder-reveal-pop 0.2s ease-out;
-}
-
-/* Ticket 121: a correct answer's confirmation text, alongside the existing
-   green screen flash — same card treatment as the wrong case, re-accented
-   green instead of red. */
-.cashBuilderQuestionArea-correct {
-  background-color: rgba(var(--color-black-rgb), 0.2);
-  border: 3px solid var(--color-green);
-  border-radius: 16px;
-  animation: cash-builder-reveal-pop 0.2s ease-out;
-}
-
-.cashBuilderRevealLabel {
-  display: block;
-  /* Ticket 115: an outcome-reveal label ("✗ WRONG!") — outcome-banner role. */
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-style: normal;
-  font-size: 34px;
-  letter-spacing: 1px;
-  color: var(--color-danger);
-  text-shadow: 0 0 10px rgba(var(--color-danger-rgb), 0.9), 0 2px 0 rgba(var(--color-black-rgb), 0.25);
-  text-transform: uppercase;
-}
-
-.cashBuilderRevealLabel-correct {
-  color: var(--color-green);
-  text-shadow: 0 0 10px rgba(var(--color-green-rgb), 0.9), 0 2px 0 rgba(var(--color-black-rgb), 0.25);
-}
-
-.cashBuilderRevealAnswer {
-  margin: 8px 0 0;
-  font-size: 20px;
-  color: var(--color-white);
-}
-
-.cashBuilderRevealAnswer strong {
-  color: var(--color-gold);
-  font-size: 24px;
-}
-
-@keyframes cash-builder-reveal-pop {
-  0% { transform: scale(0.8); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes pot-flash {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.15); color: var(--color-gold); }
-  100% { transform: scale(1); }
 }
 
 @keyframes rotate-logo {
@@ -2665,10 +2606,14 @@ h1, h2, h3, h4 {
 
 /* ---------- open-ended answer box ----------
    One component (prompt + a chunky input + a chunky Submit button) reused
-   and re-accented per context rather than four bespoke panels: red for
-   "your own turn," gold for "an opportunity is live" (a steal), blue for
-   "the team is acting," and neutral (matches an empty/unfilled board slot)
-   for a default/no-special-meaning state. */
+   and re-accented per context rather than five bespoke panels: red for
+   "your own turn" (Chaser Final) or a wrong-answer reveal (Cash Builder,
+   ticket 129), gold for "an opportunity is live" (a steal), blue for "the
+   team is acting" (Team Final) or "your own turn" on a team-centric screen
+   (Cash Builder), green for a correct-answer reveal (Cash Builder, ticket
+   129 — the first screen to show this state on the component), and neutral
+   (matches an empty/unfilled board slot) for a default/no-special-meaning
+   state. */
 
 .open-question-box {
   background: var(--ink-raised);
@@ -2680,6 +2625,10 @@ h1, h2, h3, h4 {
 .open-question-box.accent-gold { border-color: var(--color-gold); }
 .open-question-box.accent-blue { border-color: var(--contestant-blue-glow); }
 .open-question-box.accent-neutral { border-color: rgba(var(--color-white-rgb), 0.15); }
+/* Ticket 129: "you got it right" — new for Cash Builder's correct-answer
+   reveal state, the first screen to show a correct-answer state on this
+   component. */
+.open-question-box.accent-green { border-color: var(--success-green); }
 
 .oq-eyebrow {
   display: block;
@@ -2692,6 +2641,7 @@ h1, h2, h3, h4 {
 .accent-red .oq-eyebrow { color: var(--chaser-red-glow); }
 .accent-gold .oq-eyebrow { color: var(--color-gold); }
 .accent-blue .oq-eyebrow { color: var(--contestant-blue-glow); }
+.accent-green .oq-eyebrow { color: var(--success-green); }
 .oq-eyebrow.accent-neutral { color: #8494a2; }
 
 .oq-prompt {

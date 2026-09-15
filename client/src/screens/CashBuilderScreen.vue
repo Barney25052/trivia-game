@@ -69,7 +69,6 @@ const cooldownLeft = ref(0);
 // so this initial value is always the real duration in effect for this round.
 const secondsLeft = ref(Math.ceil(props.cashBuilderDurationMs / 1000));
 const awaitingNext = ref(false);
-const potFlash = ref(false);
 const timerStarted = ref(false);
 const seenQuestion = ref(false);
 const inputBox = ref(null);
@@ -84,23 +83,106 @@ const revealedCorrectAnswer = ref("");
 // short timer as the correct flash itself.
 const correctAnswerText = ref("");
 
+// Ticket 129: the pot's own moneyPlaque wipe/tick-up/dollar-burst sequence
+// (115's shared component), replacing the old plain scale-pulse flash this
+// screen used to play on a correct answer. displayedPot is the plaque's own
+// shown value — kept separate from cashBuilderMoney so a correct answer can
+// tick the number up over the wipe's duration instead of jumping straight
+// to the new total.
+const displayedPot = ref(props.cashBuilderMoney);
+const potWiping = ref(false);
+const potPlaqueEl = ref(null);
+let potWipeTimeout = null;
+let potTickRaf = null;
+
 let cooldownInterval = null;
 let questionInterval = null;
-let potFlashTimeout = null;
 let screenFlashTimeout = null;
 
 const cooldownActive = computed(() => cooldownLeft.value > 0);
+// Matches the countdown-chip's own urgent threshold everywhere else it's
+// used (see ChaseScreen.vue's lockoutUrgent) — pulses only in the last 2s
+// instead of looping the whole cooldown the way the old press-me pulse did.
+const cooldownUrgent = computed(() => cooldownLeft.value > 0 && cooldownLeft.value <= 2);
 const roundFinished = computed(() => {
     if (cooldownActive.value || props.currentQuestion) return false;
     return seenQuestion.value || secondsLeft.value === 0;
 });
-const potText = computed(() => "$" + props.cashBuilderMoney.toLocaleString("en-US"));
+const potText = computed(() => "$" + displayedPot.value.toLocaleString("en-US"));
 const questionsLabel = computed(() =>
     `${props.cashBuilderCorrectAnswers} correct answer${props.cashBuilderCorrectAnswers === 1 ? "" : "s"}`
 );
 const inputDisabled = computed(() =>
     cooldownActive.value || !props.currentQuestion || roundFinished.value || awaitingNext.value
 );
+// Which open-question-box accent the shared question card wears right now —
+// blue while it's your own turn to answer ("this is your own turn," same as
+// Team Final's buzz-winner box), re-accented red/green for the two reveal
+// states (ticket 129).
+const questionBoxAccent = computed(() => {
+    if (revealedCorrectAnswer.value) return "accent-red";
+    if (correctAnswerText.value) return "accent-green";
+    return "accent-blue";
+});
+
+function prefersReducedMotion() {
+    return typeof window !== "undefined"
+        && typeof window.matchMedia === "function"
+        && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+// Ticket 129: reuses 115's .bill particle-burst primitive (a "$" burst — see
+// style.css's own comment: spawning/removing the actual elements is a caller
+// concern, not something the primitive does itself). Mirrors ChaseScreen.vue's
+// spawnEscapeSparkles() (.spark) exactly, anchored to the plaque instead of
+// the contestant portrait. Skipped outright under reduced motion, same reason
+// as that one: .bill's animation is disabled there, but nothing else removes
+// a spawned element without its animationend event firing.
+function spawnMoneyBurst() {
+    if (prefersReducedMotion() || !potPlaqueEl.value) return;
+    const rect = potPlaqueEl.value.getBoundingClientRect();
+    const originX = rect.left + rect.width / 2;
+    const originY = rect.top + rect.height / 2;
+    for (let i = 0; i < 8; i++) {
+        const span = document.createElement("span");
+        span.className = `bill ${Math.random() < 0.5 ? "gold" : "green"}`;
+        span.textContent = "$";
+        const angle = Math.random() * 360;
+        const dist = 30 + Math.random() * 55;
+        const rad = (angle * Math.PI) / 180;
+        span.style.setProperty("--dx", `${Math.cos(rad) * dist}px`);
+        span.style.setProperty("--dy", `${Math.sin(rad) * dist}px`);
+        span.style.setProperty("--rot", `${Math.random() * 180 - 90}deg`);
+        span.style.left = `${originX}px`;
+        span.style.top = `${originY}px`;
+        document.body.appendChild(span);
+        span.addEventListener("animationend", () => span.remove());
+    }
+}
+
+// Counts displayedPot up from its old value to the new one over the same
+// 0.65s the plaque's own wipe sweep animates for (.plaque-wipe in
+// style.css) — the counting itself is a caller-driven concern per that
+// rule's own comment there.
+function animatePotTickUp(from, to) {
+    if (potTickRaf) cancelAnimationFrame(potTickRaf);
+    if (prefersReducedMotion()) {
+        displayedPot.value = to;
+        return;
+    }
+    const durationMs = 650;
+    const start = performance.now();
+    function step(now) {
+        const t = Math.min(1, (now - start) / durationMs);
+        displayedPot.value = Math.round(from + (to - from) * t);
+        if (t < 1) {
+            potTickRaf = requestAnimationFrame(step);
+        } else {
+            potTickRaf = null;
+        }
+    }
+    potTickRaf = requestAnimationFrame(step);
+}
 
 function startReadyCountdown(totalMs) {
     if (cooldownInterval) clearInterval(cooldownInterval);
@@ -170,13 +252,30 @@ watch(() => props.currentQuestion, (question) => {
     }
 });
 
+// Ticket 129: drives the moneyPlaque's wipe/tick-up/dollar-burst sequence in
+// place of the old scale-pulse flash. Presentation only — cashBuilderMoney
+// itself is still server-authoritative, untouched here.
 watch(() => props.cashBuilderMoney, (current, previous) => {
     if (current > previous) {
-        potFlash.value = true;
-        if (potFlashTimeout) clearTimeout(potFlashTimeout);
-        potFlashTimeout = setTimeout(() => {
-            potFlash.value = false;
-        }, 600);
+        animatePotTickUp(previous, current);
+        potWiping.value = true;
+        spawnMoneyBurst();
+        if (potWipeTimeout) clearTimeout(potWipeTimeout);
+        potWipeTimeout = setTimeout(() => {
+            potWiping.value = false;
+            // Safety net: a backgrounded tab throttles/suspends
+            // requestAnimationFrame (unlike this plain setTimeout, which
+            // still fires), so animatePotTickUp's rAF loop can stall before
+            // ever reaching displayedPot = current. This guarantees the
+            // plaque lands on the real total regardless.
+            if (potTickRaf) {
+                cancelAnimationFrame(potTickRaf);
+                potTickRaf = null;
+            }
+            displayedPot.value = current;
+        }, 650);
+    } else {
+        displayedPot.value = current;
     }
 });
 
@@ -201,7 +300,7 @@ watch(() => props.answerResult, (result) => {
 onMounted(() => {
     if (props.getReadyCooldownMs > 0 && !props.currentQuestion) {
         startReadyCountdown(props.getReadyCooldownMs);
-    }   
+    }
 
     document.addEventListener('keydown', handleGlobalKeydown);
 });
@@ -216,7 +315,8 @@ function handleGlobalKeydown(e) {
 onUnmounted(() => {
     if (cooldownInterval) clearInterval(cooldownInterval);
     if (questionInterval) clearInterval(questionInterval);
-    if (potFlashTimeout) clearTimeout(potFlashTimeout);
+    if (potWipeTimeout) clearTimeout(potWipeTimeout);
+    if (potTickRaf) cancelAnimationFrame(potTickRaf);
     if (screenFlashTimeout) clearTimeout(screenFlashTimeout);
     clearBubble();
     document.removeEventListener('keydown', handleGlobalKeydown);
@@ -229,47 +329,59 @@ onUnmounted(() => {
     <div class="lobby cashBuilder">
         <h2 class="lobbyTitle">Cash Builder</h2>
 
-        <p v-if="cooldownActive" class="playerName getReadyCountdown">
-            Get ready… {{ cooldownLeft }}s
-        </p>
-        <p v-else class="cashBuilderTimer">Time left: {{ secondsLeft }}s</p>
+        <div v-if="cooldownActive" class="cashBuilderCountdown">
+            <p class="playerName">Get ready…</p>
+            <div class="countdown-chip" :class="{ urgent: cooldownUrgent }">
+                <span class="countdown-num">{{ cooldownLeft }}</span>
+            </div>
+        </div>
+        <div v-else class="cf-hud">
+            <span>TIME LEFT <b>{{ secondsLeft }}s</b></span>
+        </div>
 
         <div class="cashBuilderBody">
           <div class="cashBuilderMain">
             <template v-if="isActiveContestant">
-                <div class="cashBuilderPot" :class="{ 'cashBuilderPot-flash': potFlash }">
-                    {{ potText }}
+                <div
+                    class="moneyPlaque cashBuilderPot"
+                    :class="{ wiping: potWiping }"
+                    ref="potPlaqueEl"
+                >
+                    <span class="who">Cash Builder pot</span>
+                    <span class="amount">{{ potText }}</span>
+                    <div class="plaque-wipe"></div>
                 </div>
                 <p class="playerName cashBuilderMeta">{{ questionsLabel }}</p>
 
-                <div
-                    class="cashBuilderQuestionArea"
-                    :class="{ 'cashBuilderQuestionArea-wrong': revealedCorrectAnswer, 'cashBuilderQuestionArea-correct': correctAnswerText }"
-                >
+                <div class="open-question-box" :class="questionBoxAccent">
                     <template v-if="revealedCorrectAnswer">
-                        <span class="cashBuilderRevealLabel">✗ WRONG!</span>
-                        <p class="cashBuilderRevealAnswer">The answer was <strong>{{ revealedCorrectAnswer }}</strong></p>
+                        <span class="wrong-label">✗ WRONG!</span>
+                        <p class="wrong-answer">The answer was <strong>{{ revealedCorrectAnswer }}</strong></p>
                     </template>
                     <template v-else-if="correctAnswerText">
-                        <span class="cashBuilderRevealLabel cashBuilderRevealLabel-correct">✓ Correct!</span>
-                        <p class="cashBuilderRevealAnswer"><strong>{{ correctAnswerText }}</strong></p>
+                        <span class="steal-success-label">✓ Correct!</span>
+                        <p class="steal-success-text"><strong>{{ correctAnswerText }}</strong></p>
                     </template>
                     <template v-else-if="currentQuestion">
-                        <p class="cashBuilderQuestion">{{ currentQuestion.prompt }}</p>
+                        <span class="oq-eyebrow">Your answer</span>
+                        <p class="oq-prompt">{{ currentQuestion.prompt }}</p>
                     </template>
-                    <p v-else class="playerName">Waiting for the first question…</p>
-                </div>
+                    <p v-else class="oq-thinking">Waiting for the first question…</p>
 
-                <input
-                    v-model="answerInput"
-                    class="cashBuilderInput"
-                    :class="{ 'cashBuilderInput-wrong': revealedCorrectAnswer }"
-                    placeholder="Type your answer..."
-                    :disabled="inputDisabled"
-                    @keyup.enter="submit"
-                    ref="inputBox"
-                    @blur="inputBox?.focus()"
-                />
+                    <div class="oq-row cashBuilderAnswerRow">
+                        <input
+                            v-model="answerInput"
+                            class="cashBuilderInput"
+                            :class="{ 'cashBuilderInput-wrong': revealedCorrectAnswer }"
+                            placeholder="Type your answer..."
+                            :disabled="inputDisabled"
+                            @keyup.enter="submit"
+                            ref="inputBox"
+                            @blur="inputBox?.focus()"
+                        />
+                        <button class="oq-submit" :disabled="inputDisabled" @click="submit">Submit</button>
+                    </div>
+                </div>
 
                 <div class="cashBuilderStatusSlot">
                     <p v-if="roundFinished" class="playerName cashBuilderStatus">Time's up!</p>
@@ -280,8 +392,14 @@ onUnmounted(() => {
             <template v-else>
                 <div class="cashBuilderSpectator">
                     <p class="playerName">{{ activeContestantName || "A contestant" }} is playing…</p>
-                    <div class="cashBuilderPot" :class="{ 'cashBuilderPot-flash': potFlash }">
-                        {{ potText }}
+                    <div
+                        class="moneyPlaque cashBuilderPot"
+                        :class="{ wiping: potWiping }"
+                        ref="potPlaqueEl"
+                    >
+                        <span class="who">Cash Builder pot</span>
+                        <span class="amount">{{ potText }}</span>
+                        <div class="plaque-wipe"></div>
                     </div>
                     <p class="playerName cashBuilderMeta">{{ questionsLabel }}</p>
                 </div>
