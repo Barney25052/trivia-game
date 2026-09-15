@@ -148,3 +148,11 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: a clean single disconnect with no retry storm, consistent with AGENTS.md's documented "reload = forfeit the seat" model (sessionId is ephemeral; a reload joins as a new player, there's no reconnection story except the separate not-yet-built host-reconnect stretch goal).
 - Repro steps: 1. Join or create a lobby. 2. Reload the page (or navigate away) while still connected. 3. Watch the browser console for the repeated failed WebSocket/reconnection attempts.
 - Status: triaged — ticket 153
+
+
+## `bug-021` — Question bank contained a non-trivia, tonally inappropriate entry ("Did you know John Lennon hit his wife?")
+- Found: 2026-09-15 · ticket 134 (found live-playing Cash Builder while verifying the Offer screen redesign; unrelated to that ticket's files) · `server/data/questions.json` (id 349, "music" category)
+- What you saw: the bank served "Did you know John Lennon hit his wife?" as a Cash Builder question, answer "Yes", with `alternatives: ["no"]` — not phrased as answerable trivia, tonally out of place for the game, and structurally broken besides (an "alternative accepted answer" of the literal opposite of the canonical answer makes no sense — this wasn't a real accepted-phrasing variant).
+- Expected: every bank entry is a legitimate, answerable trivia question with sane alternatives.
+- Repro steps: play Cash Builder repeatedly (questions draw randomly) until it surfaces, or grep `server/data/questions.json` for "Lennon".
+- Status: resolved — removed the entry (id 349) from `server/data/questions.json` and re-seeded `questions.db` (813 rows now), 2026-09-15. No test hardcoded the row count. `npm test` reconfirmed 334 passing after the reseed.

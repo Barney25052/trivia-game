@@ -2901,15 +2901,6 @@
       ]
     },
     {
-      "id": 349,
-      "category": "music",
-      "question": "Did you know John Lennon hit his wife?",
-      "answer": "Yes",
-      "alternatives": [
-        "no"
-      ]
-    },
-    {
       "id": 350,
       "category": "sport",
       "question": "In football, what is it called when the ball goes into the net from a corner kick without being touched?",
