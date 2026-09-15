@@ -227,7 +227,7 @@ describe("roomFlow", () => {
     assert.strictEqual(offer.offers.high, 2000);
     const chaserCharId = room.state.players.get(room.state.chaserSeatId).chaserCharacterId;
     assert.ok(
-      ["bezos", "big stan", "nami"].includes(chaserCharId),
+      ["bezos", "big stan", "nami", "maggie"].includes(chaserCharId),
       "the chaser picks a roster character during roles reveal"
     );
     assert.strictEqual(offer.chaserCharacterId, chaserCharId);
@@ -235,7 +235,12 @@ describe("roomFlow", () => {
       typeof offer.chaserCharacterName === "string" && offer.chaserCharacterName.length > 0,
       "offer message should carry the chaser character name"
     );
-    assert.strictEqual(offer.chaserCharacterAbility, "", "placeholder abilities are empty for now");
+    assert.ok(
+      typeof offer.chaserCharacterTagline === "string" && offer.chaserCharacterTagline.length > 0,
+      "offer message should carry the chaser character tagline"
+    );
+    assert.ok(Array.isArray(offer.chaserCharacterPassive), "offer message should carry the passive ability list");
+    assert.ok(Array.isArray(offer.chaserCharacterActive), "offer message should carry the active ability list");
     await waitForPhaseBroadcast(phases, GamePhase.RolesReveal, "rolesReveal phase broadcast to reach alice");
     await waitForPhaseBroadcast(phases, GamePhase.CashBuilder, "cashBuilder phase broadcast to reach alice");
     await waitForPhaseBroadcast(phases, GamePhase.Offer, "offer phase broadcast to reach alice");

@@ -97,7 +97,10 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           console.log(`Chaser character reveal — ${chaserChar?.name ?? chaserCharId} (${duration}ms)`);
           room.broadcast("chaserCharacterReveal", {
             chaserCharacterId: chaserCharId,
-            chaserCharacterName: chaserChar?.name ?? ""
+            chaserCharacterName: chaserChar?.name ?? "",
+            chaserCharacterTagline: chaserChar?.tagline ?? "",
+            chaserCharacterPassive: chaserChar?.passive ?? [],
+            chaserCharacterActive: chaserChar?.active ?? []
           });
           room.activeTimer = room.scheduleTimer(duration, () => {
             room.dispatch({ type: "chaserCharacterRevealComplete" });
@@ -153,7 +156,9 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
             low: room.currentOffer.low,
             chaserCharacterId: chaserCharId,
             chaserCharacterName: chaserChar?.name ?? "",
-            chaserCharacterAbility: chaserChar?.ability ?? "",
+            chaserCharacterTagline: chaserChar?.tagline ?? "",
+            chaserCharacterPassive: chaserChar?.passive ?? [],
+            chaserCharacterActive: chaserChar?.active ?? [],
             quip: pickOfferQuip("start")
           });
           break;
@@ -174,7 +179,9 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
             offers: room.currentOffer,
             chaserCharacterId: chaserCharId,
             chaserCharacterName: chaserChar?.name ?? "",
-            chaserCharacterAbility: chaserChar?.ability ?? "",
+            chaserCharacterTagline: chaserChar?.tagline ?? "",
+            chaserCharacterPassive: chaserChar?.passive ?? [],
+            chaserCharacterActive: chaserChar?.active ?? [],
             quip: pickOfferQuip("high")
           });
           // Reaction reveal (ticket 103), replacing OfferScreen.vue's former

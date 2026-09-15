@@ -22,5 +22,6 @@ export enum PlayerRole {
 export enum ChaserCharacter {
     Bezos = "bezos",
     BigStan = "big stan",
-    Nami = "nami"
+    Nami = "nami",
+    Maggie = "maggie"
 }

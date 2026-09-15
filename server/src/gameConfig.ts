@@ -81,11 +81,122 @@ export const OFFER_QUIPS = {
     ]
 } as const;
 
-export const CHASER_CHARACTERS = [
-    { id: "bezos", name: "Bezos", ability: "" },
-    { id: "big stan", name: "Big Stan", ability: "" },
-    { id: "nami", name: "Nami", ability: "" }
+/** Abilities every Chaser gets regardless of which character they pick
+ * (ticket 139) — not tied to any character's roster entry below. */
+export const SHARED_CHASER_ABILITIES = [
+    {
+        id: "fiftyFifty",
+        name: "50/50",
+        description: "Removes one wrong option from the current board-chase question — 4 uses a game."
+    },
+    {
+        id: "skip",
+        name: "Skip",
+        description: "Discards the Chaser's current final-round question with no penalty — 2 uses a game."
+    }
 ] as const;
+
+/** Chaser character roster (ticket 139): a tagline plus passive abilities
+ * (always on, nothing to trigger) and active abilities (the Chaser must
+ * deliberately activate them — ticket 140's useChaserAbility handler).
+ * Bezos intentionally has 0 active abilities — both his traits are
+ * automatic; this is a design decision (GOAL.md), not an oversight. */
+export const CHASER_CHARACTERS = [
+    {
+        id: "bezos",
+        name: "Bezos",
+        tagline: "Pays his way around the rules.",
+        passive: [
+            {
+                id: "noMiddle",
+                name: "No Middle",
+                description: "Every offer he sets skips the middle tier — only low or high."
+            },
+            {
+                id: "pushbackImmunity",
+                name: "Pushback Immunity",
+                description: "A successful team steal doesn't push him back — 3 times a game."
+            }
+        ],
+        active: []
+    },
+    {
+        id: "big stan",
+        name: "Big Stan",
+        tagline: "An aggressive gambler.",
+        passive: [
+            {
+                id: "timeBonus",
+                name: "Time Bonus",
+                description: "+0.5s on his final-round clock for every correct answer."
+            }
+        ],
+        active: [
+            {
+                id: "doubleTime",
+                name: "Double Time",
+                description: "His next correct chase answer moves him 2 spaces instead of 1 — a miss while it's armed costs him a space back. Once per contestant's chase."
+            }
+        ]
+    },
+    {
+        id: "nami",
+        name: "Nami",
+        tagline: "Just wants to go home.",
+        passive: [
+            {
+                id: "shortFuse",
+                name: "Short Fuse",
+                description: "The team's steal window is always 10s instead of 20s against her."
+            }
+        ],
+        active: [
+            {
+                id: "reRack",
+                name: "Re-rack",
+                description: "Redraws the current board-chase question. Once per contestant's chase."
+            }
+        ]
+    },
+    {
+        id: "maggie",
+        name: "Maggie",
+        tagline: "A career politician.",
+        passive: [
+            {
+                id: "silence",
+                name: "Silence",
+                description: "Whoever answered the team's last final-round question correctly can't answer the next one."
+            }
+        ],
+        active: [
+            {
+                id: "jumble",
+                name: "Jumble",
+                description: "Shuffles the answer-button order on the contestant's own screen for one board-chase question. Once per contestant's chase."
+            }
+        ]
+    }
+] as const;
+
+/** Fixed game-balance constants for the abilities above — not client-supplied
+ * room options, so (same precedent as CHASER_POT.initial/perRound) they need
+ * no min/max clamp pair.
+ *
+ * "Once per contestant's chase" = once per table round: exactly one
+ * contestant's own Cash Builder -> Offer -> Chase turn. Later tickets (140+)
+ * rely on this definition for when the usesPerTableRound counters reset —
+ * at that contestant's startChase. */
+export const CHASER_ABILITIES = {
+    fiftyFifty: { usesPerGame: 4 },
+    skip: { usesPerGame: 2 },
+    pushbackImmunity: { usesPerGame: 3 },
+    doubleTime: { usesPerTableRound: 1 },
+    reRack: { usesPerTableRound: 1 },
+    jumble: { usesPerTableRound: 1 },
+    timeBonusMs: 500,
+    shortFuseStealWindowMs: 10_000
+} as const;
 
 export const BOARD = {
     /** Spaces on the board are 1..spaces inclusive. */

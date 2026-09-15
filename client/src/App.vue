@@ -399,7 +399,9 @@ async function joinLobby(playerName, roomCode) {
         high: null,
         chaserCharacterId: message.chaserCharacterId,
         chaserCharacterName: message.chaserCharacterName,
-        chaserCharacterAbility: message.chaserCharacterAbility
+        chaserCharacterTagline: message.chaserCharacterTagline,
+        chaserCharacterPassive: message.chaserCharacterPassive,
+        chaserCharacterActive: message.chaserCharacterActive
       };
       showChaserQuip(message.quip);
     });
@@ -418,7 +420,9 @@ async function joinLobby(playerName, roomCode) {
         high: message.offers.high,
         chaserCharacterId: message.chaserCharacterId,
         chaserCharacterName: message.chaserCharacterName,
-        chaserCharacterAbility: message.chaserCharacterAbility
+        chaserCharacterTagline: message.chaserCharacterTagline,
+        chaserCharacterPassive: message.chaserCharacterPassive,
+        chaserCharacterActive: message.chaserCharacterActive
       };
       showChaserQuip(message.quip);
     });
