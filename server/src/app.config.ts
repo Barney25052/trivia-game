@@ -13,7 +13,7 @@ import path from "node:path";
  */
 import { TriviaRoom } from "./rooms/TriviaRoom.js";
 import { appendQuestion, validateNewQuestion } from "./questions/bankAdmin.js";
-import { checkBasicAuth, resolveAllowedOrigin } from "./httpSecurity.js";
+import { checkBasicAuth, resolveAllowedOrigin, installQuestionsPreflightGuard } from "./httpSecurity.js";
 
 const server = defineServer({
     /**
@@ -154,5 +154,22 @@ const server = defineServer({
     }
 
 });
+
+// Ticket 151 (bug-018): install the OPTIONS /api/questions preflight guard
+// (httpSecurity.ts) right after @colyseus/core registers its own permissive
+// "request" listener — which happens inside Server#listen() itself, so it
+// can't be done any earlier (see installQuestionsPreflightGuard's doc
+// comment for the full mechanism). Wrapping this instance's own .listen()
+// — rather than only hooking production's src/index.ts — means the guard
+// is also installed when @colyseus/testing's boot() calls .listen()
+// directly, as it does for every integration test in server/test/.
+const originalListen = server.listen.bind(server);
+server.listen = async (...args: Parameters<typeof server.listen>) => {
+    const result = await originalListen(...args);
+    if (server.transport.server) {
+        installQuestionsPreflightGuard(server.transport.server);
+    }
+    return result;
+};
 
 export default server;

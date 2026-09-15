@@ -1,4 +1,5 @@
 import assert from "assert";
+import http from "node:http";
 import { ColyseusTestServer } from "@colyseus/testing";
 import appConfig from "../src/app.config.js";
 import { checkBasicAuth, resolveAllowedOrigin } from "../src/httpSecurity.js";
@@ -209,5 +210,116 @@ describe("POST /api/questions CORS origin (production gate, ticket 131)", () => 
       assert.strictEqual(err.headers["access-control-allow-origin"], undefined);
       return true;
     });
+  });
+});
+
+describe("OPTIONS /api/questions preflight CORS origin (ticket 151, bug-018)", () => {
+  // Integration-level on purpose: the bug was @colyseus/core's own
+  // server.prependListener("request", ...) (installed inside
+  // Server#listen(), see httpSecurity.ts's installQuestionsPreflightGuard
+  // doc comment) answering every OPTIONS request before Express — and this
+  // app's CORS logic — ever ran. That's HTTP/listener-ordering behavior a
+  // real booted server exhibits; the pure allowCrossOrigin/resolveAllowedOrigin
+  // unit tests above never touch it, so they couldn't have caught this. We
+  // therefore send a real OPTIONS request (Node's http client, not
+  // ColyseusTestServer.http, which has no .options()) against the actual
+  // listening port.
+  let server: ColyseusTestServer<typeof appConfig>;
+  let savedEnv: Record<string, string | undefined>;
+  let baseUrl: string;
+
+  before(async () => {
+    server = await getTestServer();
+    const httpServer = server.server.transport.server;
+    assert.ok(httpServer, "expected the Colyseus Server to be backed by a raw http.Server");
+    const address = httpServer!.address();
+    assert.ok(
+      address !== null && typeof address === "object",
+      "expected the http.Server to be listening on a TCP port"
+    );
+    baseUrl = `http://127.0.0.1:${(address as { port: number }).port}`;
+  });
+
+  beforeEach(() => {
+    savedEnv = {
+      NODE_ENV: process.env.NODE_ENV,
+      CLIENT_ORIGIN: process.env.CLIENT_ORIGIN
+    };
+  });
+
+  afterEach(() => {
+    for (const key of Object.keys(savedEnv)) {
+      const value = savedEnv[key];
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  });
+
+  function preflight(path: string, origin: string): Promise<{ statusCode: number; headers: http.IncomingHttpHeaders }> {
+    return new Promise((resolve, reject) => {
+      const req = http.request(
+        `${baseUrl}${path}`,
+        {
+          method: "OPTIONS",
+          headers: {
+            "Origin": origin,
+            "Access-Control-Request-Method": "POST"
+          }
+        },
+        (res) => {
+          res.resume();
+          res.on("end", () => resolve({ statusCode: res.statusCode ?? 0, headers: res.headers }));
+        }
+      );
+      req.on("error", reject);
+      req.end();
+    });
+  }
+
+  // The regression test for the bypass itself: before ticket 151's fix,
+  // Colyseus's own listener answered this before app.config.ts's CORS logic
+  // ever ran, reflecting the attacker's own Origin straight back.
+  it("production, disallowed origin: does not reflect the origin or '*'", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.CLIENT_ORIGIN = "https://trivia.example.com";
+    const res = await preflight("/api/questions", "https://evil.example.com");
+    assert.notStrictEqual(res.headers["access-control-allow-origin"], "https://evil.example.com");
+    assert.notStrictEqual(res.headers["access-control-allow-origin"], "*");
+  });
+
+  it("production, allowed origin: reflects the configured CLIENT_ORIGIN", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.CLIENT_ORIGIN = "https://trivia.example.com";
+    const res = await preflight("/api/questions", "https://trivia.example.com");
+    assert.strictEqual(res.statusCode, 204);
+    assert.strictEqual(res.headers["access-control-allow-origin"], "https://trivia.example.com");
+  });
+
+  it("production without CLIENT_ORIGIN configured: header is omitted entirely", async () => {
+    process.env.NODE_ENV = "production";
+    delete process.env.CLIENT_ORIGIN;
+    const res = await preflight("/api/questions", "https://evil.example.com");
+    assert.strictEqual(res.headers["access-control-allow-origin"], undefined);
+  });
+
+  it("dev (NODE_ENV unset): Access-Control-Allow-Origin is '*' (unchanged from before ticket 151)", async () => {
+    delete process.env.NODE_ENV;
+    const res = await preflight("/api/questions", "https://anything.example.com");
+    assert.strictEqual(res.statusCode, 204);
+    assert.strictEqual(res.headers["access-control-allow-origin"], "*");
+  });
+
+  // Scope check: /monitor's own OPTIONS/CORS handling must stay exactly the
+  // pre-existing Colyseus-core default (reflects Origin unconditionally) —
+  // this ticket only scopes the fix to /api/questions. /monitor's real
+  // (non-OPTIONS) requests remain gated by requireMonitorAuth regardless.
+  it("does not change OPTIONS /monitor's own (Colyseus-default) CORS behavior", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.CLIENT_ORIGIN = "https://trivia.example.com";
+    const res = await preflight("/monitor", "https://evil.example.com");
+    assert.strictEqual(res.headers["access-control-allow-origin"], "https://evil.example.com");
   });
 });
