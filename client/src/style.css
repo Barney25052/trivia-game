@@ -239,6 +239,56 @@ input {
   max-width: 500px;
   margin: 40px auto;
 }
+
+/* Ticket 133: name entry moves off the legacy plain-pill `input` rule above
+   onto the same chunky ink-bordered field chrome as the open-question-box
+   family's .oq-input/Cash Builder's .cashBuilderInput (hard-offset shadow,
+   3px --btn-ink border, 10px radius) instead of the old 25px-radius white
+   pill — this is the last screen still using that pre-115 input look. */
+.homeNameInput,
+.homeRoomInput {
+  display: block;
+  width: 100%;
+  max-width: 350px;
+  height: auto;
+  box-sizing: border-box;
+  margin: 14px auto;
+  padding: 16px 20px;
+  border-radius: 10px;
+  border: 3px solid var(--btn-ink);
+  background-color: var(--color-white);
+  color: var(--color-text-dark);
+  appearance: none;
+  text-align: center;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-style: normal;
+  font-size: 18px;
+  box-shadow: 4px 4px 0 rgba(var(--color-black-rgb), 0.3);
+}
+
+/* Room code gets the same pixel/HUD treatment (VT323, wide letter-spacing,
+   uppercase) as the read-only room-code badge on LobbyScreen.vue's
+   .ticket-badge .code (ticket 119) — Home is where that same code gets
+   typed in, so it should read as the same "kind of thing" on entry as it
+   does on display, even though this is a real editable field rather than
+   the badge's notched-ticket shape. */
+.homeRoomInput {
+  font-family: var(--font-pixel);
+  font-size: 26px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.homeNameInput::placeholder,
+.homeRoomInput::placeholder {
+  font-family: var(--font-body);
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: #8494a2;
+}
+
 /* Ticket 127: was max-width:500px — this base class's own consumers
    (ChaserSelectionScreen, ResultsScreen, CashBuilderScreen, OfferScreen) all
    left most of the screen as unused page background on any normal desktop
@@ -2245,26 +2295,36 @@ h1, h2, h3, h4 {
 
 /* Add-question screen (ticket 092) — a quiet home-page entry point into
    091's add-question endpoint; reuses the home/homeInputs/joinButton look,
-   these are the only new rules it needed. */
+   these are the only new rules it needed.
+   Ticket 133: given a thin bordered-chip chrome (same --btn-ink-on-white
+   language as the button family, just lighter — no fill, no hard-offset
+   shadow, half the border weight) instead of the old bare underlined text,
+   so it reads as a real tappable control on this now-chunky screen without
+   competing with the primary Join/Create .btn-primary/.btn-outline pair. */
 .addQuestionsLink {
   display: block;
   width: fit-content;
   height: auto;
-  margin: 15px auto 0;
-  padding: 6px 10px;
+  margin: 18px auto 0;
+  padding: 8px 16px;
   background: transparent;
-  border: none;
+  border: 2px solid rgba(var(--color-white-rgb), 0.5);
+  border-radius: 8px;
   box-shadow: none;
   color: var(--color-white);
-  font-size: 16px;
-  font-weight: 400;
-  text-decoration: underline;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
   opacity: 0.85;
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.12s ease, border-color 0.12s ease;
 }
 
 .addQuestionsLink:hover {
   opacity: 1;
-  transform: none;
+  border-color: var(--color-white);
+  transform: translateY(-1px);
   box-shadow: none;
 }
 

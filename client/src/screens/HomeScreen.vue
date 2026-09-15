@@ -44,8 +44,8 @@ function handleAddQuestions() {
   <div class="home">
       <div class="rotate"><img :src="logo" class = "logo"></img></div>
       <div class="homeInputs">
-        <input v-model="playerName" placeholder="Your name" :class = "{ 'input-error': nameEmptyError}" @animationend="nameEmptyError=false"/>
-        <input v-model="roomCode" placeholder="Room Code" :class = "{ 'input-error': codeEmptyError}" @animationend="codeEmptyError=false"/>
+        <input v-model="playerName" placeholder="Your name" class="homeNameInput" :class = "{ 'input-error': nameEmptyError}" @animationend="nameEmptyError=false"/>
+        <input v-model="roomCode" placeholder="Room Code" class="homeRoomInput" :class = "{ 'input-error': codeEmptyError}" @animationend="codeEmptyError=false"/>
         <div class="homeButtonHolder">
           <button @click="handleJoin" class="btn btn-primary joinButton">Join Lobby</button>
           <button @click="handleCreate" class="btn btn-outline createButton">Create Lobby</button>
