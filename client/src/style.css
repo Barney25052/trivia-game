@@ -522,10 +522,12 @@ h1, h2, h3, h4 {
   margin-top: 40px;
 }
 
-/* Prefixed lobbyCharacter* (not the shorter character*) to avoid colliding
-   with RolesRevealScreen's pre-existing .characterPicker/.characterPickerLabel
-   (the unrelated Chaser-portrait picker) — the two are separate features that
-   happen to want similar names. */
+/* Prefixed lobbyCharacter* (not the shorter character*) — originally chosen
+   to avoid colliding with RolesRevealScreen's own character-picker classes.
+   Ticket 150 replaced that screen's picker with .p5-*-prefixed classes, but
+   the lobbyCharacter* prefix stays: this is still a separate feature (the
+   Lobby's own-character customiser vs. the Chaser roster picker) that
+   happens to want similar names. */
 .lobbyCharacterPicker {
   display: flex;
   flex-direction: column;
@@ -821,39 +823,17 @@ h1, h2, h3, h4 {
   margin: 0;
 }
 
+/* .chaserSilhouette/.sil (below) are still used — ticket 150 kept them for
+   the "everyone else, still waiting" mystery-bust view (the v-else branch),
+   just wrapped in the new .p5-mystery-frame reskin. The old
+   .characterOptions/.chaserImage rules that styled the Chaser's own picker
+   are gone, superseded by the .p5-* roster below. */
 .chaserSilhouette {
   width: 120px;
   height: 170px;
   margin: auto;
   display: block;
 }
-.characterOptions {
-  padding-top: 50px;
-  -webkit-mask-image: linear-gradient(to bottom, var(--color-black) 88%, transparent 90%);
-  mask-image: linear-gradient(to bottom, var(--color-black) 88%, transparent 90%);
-}
-
-
-.chaserImage {
-  width: auto;
-  height: 256px;
-  margin: 10px 0;
-  -ms-interpolation-mode: nearest-neighbor;
-  /* Firefox */
-  image-rendering: crisp-edges;
-  /* Chromium + Safari */
-  image-rendering: pixelated;
-  margin: auto;
-  margin-bottom: 20px;
-  filter: grayscale(100%) brightness(0%) ;
-  transition: filter 0.3s ease-in-out, transform 0.3s ease-in-out;
-}
-
-.chaserImage:hover {
-    filter: grayscale(0%) brightness(100%) ;
-    transform: scale(1.08);
-}
-
 
 /* Ticket 125: --chaser-red-dark, not --chaser-silhouette — the latter was
    tuned for the old .revealTop gradient's own dark-red end and reads as
@@ -862,6 +842,374 @@ h1, h2, h3, h4 {
    same "Chaser" accent red already used for text on this ground/context. */
 .chaserSilhouette .sil {
   fill: var(--chaser-red-dark);
+}
+
+/* Ticket 150: the angular reskin for the mystery-bust view — a diagonal-cut
+   panel behind the existing .chaserSilhouette/.revealChaserName/
+   .revealReadyTick content, matching the Persona 5 roster's own card-plate
+   language below. Real content stays a plain sibling of the clipped ::before
+   plate (same bg/content split reasoning as .p5-card-bg/.p5-card-content)
+   rather than a descendant of it, so nothing here ever risks being cut off
+   by the angled edge. */
+.p5-mystery-frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 36px 60px;
+}
+
+.p5-mystery-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, var(--ink-raised), var(--ink-chase));
+  border: 3px solid var(--chaser-red-dark);
+  clip-path: polygon(6% 0%, 100% 0%, 94% 100%, 0% 100%);
+  z-index: 0;
+}
+
+.p5-mystery-frame > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   Ticket 150: "Choose your Chaser" roster — Persona 5 style.
+   Class names follow the agreed mockup (Big Baws Style Guide, section 17)
+   1:1, prefixed .p5- per that ticket's own naming, rather than renamed to
+   this project's usual camelCase — same precedent as ticket 115's .moneyPlaque
+   family (see tickets/README.md's ticket-115 footnote).
+
+   .p5-card-bg (the clipped diagonal plate) and .p5-card-content (portrait/
+   name/tagline/ability chips) are siblings, not ancestor/descendant: a
+   clip-path on an ancestor clips its own painted descendants exactly like
+   overflow:hidden would, so the ability chips' hover tooltips would get cut
+   off at the card's angled edge if they lived inside the clipped element.
+   Keeping them as siblings means .p5-card-content (and its tooltips) is
+   never clipped by .p5-card-bg's diagonal cut.
+   ============================================================ */
+
+.p5-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.p5-title-block {
+  position: relative;
+  margin: 0 0 10px;
+  padding: 16px 54px;
+}
+
+.p5-title-block::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, var(--chaser-red-glow), var(--chaser-red-dark) 60%, var(--chaser-silhouette));
+  clip-path: polygon(4% 0%, 100% 0%, 96% 100%, 0% 100%);
+  border: 3px solid var(--btn-ink);
+  filter: drop-shadow(4px 4px 0 rgba(var(--color-black-rgb), 0.4));
+  z-index: 0;
+}
+
+.p5-title {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: normal;
+  font-size: 34px;
+  color: var(--color-white);
+  text-align: center;
+  /* Ticket 150: hard offset shadow, not -webkit-text-stroke — the mockup
+     dropped the bubble-letter outline in favour of this flatter look, same
+     rule as .wrong-label/.steal-success-label elsewhere in this file. */
+  text-shadow: 3px 3px 0 var(--btn-ink);
+}
+
+.p5-roster-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 46px 20px 10px;
+}
+
+/* Fan-tilt: each card sits at a slight alternating angle like a hand of
+   cards, and squares up + lifts on hover/focus so the hovered card reads as
+   the active choice. Needs its own stacking context (position + z-index)
+   so the lifted card visually overlaps its untilted neighbours instead of
+   being tucked behind them by DOM order. */
+.p5-card-tilt {
+  position: relative;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.p5-card-tilt:nth-child(1) { transform: rotate(-6deg) translateY(8px); }
+.p5-card-tilt:nth-child(2) { transform: rotate(-2deg); }
+.p5-card-tilt:nth-child(3) { transform: rotate(2deg); }
+.p5-card-tilt:nth-child(4) { transform: rotate(6deg) translateY(8px); }
+
+.p5-card-tilt:hover {
+  transform: rotate(0deg) translateY(-16px);
+  z-index: 5;
+}
+
+.p5-card {
+  position: relative;
+  width: 200px;
+  min-height: 320px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: center;
+}
+
+.p5-card:disabled {
+  cursor: default;
+}
+
+/* Non-picked cards fade back once a pick is made and the ready round-trip
+   is pending — mirrors the old .chaserImage picker's :disabled dimming so a
+   double-click can't fire a second select while the server ack is in flight. */
+.p5-card:disabled:not(.p5-card-selected) {
+  opacity: 0.35;
+  filter: grayscale(70%);
+}
+
+.p5-card-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(165deg, var(--chaser-red-glow), var(--chaser-red-dark) 60%, var(--chaser-silhouette));
+  clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+  border: 3px solid var(--btn-ink);
+  /* drop-shadow (not box-shadow) so the hard-offset shadow actually follows
+     the diagonal clip-path cut instead of the element's plain rectangular
+     box — box-shadow ignores clip-path entirely. */
+  filter: drop-shadow(5px 5px 0 rgba(var(--color-black-rgb), 0.45));
+  transition: filter 0.2s ease;
+  z-index: 0;
+}
+
+.p5-card:hover .p5-card-bg,
+.p5-card:focus-visible .p5-card-bg {
+  filter: drop-shadow(7px 7px 0 rgba(var(--color-black-rgb), 0.45));
+}
+
+.p5-card-selected .p5-card-bg {
+  filter: drop-shadow(5px 5px 0 var(--color-gold));
+}
+
+.p5-card-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  padding: 20px 14px 16px;
+  box-sizing: border-box;
+}
+
+.p5-card-portrait-wrap {
+  position: relative;
+  width: 140px;
+  height: 170px;
+  margin: 0 auto 8px;
+}
+
+.p5-card-portrait-base,
+.p5-card-portrait-cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* The slash-reveal: .p5-card-portrait-cover paints a black silhouette
+   (image) or dim-fill bust (Maggie's SVG) directly over the base layer, at
+   rest fully covering it. Hovering/focusing the card animates its clip-path
+   from a straight rectangle to an oversized diagonal parallelogram slid off
+   to the side — since clip-path interpolates point-by-point, the shape's
+   edges sweep across at an angle mid-transition instead of the old picker's
+   plain opacity fade. */
+.p5-card-portrait-cover {
+  clip-path: polygon(-50% -50%, 150% -50%, 150% 150%, -50% 150%);
+  transition: clip-path 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* End state: every vertex sits at x >= 100%, so the cover is fully clear of
+   the box (not just mostly) — the top/bottom edges travel different
+   distances (+230% vs +170%), which is what makes the shape shear into a
+   diagonal blade mid-transition instead of sliding off as a plain rectangle. */
+.p5-card:hover .p5-card-portrait-cover,
+.p5-card:focus-visible .p5-card-portrait-cover {
+  clip-path: polygon(180% -50%, 380% -50%, 320% 150%, 120% 150%);
+}
+
+.p5-card-portrait {
+  width: auto;
+  height: 100%;
+  -ms-interpolation-mode: nearest-neighbor;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+.p5-card-portrait-silhouette {
+  filter: grayscale(100%) brightness(0%);
+}
+
+.p5-card-silhouette {
+  width: 100px;
+  height: 140px;
+}
+
+/* Maggie has no portrait art yet (HUMAN_TASKS.md's maggie-icon.png row is
+   still `todo`) — her card renders this SVG bust permanently instead of an
+   <img>, using the same base/cover two-layer structure (and the same slash
+   transition above) as every other card so her hover/select behaviour is
+   identical, not a degraded placeholder. */
+.p5-card-silhouette-base .sil {
+  fill: var(--chaser-red-glow);
+}
+
+.p5-card-silhouette-cover .sil {
+  fill: var(--chaser-silhouette);
+}
+
+.p5-card-name {
+  margin: 4px 0 2px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: normal;
+  font-size: 22px;
+  color: var(--color-white);
+  text-shadow: 2px 2px 0 var(--btn-ink);
+  text-align: center;
+}
+
+.p5-card-tagline {
+  margin: 0 0 10px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--text-soft);
+  text-align: center;
+  min-height: 28px;
+}
+
+.p5-card-abilities {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: auto;
+}
+
+/* Ability chips: passive (always-on traits) vs active (must be triggered,
+   ticket 140) get distinct colours so the roster reads at a glance which is
+   which, matching the gold "opportunity"/blue "info" colour roles used
+   elsewhere in this file. fiftyFifty/skip are deliberately not chips here —
+   see the chaserAbilities.ts header comment. */
+.p5-ability-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 2px solid var(--btn-ink);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-style: normal;
+  font-size: 12px;
+  cursor: default;
+}
+
+.p5-ability-chip-passive {
+  background: var(--contestant-blue-glow);
+  color: var(--btn-ink);
+}
+
+.p5-ability-chip-active {
+  background: var(--color-gold);
+  color: var(--btn-ink);
+}
+
+/* Styled hover tooltip via data-tip + content: attr() — not the browser's
+   native title tooltip (per the mockup's second round of feedback). ::before
+   is the tip bubble, ::after is its little pointer arrow. Both are
+   positioned relative to the chip itself, which is safe from the card's
+   diagonal clip-path precisely because .p5-card-content (this chip's
+   ancestor) is never the clipped element — see the header comment above. */
+.p5-ability-chip::before,
+.p5-ability-chip::after {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 20;
+}
+
+.p5-ability-chip::before {
+  content: attr(data-tip);
+  width: max-content;
+  max-width: 180px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--ink-chase);
+  border: 2px solid var(--btn-ink);
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+  box-shadow: 3px 3px 0 rgba(var(--color-black-rgb), 0.4);
+}
+
+.p5-ability-chip::after {
+  content: "";
+  bottom: calc(100% + 2px);
+  border: 6px solid transparent;
+  border-top-color: var(--btn-ink);
+}
+
+.p5-ability-chip:hover::before,
+.p5-ability-chip:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.p5-confirm-banner {
+  margin: 22px 0 0;
+  padding: 14px 30px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--contestant-blue-glow), var(--gradient-page-end));
+  border: 3px solid var(--btn-ink);
+  color: var(--btn-ink);
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: normal;
+  font-size: 24px;
+  text-align: center;
+  box-shadow: 4px 4px 0 rgba(var(--color-black-rgb), 0.4);
+  /* Reused verbatim, not reinvented — this is exactly the "future large-text
+     reveal moment" the reveal-text-pop keyframes' own doc comment invites. */
+  animation: reveal-text-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .revealChaserName {
