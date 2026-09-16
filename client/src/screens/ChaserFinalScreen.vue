@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import ChaserPanel from "../components/ChaserPanel.vue";
 import CharacterFace from "../components/CharacterFace.vue";
+import { CHASER_NAMES } from "../chaserPortraits.ts";
 
 const props = defineProps({
     teamScore: { type: Number, default: 0 },
@@ -31,12 +32,25 @@ const props = defineProps({
     // ChaserPanel — see App.vue for where these come from.
     abilityCounters: { type: Object, default: () => ({}) },
     abilityCueText: { type: String, default: "" },
-    abilityCueKey: { type: Number, default: 0 }
+    abilityCueKey: { type: Number, default: 0 },
+    // Ticket 148: bumped by App.vue whenever the Chaser fires Skip — gives
+    // the question box its own "just changed, no consequence" pulse on top
+    // of the generic ability-cue toast ChaserPanel already renders.
+    skipPulseKey: { type: Number, default: 0 },
+    // Ticket 148: bumped by App.vue whenever a chaser-final clock sync is
+    // inferred to be Big Stan's Time Bonus extending the running clock (see
+    // App.vue's onStateChange comment) — drives a brief tick/pulse on the
+    // "TIME LEFT" number below instead of a new animation language.
+    chaserFinalTimeBonusKey: { type: Number, default: 0 }
 });
 const emit = defineEmits(["submit-final-chaser-answer", "submit-final-steal-answer", "auto-quip", "send-quip", "use-ability"]);
 
 const isChaser = computed(() => props.mySeatId !== "" && props.mySeatId === props.chaserSeatId);
 const teamPlayers = computed(() => props.players.filter((p) => p.seatId !== props.chaserSeatId));
+// Ticket 148: Bezos's Pushback Immunity outcome line names the character
+// rather than saying "the Chaser", so a spectator watching cold still learns
+// whose passive just fired.
+const chaserDisplayName = computed(() => CHASER_NAMES[props.chaserCharacterId] || "The Chaser");
 
 // The displayed "Time left" is derived straight from the server's real
 // running/paused clock (ticket 105) instead of a client-only setInterval
@@ -72,6 +86,39 @@ watch(
     { immediate: true }
 );
 
+// Ticket 148 (Big Stan's Time Bonus): a brief tick/pulse on the clock number
+// itself — App.vue bumps chaserFinalTimeBonusKey once per inferred
+// extension; this just holds the pulse class on for one animation's worth of
+// time then clears it, the same one-shot-key-to-timed-flag shape as the
+// answer bubbles above.
+const TIME_BONUS_PULSE_MS = 700;
+const timeBonusPulseActive = ref(false);
+let timeBonusPulseTimeout = null;
+watch(() => props.chaserFinalTimeBonusKey, (key) => {
+    if (key === 0) return;
+    timeBonusPulseActive.value = true;
+    if (timeBonusPulseTimeout) clearTimeout(timeBonusPulseTimeout);
+    timeBonusPulseTimeout = setTimeout(() => {
+        timeBonusPulseActive.value = false;
+    }, TIME_BONUS_PULSE_MS);
+});
+
+// Ticket 148 (Skip): a short pulse on the open question box so "the question
+// just changed" reads as a deliberate, consequence-free beat rather than a
+// silent swap — on top of, not instead of, ChaserPanel's own generic
+// "Chaser used Skip!" toast (abilityCueText/Key, unchanged here).
+const SKIP_PULSE_MS = 650;
+const skipPulseActive = ref(false);
+let skipPulseTimeout = null;
+watch(() => props.skipPulseKey, (key) => {
+    if (key === 0) return;
+    skipPulseActive.value = true;
+    if (skipPulseTimeout) clearTimeout(skipPulseTimeout);
+    skipPulseTimeout = setTimeout(() => {
+        skipPulseActive.value = false;
+    }, SKIP_PULSE_MS);
+});
+
 const secondsLeft = computed(() => {
     if (!props.chaserFinalClockRunning) {
         return Math.max(0, Math.ceil(props.chaserFinalRemainingMs / 1000));
@@ -97,6 +144,8 @@ onUnmounted(() => {
     if (closeTimeout) clearTimeout(closeTimeout);
     if (answerBubbleTimeout) clearTimeout(answerBubbleTimeout);
     if (stealAnswerBubbleTimeout) clearTimeout(stealAnswerBubbleTimeout);
+    if (timeBonusPulseTimeout) clearTimeout(timeBonusPulseTimeout);
+    if (skipPulseTimeout) clearTimeout(skipPulseTimeout);
 });
 
 // The target row always spans the full width, one box per point the team
@@ -347,10 +396,20 @@ watch(() => props.finalStealResolved, (result) => {
     stealLocked.value = true;
     stealOutcomeCorrect.value = result.correct;
     if (result.correct) {
-        stealOutcomeLabel.value = result.pushedBack ? "Stolen!" : "Correct!";
-        stealOutcomeBody.value = result.pushedBack
-            ? "The Chaser is pushed back."
-            : "The Chaser was already at zero — the target goes up.";
+        // Ticket 148: a blocked push-back (Bezos's Pushback Immunity, ticket
+        // 142) still reuses the same green success panel as a normal steal —
+        // it IS a correct answer, it just didn't move the target — but gets
+        // its own label/line so the team reads "we got it right, he just
+        // didn't budge" instead of mistaking the frozen target for a miss.
+        if (result.pushbackBlocked) {
+            stealOutcomeLabel.value = "Blocked!";
+            stealOutcomeBody.value = `Correct — but ${chaserDisplayName.value} doesn't budge.`;
+        } else {
+            stealOutcomeLabel.value = result.pushedBack ? "Stolen!" : "Correct!";
+            stealOutcomeBody.value = result.pushedBack
+                ? "The Chaser is pushed back."
+                : "The Chaser was already at zero — the target goes up.";
+        }
     } else {
         stealOutcomeLabel.value = "✗ WRONG!";
         stealCorrectAnswer.value = result.correctAnswer;
@@ -433,7 +492,7 @@ const chaserFinalStageClass = computed(() => (stealActive.value ? "chaserFinalSt
     </div>
 
     <div class="cf-hud">
-      <span>TIME LEFT <b>{{ secondsLeft }}s</b></span>
+      <span>TIME LEFT <b :class="{ 'cf-hud-time-tick': timeBonusPulseActive }">{{ secondsLeft }}s</b></span>
       <span>CHASER <b>{{ chaserScore }}</b> — TARGET <b>{{ teamScore }}</b></span>
     </div>
 
@@ -498,7 +557,11 @@ const chaserFinalStageClass = computed(() => (stealActive.value ? "chaserFinalSt
 
       <template v-else-if="isChaser">
         <template v-if="finalQuestion">
-          <div v-if="!chaserWaitingForSteal" class="open-question-box accent-red">
+          <div
+              v-if="!chaserWaitingForSteal"
+              class="open-question-box accent-red"
+              :class="{ 'open-question-box-skip-pulse': skipPulseActive }"
+          >
             <span class="oq-eyebrow">Your answer</span>
             <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
             <div class="oq-row">
@@ -525,7 +588,11 @@ const chaserFinalStageClass = computed(() => (stealActive.value ? "chaserFinalSt
            see the same finalQuestion.prompt the Chaser is working from,
            instead of a blank "is answering" placeholder. -->
       <template v-else>
-        <div v-if="finalQuestion" class="open-question-box">
+        <div
+            v-if="finalQuestion"
+            class="open-question-box"
+            :class="{ 'open-question-box-skip-pulse': skipPulseActive }"
+        >
           <span class="oq-eyebrow accent-neutral">Watching</span>
           <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
           <p class="oq-thinking">The Chaser is answering<span class="oq-dots"><i></i><i></i><i></i></span></p>

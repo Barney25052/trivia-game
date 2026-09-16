@@ -13,7 +13,14 @@ const props = defineProps({
     answerResult: { type: Object, default: null },
     // Per-seat face reaction store (ticket 103): seatId -> expression, see
     // App.vue's reactionsBySeat.
-    reactions: { type: Object, default: () => ({}) }
+    reactions: { type: Object, default: () => ({}) },
+    // Ticket 148 (Maggie's Silence, ticket 144's SILENCED error): App.vue
+    // only ever forwards this from a `client.send` targeted at the rejected
+    // client, so any value here is always about *this* client's own buzz —
+    // no seatId to check. silencedKey is a one-shot bump, same pattern as
+    // the ability-cue/bubble timers elsewhere.
+    silencedMessage: { type: String, default: "" },
+    silencedKey: { type: Number, default: 0 }
 });
 const emit = defineEmits(["buzz-in", "submit-final-answer"]);
 
@@ -37,6 +44,7 @@ onUnmounted(() => {
     document.removeEventListener("keydown", handleSpace);
     clearBubble();
     if (screenFlashTimeout) clearTimeout(screenFlashTimeout);
+    if (silencedTimeout) clearTimeout(silencedTimeout);
 });
 
 const isChaser = computed(() => props.mySeatId !== "" && props.mySeatId === props.chaserSeatId);
@@ -89,6 +97,23 @@ function clearBubble() {
     }
     bubbleText.value = "";
 }
+
+// Ticket 148 (Maggie's Silence): a shake + the server's own rejection
+// message on the buzzer, rather than a silent no-op — this is a real game
+// rule (only the previous question's scorer is locked out), not a bug, so it
+// needs to visibly explain itself. Same one-shot-key-to-timed-flag shape as
+// the answer bubbles above.
+const SILENCED_DISPLAY_MS = 2200;
+const silencedActive = ref(false);
+let silencedTimeout = null;
+watch(() => props.silencedKey, (key) => {
+    if (key === 0) return;
+    silencedActive.value = true;
+    if (silencedTimeout) clearTimeout(silencedTimeout);
+    silencedTimeout = setTimeout(() => {
+        silencedActive.value = false;
+    }, SILENCED_DISPLAY_MS);
+});
 
 const buzzOpen = computed(
     () => props.finalQuestion !== null && props.finalBuzzSeatId === "" && !revealedCorrectAnswer.value
@@ -202,7 +227,14 @@ watch(isBuzzWinner, (winner) => {
         </div>
         <div v-else-if="finalBuzzSeatId === ''" class="teamFinalQuestionBlock">
           <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
-          <button class="buzzer-btn" @click="buzz">BUZZ IN</button>
+          <button
+              class="buzzer-btn"
+              :class="{ 'buzzer-btn-silenced': silencedActive }"
+              @click="buzz"
+          >BUZZ IN</button>
+          <Transition name="chaser-bubble-pop">
+            <p v-if="silencedActive" class="buzzer-silenced-msg">{{ silencedMessage }}</p>
+          </Transition>
         </div>
         <div v-else class="open-question-box">
           <span class="oq-eyebrow accent-neutral">{{ buzzWinnerName }} is answering</span>

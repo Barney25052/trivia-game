@@ -2591,6 +2591,24 @@ h1, h2, h3, h4 {
 .teamFinalQuestionBlock .oq-prompt { color: var(--color-white); }
 .teamFinalQuestionBlock .buzzer-btn { margin: 14px auto 0; }
 
+/* Ticket 148 (Maggie's Silence): a rejected buzz-in shakes the button itself
+   (reuses .cashBuilderInput-wrong's own shake keyframes — same "this input
+   just got refused" language, not a new one) and rings it red instead of
+   silently doing nothing, since an unexplained no-op reads as a bug rather
+   than the real game rule it is. */
+.buzzer-btn-silenced {
+  animation: cash-builder-input-shake 0.4s ease-in-out;
+  box-shadow: 0 10px 0 var(--gradient-page-end), 0 0 18px rgba(var(--color-danger-strong-rgb), 0.8);
+}
+
+.buzzer-silenced-msg {
+  margin: 10px 0 0;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--chaser-red-glow);
+}
+
 .teamFinalTable {
   position: relative;
   margin-top: 70px;
@@ -3251,6 +3269,22 @@ h1, h2, h3, h4 {
    reveal state, the first screen to show a correct-answer state on this
    component. */
 .open-question-box.accent-green { border-color: var(--success-green); }
+
+/* Ticket 148 (Skip): the question box just swapped with no scoring
+   consequence at all — no correct, no wrong, no steal window — so it gets a
+   one-shot gold glow (same token/spirit as .doubleTimeArmedBadge's pulse)
+   instead of silently changing underneath the player, on top of ChaserPanel's
+   own generic "Chaser used Skip!" toast. Plays on whichever accent border is
+   already active (accent-red for the Chaser's own box, none for the team's
+   "Watching" box) rather than overriding it. */
+.open-question-box-skip-pulse {
+  animation: skip-pulse 0.65s ease-out;
+}
+@keyframes skip-pulse {
+  0%   { box-shadow: none; }
+  35%  { box-shadow: 0 0 22px rgba(var(--color-gold-rgb), 0.9); }
+  100% { box-shadow: none; }
+}
 
 .oq-eyebrow {
   display: block;
@@ -3962,6 +3996,21 @@ h1, h2, h3, h4 {
   font-variant-numeric: tabular-nums;
 }
 
+/* Ticket 148 (Big Stan's Time Bonus): a brief scale/colour tick on the "TIME
+   LEFT" number itself when +0.5s lands — same tick-up spirit as the money
+   plaque's .plaque-wipe (a quick highlight on a number that just moved) but
+   scoped to this one inline number rather than a full plaque sweep. Applied
+   only to the "TIME LEFT" <b>, never the CHASER/TARGET score pair. */
+.cf-hud-time-tick {
+  display: inline-block;
+  animation: cf-hud-time-tick 0.7s ease-out;
+}
+@keyframes cf-hud-time-tick {
+  0%   { color: var(--color-gold); transform: scale(1); }
+  35%  { color: var(--success-green); transform: scale(1.3); }
+  100% { color: var(--color-gold); transform: scale(1); }
+}
+
 /* Shared wrong/success outcome cards — one dark raised card, re-accented red
    (wrong) or green (a steal succeeded — never gold: gold means "opportunity
    live", green means "correct", per 115's colour rule). Used here for both
@@ -4005,7 +4054,10 @@ h1, h2, h3, h4 {
   .teamFinalPlayer.buzzing .head,
   .teamFinalPlayer.buzzing .eyes,
   .team-final-target-bar-enter-active,
-  .teamFinalTableSlab {
+  .teamFinalTableSlab,
+  .open-question-box-skip-pulse,
+  .cf-hud-time-tick,
+  .buzzer-btn-silenced {
     animation: none !important;
     transition: none !important;
   }

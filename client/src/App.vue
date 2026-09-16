@@ -107,6 +107,30 @@ const abilityCueText = ref("");
 const abilityCueKey = ref(0);
 let abilityCueTimeout = null;
 const ABILITY_CUE_DISPLAY_MS = 4000;
+// Ticket 148: a Skip-specific pulse key, bumped alongside the generic
+// ability cue above whenever the fired ability is Skip — ChaserFinalScreen
+// watches this to give the "question just changed, no consequence" moment
+// its own beat on the question box, on top of (not instead of) the generic
+// "Chaser used Skip!" toast every other ability already gets. Kept as its
+// own key/counter, same "never clobber a different channel" precedent as
+// abilityCueText/quipText, rather than string-matching abilityCueText's
+// rendered copy in the child.
+const skipPulseKey = ref(0);
+// Ticket 148 (Big Stan's Time Bonus): bumped whenever a chaser-final clock
+// sync (below) is detected to be an *extension* rather than a pause/resume —
+// see the onStateChange comment on chaserFinalClockRunning/RemainingMs for
+// how that's told apart. ChaserFinalScreen watches this to give the clock
+// number a brief tick/pulse; the server never sends a distinct "time bonus
+// fired" message, so this is inferred client-side from the sync itself.
+const chaserFinalTimeBonusKey = ref(0);
+// Ticket 148 (Maggie's Silence, ticket 144's SILENCED error): the server
+// sends `error`/{code: "SILENCED"} to the rejected client only (client.send,
+// never a broadcast — see messageHandlers.ts buzzIn), so any client that
+// receives this message is necessarily hearing about its own rejected buzz.
+// TeamFinalScreen watches silencedKey to shake the buzzer and show the
+// server's own explanatory message for a beat.
+const silencedMessage = ref("");
+const silencedKey = ref(0);
 // Flat ability-id -> display-name lookup built once from chaserAbilities.ts
 // (ticket 150's copy) so the toast text doesn't need to know which character
 // owns which ability, just the id the server broadcasts.
@@ -281,6 +305,9 @@ function showAbilityCue(ability) {
   abilityCueTimeout = setTimeout(() => {
     abilityCueText.value = "";
   }, ABILITY_CUE_DISPLAY_MS);
+  if (ability === "skip") {
+    skipPulseKey.value += 1;
+  }
 }
 
 async function handleJoin({ playerName, roomCode }) {
@@ -323,6 +350,19 @@ async function joinLobby(playerName, roomCode) {
           newState.chaserFinalClockRunning !== chaserFinalClockRunning.value ||
           newState.chaserFinalRemainingMs !== chaserFinalRemainingMs.value
       ) {
+        // Ticket 148: tell a Time Bonus extension apart from an ordinary
+        // pause/resume, purely from the shape of this sync — the server
+        // (TriviaRoom.extendChaserFinalClock) never sends a distinct "time
+        // bonus fired" message. pauseChaserFinalClock always flips running
+        // true -> false; resumeChaserFinalClock always flips false -> true
+        // without touching the paused remainder; extendChaserFinalClock is
+        // the *only* path that calls syncChaserFinalClockState while running
+        // stays true on both sides of the change (it requires the clock
+        // already running, then re-arms it still running) — so "was running,
+        // still running" uniquely identifies an extension.
+        if (chaserFinalClockRunning.value === true && newState.chaserFinalClockRunning === true) {
+          chaserFinalTimeBonusKey.value += 1;
+        }
         // Only re-stamp the sync point when the server actually changed
         // something — an unrelated state patch (a score update, say) must not
         // reset the reference the display countdown ticks from.
@@ -532,6 +572,21 @@ async function joinLobby(playerName, roomCode) {
 
     room.value.onMessage("finalStealResolved", (message) => {
       finalStealResolved.value = message;
+    });
+
+    // Ticket 148: the only `error` message type today carries a `code` field
+    // (RATE_LIMITED from TriviaRoom's own rate limiter, SILENCED from
+    // ticket 144's buzzIn rejection) — only SILENCED needs a client-visible
+    // reaction, so this stays a narrow switch rather than a generic error
+    // toast. `client.send` targets the rejected client alone, so receiving
+    // this at all means it's about this client's own buzz attempt.
+    room.value.onMessage("error", (message) => {
+      if (message?.code === "SILENCED") {
+        silencedMessage.value = typeof message.message === "string"
+            ? message.message
+            : "You can't buzz in yet.";
+        silencedKey.value += 1;
+      }
     });
 
     room.value.onMessage("endGame", (message) => {
@@ -879,6 +934,8 @@ onUnmounted(() => {
       :finalBuzzSeatId="finalBuzzSeatId"
       :answerResult="answerResult"
       :reactions="reactionsBySeat"
+      :silencedMessage="silencedMessage"
+      :silencedKey="silencedKey"
       @buzz-in="buzzIn"
       @submit-final-answer="submitFinalAnswer"
     />
@@ -904,6 +961,8 @@ onUnmounted(() => {
       :abilityCounters="abilityCounters"
       :abilityCueText="abilityCueText"
       :abilityCueKey="abilityCueKey"
+      :skipPulseKey="skipPulseKey"
+      :chaserFinalTimeBonusKey="chaserFinalTimeBonusKey"
       @submit-final-chaser-answer="submitFinalChaserAnswer"
       @submit-final-steal-answer="submitFinalStealAnswer"
       @auto-quip="showChaserQuip"
