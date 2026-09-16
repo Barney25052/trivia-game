@@ -1,5 +1,6 @@
 import { GamePhase, PlayerRole } from "../../TriviaTypes.js";
 import { allPlayersReady, allPlayersVoted, tallyChaserVotes } from "./chaserSelection.js";
+import { applyChaserAbilityEffect, canUseAbility } from "./chaserAbilities.js";
 import { checkAnswer } from "../../questions/answerChecker.js";
 import { pickOfferQuip } from "../../offerQuips.js";
 import { isValidCharacter } from "../../character.js";
@@ -536,6 +537,32 @@ export function sendChaserQuip(client: any, message: any, room: any) {
         return;
     }
     room.broadcast("chaserQuip", { text, at: Date.now() });
+}
+
+/** Generic activation handler for every manually-triggered Chaser ability
+ * (50/50, Skip, Double Time, Re-rack, Jumble — ticket 140). `canUseAbility`
+ * is the single source of truth for ownership/uses/timing; this handler just
+ * validates the message shape, rejects + logs on failure like every other
+ * handler, then applies the (currently bookkeeping-only) effect and tells
+ * every client a "the Chaser just did a thing" cue — no hidden info, same
+ * spirit as the existing `reaction` broadcast. */
+export function useChaserAbility(client: any, message: any, room: any) {
+    if (typeof message?.ability !== "string") {
+        console.log(client.sessionId, "Ignoring malformed useChaserAbility payload:", message);
+        return;
+    }
+    const seatId = room.seatIdForClient(client);
+    if (!seatId) {
+        return;
+    }
+    const result = canUseAbility(room, seatId, message.ability);
+    if (result.ok === false) {
+        console.log(seatId, `Can not use chaser ability '${message.ability}':`, result.reason);
+        return;
+    }
+    applyChaserAbilityEffect(room, message.ability);
+    console.log(`${seatId} used chaser ability '${message.ability}'`);
+    room.broadcast("chaserAbilityUsed", { ability: message.ability, seatId });
 }
 
 export function submitAnswer(client: any, message: any, room: any) {

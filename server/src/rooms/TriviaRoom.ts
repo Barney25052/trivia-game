@@ -49,6 +49,7 @@ import {
   submitAnswer,
   sendChaserQuip,
   setCharacter,
+  useChaserAbility,
 } from "./handlers/messageHandlers.js";
 import { applyEffects } from "./handlers/effects.js";
 import { clampRoomOptions } from "./handlers/clampOptions.js";
@@ -294,6 +295,9 @@ export class TriviaRoom extends Room {
     }
     this.currentChaseQuestion = null;
     this.chaseAnswers = {};
+    // Double Time (ticket 140) is armed for exactly one chase question —
+    // never let it survive past the question it was armed for.
+    this.state.doubleTimeArmed = false;
   }
 
   private clearFinalStealTimer() {
@@ -449,6 +453,9 @@ export class TriviaRoom extends Room {
   private async startNextChaseQuestion(): Promise<void> {
     this.currentChaseQuestion = null;
     this.chaseAnswers = {};
+    // Double Time (ticket 140) is armed for exactly one chase question —
+    // never let it survive into the next one.
+    this.state.doubleTimeArmed = false;
 
     const question = await this.drawChaseQuestion();
     if (!question) {
@@ -491,6 +498,9 @@ export class TriviaRoom extends Room {
     const answers = this.chaseAnswers;
     this.currentChaseQuestion = null;
     this.chaseAnswers = {};
+    // Double Time (ticket 140) is consumed either way once its question
+    // resolves — the actual board-math consumption is ticket 141's scope.
+    this.state.doubleTimeArmed = false;
 
     const contestantSeatId = this.state.activeContestantSeatId;
     const chaserSeatId = this.state.chaserSeatId;
@@ -643,6 +653,10 @@ export class TriviaRoom extends Room {
     setCharacter: (client: Client, message: any) => {
       if (!this.checkRateLimit(client)) return;
       setCharacter(client, message, this);
+    },
+    useChaserAbility: (client: Client, message: any) => {
+      if (!this.checkRateLimit(client)) return;
+      useChaserAbility(client, message, this);
     },
     whoami: (client: Client) => {
       if (!this.checkRateLimit(client)) return;

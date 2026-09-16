@@ -202,6 +202,12 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           if (chaser) {
             chaser.boardPos = effect.chaserStartSpace;
           }
+          // Once-per-table-round active abilities (ticket 140) reset for the
+          // new contestant's Chase — "once per contestant's chase" per
+          // CHASER_ABILITIES' definition in gameConfig.ts.
+          room.state.doubleTimeUsedThisTableRound = false;
+          room.state.reRackUsedThisTableRound = false;
+          room.state.jumbleUsedThisTableRound = false;
           console.log(
             `Chase: ${effect.seatId} starts at space ${effect.contestantStartSpace}, ` +
             `chaser at ${effect.chaserStartSpace}`

@@ -1,6 +1,6 @@
 import { ArraySchema, MapSchema, Schema, type } from "@colyseus/schema";
 import { GamePhase, PlayerRole } from "../../TriviaTypes.js";
-import { BOARD, CASH_BUILDER, CHASER_POT, CHASER_SELECTION } from "../../gameConfig.js";
+import { BOARD, CASH_BUILDER, CHASER_ABILITIES, CHASER_POT, CHASER_SELECTION } from "../../gameConfig.js";
 
 export class GamePlayer extends Schema {
     @type("string") name: string = "";
@@ -48,4 +48,25 @@ export class GameState extends Schema {
      * instead of a hardcoded guess. Doesn't change mid-game, so unlike the
      * Chaser-final clock (ticket 105) this needs no running/paused pair. */
     @type("number") cashBuilderDurationMs: number = CASH_BUILDER.durationMs;
+    /** Chaser ability-use counters/flags (ticket 140) — synced because these
+     * aren't hidden info, same reasoning as the Chaser pot being public.
+     * Defaults come from CHASER_ABILITIES (ticket 139); tickets 141/142 spend
+     * them on the actual per-ability effects. There is one Chaser per room
+     * for the whole game, so these are only ever set once at construction —
+     * no mid-game reset needed. */
+    @type("uint8") fiftyFiftyUsesRemaining: number = CHASER_ABILITIES.fiftyFifty.usesPerGame;
+    @type("uint8") skipUsesRemaining: number = CHASER_ABILITIES.skip.usesPerGame;
+    @type("uint8") pushbackImmunityUsesRemaining: number = CHASER_ABILITIES.pushbackImmunity.usesPerGame;
+    /** Once-per-table-round active-ability flags — reset to false whenever a
+     * new contestant's Chase starts (the `startChase` effect in effects.ts,
+     * alongside where boardPos is set for the new round). */
+    @type("boolean") doubleTimeUsedThisTableRound: boolean = false;
+    @type("boolean") reRackUsedThisTableRound: boolean = false;
+    @type("boolean") jumbleUsedThisTableRound: boolean = false;
+    /** Transient: true from Double Time's activation until the next chase
+     * question resolves (consumed either way) — reset in
+     * TriviaRoom.resolveChaseQuestion and startNextChaseQuestion/
+     * clearChaseAnswerTimer so it never survives past the question it was
+     * armed for. */
+    @type("boolean") doubleTimeArmed: boolean = false;
 }
