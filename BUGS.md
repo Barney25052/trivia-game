@@ -156,3 +156,11 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: every bank entry is a legitimate, answerable trivia question with sane alternatives.
 - Repro steps: play Cash Builder repeatedly (questions draw randomly) until it surfaces, or grep `server/data/questions.json` for "Lennon".
 - Status: resolved — removed the entry (id 349) from `server/data/questions.json` and re-seeded `questions.db` (813 rows now), 2026-09-15. No test hardcoded the row count. `npm test` reconfirmed 334 passing after the reseed.
+
+
+## `bug-022` — `roomFlow`'s full-walkthrough test is flaky against the real-timer rate limiter
+- Found: 2026-09-16 · ticket 147 (confirmed server-side, unrelated to that ticket's client-only scope) · `server/test/roomFlow.test.ts` ("walks the full flow end-to-end via the stub handlers"), `server/src/rooms/TriviaRoom.ts` (`checkRateLimit`)
+- What you saw: intermittent `Error: message 'endGame' was not called. timed out (3000ms)`, preceded by a `<sessionId> rate limited: ...` log line, when running the full `npm test` suite — but the same test passes reliably every time in true isolation. Reproduced by the orchestrating session directly: 2 failures and 2 passes across 4 consecutive full-suite runs on the same unmodified `dev` HEAD, no code changes between runs.
+- Expected: the test passes reliably regardless of incidental system timing, the same class of fix ticket 114 already applied to a similar wall-clock flake in `chaseFlow.test.ts`.
+- Repro steps: `cd server && npm test`, repeatedly (not always reproducible on a single run — needs a few attempts).
+- Status: triaged — ticket 158
