@@ -42,7 +42,7 @@ Documented standards — there is no formatter or linter; conventions are enforc
 ### CSS & styling
 - All styling lives in `client/src/style.css` (imported once in `main.ts`). Components only attach class names — no `<style scoped>`, no inline `style=` unless truly necessary.
 - **Human-readable first**: the user edits this file by hand. Reuse existing classes (`lobby`, `lobbyTitle`, `playerName`, `startButton`, `roomCode`, `answerButton`, ...) before adding new ones; name new classes kebab-case with an obvious purpose; group related declarations.
-- Formatting: 4-space indent, one declaration per line, trailing semicolons, lowercase hex (`#ffffff`), `transparent` instead of the `#0000` shorthand, sizes as `0` not `0px`. No commented-out dead rules.
+- Formatting: 2-space indent (the file's real convention — differs from the 4-space rule for TS/Vue code below), one declaration per line, trailing semicolons, lowercase hex (`#ffffff`), `transparent` instead of the `#0000` shorthand, sizes as `0` not `0px`. No commented-out dead rules.
 - Prefer CSS custom properties in a `:root` block for palette/typography when a color or family repeats — don't copy hex values between rules.
 - Respect the existing look (gradient bg, "Luckiest Guy" font, animations in style.css) when adding screens; read `style.css` first, and update it in the same ticket when a screen needs styles.
 
