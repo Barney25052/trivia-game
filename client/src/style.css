@@ -1976,6 +1976,46 @@ h1, h2, h3, h4 {
   color: var(--color-danger);
 }
 
+/* Ticket 147: Bezos's No Middle passive (ticket 143) voids the middle tier
+   as a pickable offer. The plaque stays put in the row (so its dimming
+   reads as "switched off", not the loading-in-progress look
+   .offerAmountPending already owns) but is desaturated and struck through,
+   with a red "VOID" swapped in for the dollar amount and a diagonal ribbon
+   naming the passive stamped across it — .moneyPlaque is already
+   position:relative + overflow:hidden, the exact setup a corner ribbon needs. */
+.offerTierPlaqueVoided {
+  opacity: 0.6;
+  filter: grayscale(85%);
+}
+
+.offerTierPlaqueVoided .who {
+  text-decoration: line-through;
+}
+
+.offerVoidAmount {
+  color: var(--color-danger);
+  letter-spacing: 2px;
+}
+
+.offerVoidRibbon {
+  position: absolute;
+  top: 14px;
+  left: -34px;
+  width: 160px;
+  padding: 3px 0;
+  background-color: var(--color-danger);
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-align: center;
+  text-transform: uppercase;
+  transform: rotate(-18deg);
+  box-shadow: 0 2px 0 rgba(var(--color-black-rgb), 0.3);
+  pointer-events: none;
+}
+
 .offerContestantBox {
   display: flex;
   flex-direction: column;

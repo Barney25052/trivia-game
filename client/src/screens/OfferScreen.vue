@@ -48,6 +48,11 @@ const highError = ref("");
 const hasMiddle = computed(() => props.offer?.middle !== null && props.offer?.middle !== undefined);
 const hasLow = computed(() => props.offer?.low !== null && props.offer?.low !== undefined);
 const hasHigh = computed(() => props.offer?.high !== null && props.offer?.high !== undefined);
+// Ticket 147: Bezos's No Middle passive (ticket 143, server-authoritative —
+// see messageHandlers.ts's offerChoice) voids the middle tier as a pickable
+// offer. Read straight off the broadcast data App.vue already captures onto
+// currentOffer (offerStart/offer messages) — no new plumbing needed here.
+const isMiddleVoided = computed(() => !!props.offer?.middleVoided);
 // A $0 middle has no real low offer (ticket 058) — the low tier plaque never
 // reveals an amount in that case, same as the old board's low space always
 // staying blank instead of duplicating the $0 shown at middle.
@@ -156,9 +161,13 @@ function submitHigh() {
                             <span v-else key="low-pending" class="amount offerAmountPending">—</span>
                         </Transition>
                     </div>
-                    <div class="moneyPlaque offerTierPlaque">
+                    <div class="moneyPlaque offerTierPlaque" :class="{ offerTierPlaqueVoided: isMiddleVoided }">
                         <span class="who">Middle</span>
-                        <Transition name="offer-pop">
+                        <template v-if="isMiddleVoided">
+                            <span class="amount offerVoidAmount" key="middle-void">VOID</span>
+                            <span class="offerVoidRibbon">No Middle</span>
+                        </template>
+                        <Transition v-else name="offer-pop">
                             <span
                                 v-if="hasMiddle"
                                 key="middle-amount"
@@ -230,7 +239,11 @@ function submitHigh() {
                             >
                                 <span :class="{ 'offer-amount-negative': offer.low <= 0 }">Low — {{ formatAmount(offer.low) }}</span>
                             </button>
-                            <button class="btn btn-primary offerTierButton" @click="emit('choose', 'middle')">
+                            <button
+                                v-if="!isMiddleVoided"
+                                class="btn btn-primary offerTierButton"
+                                @click="emit('choose', 'middle')"
+                            >
                                 Middle — {{ formatAmount(offer.middle) }}
                             </button>
                             <button class="btn btn-primary offerTierButton" @click="emit('choose', 'high')">
