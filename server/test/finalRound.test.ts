@@ -2,7 +2,7 @@ import assert from "assert";
 import { ColyseusTestServer } from "@colyseus/testing";
 import appConfig from "../src/app.config.js";
 import { GameState } from "../src/rooms/schema/GameState.js";
-import { GamePhase } from "../src/TriviaTypes.js";
+import { ChaserCharacter, GamePhase } from "../src/TriviaTypes.js";
 import { BankQuestion } from "../src/questions/bank.js";
 import { cleanup, getTestServer } from "./testServer.js";
 import { seatIdOf } from "./seatIdHelper.js";
@@ -1452,5 +1452,165 @@ describe("final round — Chaser clock reaches GameEnd across multiple steals (t
 
         await waitForPhase(room, GamePhase.GameEnd, 5000);
         assert.strictEqual(room.state.currentPhase, GamePhase.GameEnd);
+    });
+});
+
+describe("final round — Maggie's Silence passive (ticket 144)", () => {
+    let colyseus: ColyseusTestServer<typeof appConfig>;
+
+    beforeEach(async () => {
+        colyseus = await getTestServer();
+        await cleanup();
+    });
+
+    const roomOptions = {
+        cashBuilderDurationMs: 80,
+        chaserSelectionDurationMs: 80,
+        chaserRevealDurationMs: 80,
+        chaserCharacterRevealDurationMs: 80,
+        revealReadyCooldownMs: 80,
+        lineupDurationMs: 80,
+        teamFinalIntroDurationMs: 80,
+        teamFinalDurationMs: 10000,
+        chaserFinalDurationMs: 10000,
+        finalWrongAnswerRevealMs: 60
+    };
+
+    it("silences the seat that just scored on the next question (targeted SILENCED error) while another connected seat can still buzz, then frees it once someone else scores", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        // Three players guarantees two non-chaser seats regardless of who is
+        // picked as Chaser (driveAllToTeamFinal always seats Maggie).
+        const { contestantClients } = await driveAllToTeamFinal(colyseus, room, ["Alice", "Bob", "Charlie"]);
+        assert.ok(contestantClients.length >= 2, "need two non-chaser seats for this scenario");
+        const [seatA, seatB] = contestantClients;
+        const seatAId = seatIdOf(room, seatA);
+        const seatBId = seatIdOf(room, seatB);
+        assert.strictEqual(
+            room.state.players.get(room.state.chaserSeatId)?.chaserCharacterId,
+            "maggie",
+            "driveAllToTeamFinal always seats Maggie as Chaser"
+        );
+
+        let question = room.finalRoundQuestions.getCurrentQuestion("team");
+        assert.ok(question, "team should have a live final question");
+
+        // Round 1: seat A buzzes and answers correctly.
+        seatA.send("buzzIn", { questionId: question!.id });
+        await sleep(50);
+        assert.strictEqual(room.currentFinalTeamBuzzer, seatAId);
+        seatA.send("submitFinalAnswer", { questionId: question!.id, answer: `Answer ${question!.id}` });
+        await sleep(80);
+        assert.strictEqual(room.state.lastTeamFinalCorrectSeatId, seatAId);
+        question = room.finalRoundQuestions.getCurrentQuestion("team");
+        assert.ok(question, "a fresh question should be live after round 1");
+
+        // Round 2: seat A is Silenced — the buzz is rejected and it gets a
+        // targeted SILENCED error; the buzz lock stays open for someone else.
+        let silenced: any = null;
+        seatA.onMessage("error", (message: any) => (silenced = message));
+        seatA.send("buzzIn", { questionId: question!.id });
+        await sleep(80);
+        assert.strictEqual(room.currentFinalTeamBuzzer, null, "a silenced buzz must not win the lock");
+        assert.ok(silenced, "the silenced seat must receive a targeted error");
+        assert.strictEqual(silenced.code, "SILENCED");
+
+        // Seat B — untouched by Silence — can still buzz and answer this
+        // very question.
+        seatB.send("buzzIn", { questionId: question!.id });
+        await sleep(50);
+        assert.strictEqual(room.currentFinalTeamBuzzer, seatBId, "every other connected non-chaser seat can still buzz");
+        seatB.send("submitFinalAnswer", { questionId: question!.id, answer: `Answer ${question!.id}` });
+        await sleep(80);
+        assert.strictEqual(room.state.lastTeamFinalCorrectSeatId, seatBId);
+        question = room.finalRoundQuestions.getCurrentQuestion("team");
+        assert.ok(question, "a fresh question should be live after round 2");
+
+        // Round 3: seat A is free again — seat B scored last, not seat A.
+        seatA.send("buzzIn", { questionId: question!.id });
+        await sleep(50);
+        assert.strictEqual(room.currentFinalTeamBuzzer, seatAId, "seat A can buzz again once someone else scored last");
+    });
+
+    it("a non-Maggie chaser lets the same seat buzz again right away, unchanged", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, chaserSeatId, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        // driveToChaseEscape always seats Maggie — swap the character directly
+        // (white-box, like other tests here poking room state) so this test
+        // proves the gate is Maggie-specific, not a blanket repeat-buzz rule.
+        room.state.players.get(chaserSeatId).chaserCharacterId = ChaserCharacter.Bezos;
+        const firstQuestion = await teamFinalQuestion;
+        const contestantSeatId = seatIdOf(room, contestantClient);
+
+        contestantClient.send("buzzIn", { questionId: firstQuestion.questionId });
+        await sleep(50);
+        assert.strictEqual(room.currentFinalTeamBuzzer, contestantSeatId);
+        const nextQuestion = contestantClient.waitForMessage("finalQuestion");
+        contestantClient.send("submitFinalAnswer", {
+            questionId: firstQuestion.questionId,
+            answer: `Answer ${firstQuestion.questionId}`
+        });
+        await nextQuestion;
+        assert.strictEqual(room.state.lastTeamFinalCorrectSeatId, contestantSeatId);
+
+        const nextTeamQuestion = room.finalRoundQuestions.getCurrentQuestion("team");
+        assert.ok(nextTeamQuestion, "a fresh question should be live");
+
+        let sawError = false;
+        contestantClient.onMessage("error", () => (sawError = true));
+        contestantClient.send("buzzIn", { questionId: nextTeamQuestion!.id });
+        await sleep(80);
+        assert.strictEqual(
+            room.currentFinalTeamBuzzer,
+            contestantSeatId,
+            "the repeat buzzer is let through unchanged for a non-Maggie chaser"
+        );
+        assert.ok(!sawError, "no SILENCED error for a non-Maggie chaser");
+    });
+
+    it("the single-eligible-buzzer exception: Silence never soft-locks a round with only one contestant", async () => {
+        const room = await colyseus.createRoom<GameState>("trivia", roomOptions);
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+
+        const { contestantClient, contestantSeatId, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        assert.strictEqual(
+            room.state.players.get(room.state.chaserSeatId)?.chaserCharacterId,
+            "maggie",
+            "driveToChaseEscape always seats Maggie as Chaser"
+        );
+        const firstQuestion = await teamFinalQuestion;
+
+        contestantClient.send("buzzIn", { questionId: firstQuestion.questionId });
+        await sleep(50);
+        assert.strictEqual(room.currentFinalTeamBuzzer, contestantSeatId);
+        const nextQuestion = contestantClient.waitForMessage("finalQuestion");
+        contestantClient.send("submitFinalAnswer", {
+            questionId: firstQuestion.questionId,
+            answer: `Answer ${firstQuestion.questionId}`
+        });
+        await nextQuestion;
+        assert.strictEqual(room.state.lastTeamFinalCorrectSeatId, contestantSeatId);
+
+        const nextTeamQuestion = room.finalRoundQuestions.getCurrentQuestion("team");
+        assert.ok(nextTeamQuestion, "a fresh question should be live");
+
+        // The only contestant left in the game is the one who just scored —
+        // Silence must let them through rather than soft-lock the round.
+        let sawError = false;
+        contestantClient.onMessage("error", () => (sawError = true));
+        contestantClient.send("buzzIn", { questionId: nextTeamQuestion!.id });
+        await sleep(80);
+        assert.strictEqual(
+            room.currentFinalTeamBuzzer,
+            contestantSeatId,
+            "the sole eligible buzzer must be let through despite Silence"
+        );
+        assert.ok(!sawError, "no SILENCED error for the sole eligible buzzer");
     });
 });

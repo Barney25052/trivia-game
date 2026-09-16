@@ -332,6 +332,34 @@ export function buzzIn(client: any, message: any, room: any) {
         console.log(client.sessionId, "Someone already buzzed in for this question");
         return;
     }
+    const chaser = room.state.players.get(room.state.chaserSeatId);
+    if (
+        chaser?.chaserCharacterId === ChaserCharacter.Maggie &&
+        seatId === room.state.lastTeamFinalCorrectSeatId
+    ) {
+        // Silence (ticket 144): whoever scored the last correct answer can't
+        // buzz in again on the next one — unless they're the only eligible
+        // buzzer still connected, in which case letting them through beats
+        // soft-locking the round. "Eligible" mirrors sendFinalQuestion's team
+        // side: any currently-connected non-Chaser client, not contestantsOrder,
+        // so eliminated players who rejoined for the final still count.
+        const eligibleBuzzerSeatIds = new Set<string>();
+        for (const otherClient of room.clients) {
+            const otherSeatId = room.seatIdForClient(otherClient);
+            if (otherSeatId && otherSeatId !== room.state.chaserSeatId) {
+                eligibleBuzzerSeatIds.add(otherSeatId);
+            }
+        }
+        const isOnlyEligibleBuzzer = eligibleBuzzerSeatIds.size === 1 && eligibleBuzzerSeatIds.has(seatId);
+        if (!isOnlyEligibleBuzzer) {
+            console.log(seatId, "Silenced by Maggie — answered last, can not buzz in again yet");
+            client.send("error", {
+                code: "SILENCED",
+                message: "You answered last — someone else has to buzz in."
+            });
+            return;
+        }
+    }
     room.currentFinalTeamBuzzer = seatId;
     console.log(`${seatId} buzzed in first for team question ${currentQuestion.id}`);
     room.broadcast("finalBuzz", { questionId: currentQuestion.id, seatId });
@@ -368,6 +396,10 @@ export function submitFinalAnswer(client: any, message: any, room: any) {
     const isCorrect = checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])]);
     if (isCorrect) {
         room.state.teamScore += 1;
+        // Track the scoring seat unconditionally, regardless of chaser
+        // character — cheap to always record; buzzIn is what actually gates
+        // on Maggie's Silence passive (ticket 144).
+        room.state.lastTeamFinalCorrectSeatId = seatId;
         // Final round only reacts to success (ticket 103) — a wrong answer
         // already gets the full-screen red flash from ticket 100.
         room.broadcastSuccessReaction(seatId);

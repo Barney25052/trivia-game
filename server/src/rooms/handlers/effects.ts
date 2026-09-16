@@ -257,6 +257,9 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
             (seatId) => room.state.players.get(seatId)?.madeItBack === true
           ).length;
           room.state.teamScore = survivors;
+          // Maggie's Silence passive (ticket 144) tracks across questions, not
+          // per-game — a fresh team final never starts with anyone silenced.
+          room.state.lastTeamFinalCorrectSeatId = "";
           console.log(`Final round: team starts at ${survivors} points (${room.teamFinalDurationMs}ms)`);
           const firstTeamQuestion = room.finalRoundQuestions.drawNext(room.questionBank, "team");
           room.sendFinalQuestion("team", firstTeamQuestion);

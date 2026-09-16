@@ -69,4 +69,13 @@ export class GameState extends Schema {
      * clearChaseAnswerTimer so it never survives past the question it was
      * armed for. */
     @type("boolean") doubleTimeArmed: boolean = false;
+    /** Maggie's Silence passive (ticket 144): the seatId that scored the most
+     * recent team-final correct answer — that seat can't buzz in again on the
+     * very next question while Maggie is the Chaser (enforced in buzzIn).
+     * Tracked unconditionally by submitFinalAnswer's correct branch for every
+     * Chaser character (cheap), reset to "" by startFinalTeam so a fresh team
+     * final never starts with anyone silenced. Spans across questions —
+     * separate from the per-question buzz lock (currentFinalTeamBuzzer /
+     * finalTeamQuestionResolved), which advanceFinalTeamQuestion still owns. */
+    @type("string") lastTeamFinalCorrectSeatId: string = "";
 }
