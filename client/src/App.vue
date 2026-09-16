@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Client } from "@colyseus/sdk";
 import { GamePhase } from "./TriviaTypes.ts";
 import { preloadImages } from "./assetPreload.js";
@@ -652,6 +652,31 @@ function sendChaserQuip(text) {
     console.error("Failed to send chaser quip:", e);
   }
 }
+
+// Ticket 153 (bug-020): AGENTS.md documents sessionId as ephemeral and a
+// reload/navigate-away as an intentional "forfeit the seat" — there is no
+// reconnection story here (host-reconnect is a separate, not-yet-built
+// stretch goal). Without this, the browser closes the open WebSocket out
+// from under the Colyseus SDK with an unexpected-close code (e.g. 1001
+// "going away") on unload, which the SDK's default reconnection behavior
+// (client/node_modules/@colyseus/sdk's Room.reconnection: enabled, 15
+// retries with exponential backoff) treats as a dropped connection worth
+// retrying — producing a burst of failed reconnection attempts that either
+// hit a torn-down page or a room that's already gone. Calling room.leave()
+// here sends a consented LEAVE_ROOM to the server first, so the connection
+// closes with a consented code instead and the SDK never enters that retry
+// loop — a clean, single disconnect instead of a retry storm.
+function leaveRoomOnUnload() {
+  room.value?.leave();
+}
+
+onMounted(() => {
+  window.addEventListener("beforeunload", leaveRoomOnUnload);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("beforeunload", leaveRoomOnUnload);
+});
 </script>
 
 <template>
