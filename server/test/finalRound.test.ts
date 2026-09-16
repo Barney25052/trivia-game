@@ -81,8 +81,14 @@ async function driveToChaseEscape(
 
     alice.send("startGame");
     await waitForPhase(room, GamePhase.RolesReveal);
-    alice.send("revealReady", { characterId: "bezos" });
-    bob.send("revealReady", { characterId: "nami" });
+    // Both pick "maggie" (ticket 142): the chaser seat is assigned randomly
+    // between alice/bob here, and Maggie is the one roster character with no
+    // final-round passive wired yet (Silence is a later ticket) — using her
+    // for both keeps this shared driver's ChaserFinal/steal behavior neutral
+    // regardless of who ends up as Chaser, instead of randomly picking up
+    // Bezos's Pushback Immunity or Nami's Short Fuse ~50% of the time.
+    alice.send("revealReady", { characterId: "maggie" });
+    bob.send("revealReady", { characterId: "maggie" });
     await waitForPhase(room, GamePhase.CashBuilder);
     room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney = 1000;
     await waitForPhase(room, GamePhase.Offer);
@@ -300,7 +306,10 @@ async function driveAllToTeamFinal(
     const chaserClient = clients.find((c: any) => seatIdOf(room, c) === chaserSeatId);
     const contestantClients = clients.filter((c: any) => c !== chaserClient);
 
-    chaserClient.send("revealReady", { characterId: "bezos" });
+    // "maggie" (ticket 142): the one roster character with no final-round
+    // passive wired yet, so this shared driver's steal/score assertions stay
+    // exact instead of quietly picking up Bezos's Pushback Immunity.
+    chaserClient.send("revealReady", { characterId: "maggie" });
     for (const c of contestantClients) {
         c.send("revealReady", {});
     }

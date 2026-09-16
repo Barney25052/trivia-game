@@ -388,6 +388,29 @@ export class TriviaRoom extends Room {
     this.runChaserFinalCountdown();
   }
 
+  /** Big Stan's Time Bonus passive (ticket 142): extends the *running*
+   * Chaser-final clock by `bonusMs` without letting the timer already
+   * scheduled against the old total still fire. Reuses the exact elapsed-time
+   * bookkeeping `pauseChaserFinalClock` uses (remaining -= time since the
+   * countdown last (re)started), adds the bonus, then re-arms the countdown
+   * against the new total via the same `runChaserFinalCountdown` seam
+   * `resumeChaserFinalClock` uses — this immediately syncs the extended time
+   * through `syncChaserFinalClockState`. A no-op while the clock isn't
+   * running (e.g. mid-steal) — nothing live to extend. */
+  extendChaserFinalClock(bonusMs: number) {
+    if (!this.chaserFinalClockRunning) {
+      return;
+    }
+    this.chaserFinalRemainingMs -= Date.now() - this.chaserFinalClockStartedAt;
+    this.chaserFinalRemainingMs += bonusMs;
+    if (this.activeTimer !== null) {
+      this.activeTimer.cancel();
+      this.activeTimer = null;
+    }
+    this.runChaserFinalCountdown();
+    console.log(`Time Bonus — chaser final clock extended by ${bonusMs}ms, ${this.chaserFinalRemainingMs}ms remain`);
+  }
+
   private runChaserFinalCountdown() {
     this.chaserFinalClockStartedAt = Date.now();
     this.chaserFinalClockRunning = true;

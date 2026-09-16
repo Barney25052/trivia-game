@@ -1,8 +1,9 @@
 import { FlowEffect } from "../../gameFlow.js";
-import { PlayerRole } from "../../TriviaTypes.js";
+import { ChaserCharacter, PlayerRole } from "../../TriviaTypes.js";
 import { pickOfferQuip } from "../../offerQuips.js";
 import * as chaserSelection from "./chaserSelection.js";
 import {
+  CHASER_ABILITIES,
   CHASER_CHARACTERS,
   CHASER_CHARACTER_REVEAL,
   CHASER_POT,
@@ -255,6 +256,18 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
         }
 
         case "startFinalChaser": {
+          // Nami's Short Fuse (ticket 142, passive/unlimited): the team's
+          // steal window is 10s instead of the usual 20s against her. Set
+          // right before the steal mechanic can ever fire (a Chaser miss is
+          // still at least one question away); every other character leaves
+          // room.stealWindowMs exactly as onCreate already set it (the
+          // clamped room option, or FINAL_ROUND.stealWindowMs by default) —
+          // this never resets it back to the config default, so short test
+          // overrides for non-Nami chasers keep working unchanged.
+          const chaser = room.state.players.get(room.state.chaserSeatId);
+          if (chaser?.chaserCharacterId === ChaserCharacter.Nami) {
+            room.stealWindowMs = CHASER_ABILITIES.shortFuseStealWindowMs;
+          }
           console.log(`Final round: chaser goes (${room.chaserFinalDurationMs}ms)`);
           const firstChaserQuestion = room.finalRoundQuestions.drawNext(room.questionBank, "chaser");
           room.sendFinalQuestion("chaser", firstChaserQuestion);

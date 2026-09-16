@@ -3,7 +3,7 @@ import { ColyseusTestServer } from "@colyseus/testing";
 import appConfig from "../src/app.config.js";
 import { GameState } from "../src/rooms/schema/GameState.js";
 import { GamePhase } from "../src/TriviaTypes.js";
-import { BOARD, CHASER_ABILITIES, CHASE_QUESTION } from "../src/gameConfig.js";
+import { BOARD, CHASER_ABILITIES, CHASE_QUESTION, FINAL_ROUND } from "../src/gameConfig.js";
 import { BankQuestion } from "../src/questions/bank.js";
 import { cleanup, getTestServer } from "./testServer.js";
 import { seatIdOf } from "./seatIdHelper.js";
@@ -882,6 +882,261 @@ describe("board-chase ability effects (ticket 141)", () => {
 
             await waitForPhase(room, GamePhase.TeamFinal);
             assert.strictEqual(room.state.players.get(contestantSeatId).isEliminated, true, "the chase round resolved as a valid catch");
+        });
+    });
+});
+
+describe("final-round ability effects (ticket 142)", () => {
+    let colyseus: ColyseusTestServer<typeof appConfig>;
+
+    beforeEach(async () => {
+        colyseus = await getTestServer();
+        await cleanup();
+    });
+
+    describe("Skip", () => {
+        it("discards the current question with no score change and no steal window, then draws a fresh one", async () => {
+            const { room, chaserClient, chaserSeatId, chaserMessage } = await reachChaserFinal(colyseus, "bezos");
+            const scoreBefore = room.state.chaserScore;
+
+            const freshQuestion = chaserClient.waitForMessage("finalQuestion");
+            const broadcastPromise = chaserClient.waitForMessage("chaserAbilityUsed");
+            chaserClient.send("useChaserAbility", { ability: "skip" });
+            const broadcast = await broadcastPromise;
+            assert.deepStrictEqual(broadcast, { ability: "skip", seatId: chaserSeatId });
+
+            const next = await freshQuestion;
+            assert.strictEqual(next.side, "chaser");
+            assert.notStrictEqual(next.questionId, chaserMessage.questionId, "skip must draw a different question");
+            assert.strictEqual(room.state.chaserScore, scoreBefore, "skip must not change chaserScore");
+            assert.strictEqual(room.finalStealActive, false, "skip must never open a steal window");
+            assert.strictEqual(room.finalChaserQuestionResolved, false, "the freshly-drawn question is live again");
+        });
+
+        it("is usable up to its 2-uses-per-game cap, then rejected a 3rd time in the same game", async () => {
+            const { room, chaserClient } = await reachChaserFinal(colyseus, "bezos");
+            assert.strictEqual(room.state.skipUsesRemaining, CHASER_ABILITIES.skip.usesPerGame);
+
+            for (let use = 0; use < CHASER_ABILITIES.skip.usesPerGame; use += 1) {
+                const broadcastPromise = chaserClient.waitForMessage("chaserAbilityUsed");
+                const freshQuestion = chaserClient.waitForMessage("finalQuestion");
+                chaserClient.send("useChaserAbility", { ability: "skip" });
+                await broadcastPromise;
+                await freshQuestion;
+            }
+            assert.strictEqual(room.state.skipUsesRemaining, 0);
+
+            const NOTHING = Symbol("no chaserAbilityUsed broadcast");
+            const outcome = Promise.race([
+                chaserClient.waitForMessage("chaserAbilityUsed"),
+                sleep(150).then(() => NOTHING)
+            ]);
+            chaserClient.send("useChaserAbility", { ability: "skip" });
+            assert.strictEqual(await outcome, NOTHING, "a 3rd Skip in the same game must be rejected");
+            assert.strictEqual(room.state.skipUsesRemaining, 0, "must stay at 0, never go negative");
+        });
+
+        it("is rejected once the question bank is exhausted mid-ChaserFinal, even though finalChaserQuestionResolved stays false", async () => {
+            const { room, chaserClient } = await reachChaserFinal(colyseus, "bezos");
+            const before = room.state.skipUsesRemaining;
+
+            // Simulate the bank running dry mid-round (the gap the ticket-140
+            // implementer flagged): draining the bank and re-drawing leaves
+            // finalChaserQuestionResolved false (advanceFinalChaserQuestion
+            // always clears it, draw success or not) but no live question
+            // object behind it — the resolved-flag gate alone can't catch this.
+            room.questionBank = [];
+            room.advanceFinalChaserQuestion();
+            assert.strictEqual(room.finalChaserQuestionResolved, false, "the resolved flag alone does not catch this gap");
+            assert.strictEqual(room.finalRoundQuestions.getCurrentQuestion("chaser"), null, "the bank is exhausted — no live question");
+
+            const NOTHING = Symbol("no chaserAbilityUsed broadcast");
+            const outcome = Promise.race([
+                chaserClient.waitForMessage("chaserAbilityUsed"),
+                sleep(150).then(() => NOTHING)
+            ]);
+            chaserClient.send("useChaserAbility", { ability: "skip" });
+            assert.strictEqual(await outcome, NOTHING, "Skip must be rejected with no live question to discard");
+            assert.strictEqual(room.state.skipUsesRemaining, before, "Skip must not consume a charge when rejected");
+        });
+    });
+
+    describe("Pushback Immunity (Bezos)", () => {
+        it("blocks exactly 3 steals (reporting pushbackBlocked, not pushedBack), then behaves normally once spent", async () => {
+            const { room, contestantClient, chaserClient } = await reachChaserFinal(colyseus, "bezos");
+
+            for (let charge = CHASER_ABILITIES.pushbackImmunity.usesPerGame; charge >= 1; charge -= 1) {
+                room.state.chaserScore = 2;
+                const chaserQuestion = room.finalRoundQuestions.getCurrentQuestion("chaser");
+                assert.ok(chaserQuestion, `chaser should have a live question (charge ${charge})`);
+
+                const steal = contestantClient.waitForMessage("finalSteal");
+                chaserClient.send("submitFinalChaserAnswer", { questionId: chaserQuestion.id, answer: "not it at all" });
+                await steal;
+
+                const resolved = contestantClient.waitForMessage("finalStealResolved");
+                contestantClient.send("submitFinalStealAnswer", {
+                    questionId: chaserQuestion.id,
+                    answer: chaserQuestion.answer
+                });
+                const resolvedMessage = await resolved;
+                assert.strictEqual(resolvedMessage.correct, true);
+                assert.strictEqual(resolvedMessage.pushbackBlocked, true, `steal with ${charge} charge(s) left should still be blocked`);
+                assert.strictEqual(resolvedMessage.pushedBack, false);
+                assert.strictEqual(room.state.chaserScore, 2, "chaserScore must not move while immune");
+                assert.strictEqual(room.state.pushbackImmunityUsesRemaining, charge - 1);
+
+                // Let the outcome-beat hold pass so the Chaser stream advances
+                // to a fresh question before the next iteration.
+                await sleep(150);
+            }
+
+            // Charges exhausted — a correct steal now behaves exactly like today.
+            room.state.chaserScore = 2;
+            const chaserQuestion = room.finalRoundQuestions.getCurrentQuestion("chaser");
+            assert.ok(chaserQuestion, "chaser should have a live question after immunity runs out");
+
+            const steal = contestantClient.waitForMessage("finalSteal");
+            chaserClient.send("submitFinalChaserAnswer", { questionId: chaserQuestion.id, answer: "not it at all" });
+            await steal;
+
+            const resolved = contestantClient.waitForMessage("finalStealResolved");
+            contestantClient.send("submitFinalStealAnswer", {
+                questionId: chaserQuestion.id,
+                answer: chaserQuestion.answer
+            });
+            const resolvedMessage = await resolved;
+            assert.strictEqual(resolvedMessage.pushedBack, true, "once exhausted, steals push back normally");
+            assert.strictEqual(resolvedMessage.pushbackBlocked, false);
+            assert.strictEqual(room.state.chaserScore, 1);
+            assert.strictEqual(room.state.pushbackImmunityUsesRemaining, 0);
+        });
+
+        it("a correct steal while Bezos is already at 0 still raises the team's target — immunity never touches that branch", async () => {
+            const { room, contestantClient, chaserClient, chaserMessage } = await reachChaserFinal(colyseus, "bezos");
+            assert.strictEqual(room.state.chaserScore, 0);
+            const teamScoreBefore = room.state.teamScore;
+            const immunityBefore = room.state.pushbackImmunityUsesRemaining;
+
+            const steal = contestantClient.waitForMessage("finalSteal");
+            chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+            await steal;
+
+            const resolved = contestantClient.waitForMessage("finalStealResolved");
+            contestantClient.send("submitFinalStealAnswer", {
+                questionId: chaserMessage.questionId,
+                answer: `Answer ${chaserMessage.questionId}`
+            });
+            const resolvedMessage = await resolved;
+            assert.strictEqual(resolvedMessage.pushedBack, false);
+            assert.strictEqual(resolvedMessage.pushbackBlocked, false, "immunity does not apply to the raise-target branch");
+            assert.strictEqual(room.state.chaserScore, 0);
+            assert.strictEqual(room.state.teamScore, teamScoreBefore + 1);
+            assert.strictEqual(room.state.pushbackImmunityUsesRemaining, immunityBefore, "a target raise must not consume an immunity charge");
+        });
+    });
+
+    describe("Time Bonus (Big Stan)", () => {
+        it("a correct chaser-final answer extends chaserFinalRemainingMs by ~500ms, synced immediately", async () => {
+            const { room, chaserClient, chaserMessage } = await reachChaserFinal(colyseus, "big stan");
+            // Headroom so this single correct answer doesn't also win the game
+            // (chaserScore reaching teamScore) before the extension can be read.
+            room.state.teamScore = 5;
+            const remainingBefore = room.state.chaserFinalRemainingMs;
+            assert.strictEqual(room.state.chaserFinalClockRunning, true);
+
+            const result = chaserClient.waitForMessage("answerResult");
+            chaserClient.send("submitFinalChaserAnswer", {
+                questionId: chaserMessage.questionId,
+                answer: `Answer ${chaserMessage.questionId}`
+            });
+            assert.strictEqual((await result).correct, true);
+
+            // Not exact-to-the-millisecond: extendChaserFinalClock also
+            // subtracts the real wall-clock time elapsed since the clock
+            // started (same bookkeeping pauseChaserFinalClock uses), so the
+            // net increase is ~500ms minus a few ms of real test/processing
+            // time — never more than the flat bonus itself.
+            const delta = room.state.chaserFinalRemainingMs - remainingBefore;
+            assert.ok(
+                delta > 400 && delta <= CHASER_ABILITIES.timeBonusMs,
+                `expected the clock to extend by ~${CHASER_ABILITIES.timeBonusMs}ms net of negligible real processing time, got ${delta}ms`
+            );
+        });
+
+        it("extends the clock again on a second correct answer — additive, not a one-time flat add", async () => {
+            const { room, chaserClient, chaserMessage } = await reachChaserFinal(colyseus, "big stan");
+            room.state.teamScore = 5;
+            const remainingAtStart = room.state.chaserFinalRemainingMs;
+
+            const firstResult = chaserClient.waitForMessage("answerResult");
+            const nextQuestion = chaserClient.waitForMessage("finalQuestion");
+            chaserClient.send("submitFinalChaserAnswer", {
+                questionId: chaserMessage.questionId,
+                answer: `Answer ${chaserMessage.questionId}`
+            });
+            await firstResult;
+            const secondQuestion = await nextQuestion;
+
+            const secondResult = chaserClient.waitForMessage("answerResult");
+            chaserClient.send("submitFinalChaserAnswer", {
+                questionId: secondQuestion.questionId,
+                answer: `Answer ${secondQuestion.questionId}`
+            });
+            await secondResult;
+
+            const totalDelta = room.state.chaserFinalRemainingMs - remainingAtStart;
+            assert.ok(
+                totalDelta > 700 && totalDelta <= 2 * CHASER_ABILITIES.timeBonusMs,
+                `two correct answers should extend the clock by ~${2 * CHASER_ABILITIES.timeBonusMs}ms total, got ${totalDelta}ms`
+            );
+        });
+
+        it("does not extend the clock for a character other than Big Stan", async () => {
+            const { room, chaserClient, chaserMessage } = await reachChaserFinal(colyseus, "bezos");
+            room.state.teamScore = 5;
+            const remainingBefore = room.state.chaserFinalRemainingMs;
+
+            const result = chaserClient.waitForMessage("answerResult");
+            chaserClient.send("submitFinalChaserAnswer", {
+                questionId: chaserMessage.questionId,
+                answer: `Answer ${chaserMessage.questionId}`
+            });
+            await result;
+
+            assert.strictEqual(room.state.chaserFinalRemainingMs, remainingBefore, "only Big Stan gets the Time Bonus");
+        });
+    });
+
+    describe("Short Fuse (Nami)", () => {
+        it("Nami's ChaserFinal uses a 10,000ms steal window even when the room was configured with the true 20,000ms default", async () => {
+            const { room } = await reachChaserFinal(colyseus, "nami", { stealWindowMs: FINAL_ROUND.stealWindowMs });
+            assert.strictEqual(room.stealWindowMs, CHASER_ABILITIES.shortFuseStealWindowMs);
+        });
+
+        it("every other character keeps the room's configured steal window (the true 20,000ms default) unchanged", async () => {
+            const { room } = await reachChaserFinal(colyseus, "bezos", { stealWindowMs: FINAL_ROUND.stealWindowMs });
+            assert.strictEqual(room.stealWindowMs, FINAL_ROUND.stealWindowMs);
+        });
+
+        it("does not reset a non-Nami chaser's short test-only stealWindowMs override back to the config default", async () => {
+            const { room } = await reachChaserFinal(colyseus, "big stan", { stealWindowMs: 250 });
+            assert.strictEqual(
+                room.stealWindowMs,
+                250,
+                "startFinalChaser must not touch room.stealWindowMs for a non-Nami chaser"
+            );
+        });
+
+        it("actually broadcasts a 10,000ms steal window when Nami misses, overriding a 150ms room option", async () => {
+            const { room, contestantClient, chaserClient, chaserMessage } = await reachChaserFinal(colyseus, "nami", { stealWindowMs: 150 });
+
+            const steal = contestantClient.waitForMessage("finalSteal");
+            chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+            const stealMessage = await steal;
+
+            assert.strictEqual(stealMessage.windowMs, CHASER_ABILITIES.shortFuseStealWindowMs);
+            assert.strictEqual(room.stealWindowMs, CHASER_ABILITIES.shortFuseStealWindowMs);
         });
     });
 });

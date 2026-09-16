@@ -1,10 +1,10 @@
-import { GamePhase, PlayerRole } from "../../TriviaTypes.js";
+import { ChaserCharacter, GamePhase, PlayerRole } from "../../TriviaTypes.js";
 import { allPlayersReady, allPlayersVoted, tallyChaserVotes } from "./chaserSelection.js";
 import { applyChaserAbilityEffect, canUseAbility } from "./chaserAbilities.js";
 import { checkAnswer } from "../../questions/answerChecker.js";
 import { pickOfferQuip } from "../../offerQuips.js";
 import { isValidCharacter } from "../../character.js";
-import { CASH_BUILDER, CHASER_CHARACTERS, CHASER_QUIP, OFFER, REACTION } from "../../gameConfig.js";
+import { CASH_BUILDER, CHASER_ABILITIES, CHASER_CHARACTERS, CHASER_QUIP, OFFER, REACTION } from "../../gameConfig.js";
 
 export function startGame(client: any, message: any, room: any) {
     if (!room.isHost(client)) {
@@ -414,6 +414,16 @@ export function submitFinalChaserAnswer(client: any, message: any, room: any) {
     if (isCorrect) {
         room.state.chaserScore += 1;
         console.log(`Chaser answered correctly — chaserScore ${room.state.chaserScore}/${room.state.teamScore}`);
+
+        // Big Stan's Time Bonus (ticket 142, passive/unlimited/auto-consumed):
+        // +0.5s on the running Chaser-final clock for every correct answer,
+        // only while the clock is actually counting down — a paused clock
+        // (e.g. resolving a steal) has nothing live to extend here.
+        const chaser = room.state.players.get(room.state.chaserSeatId);
+        if (chaser?.chaserCharacterId === ChaserCharacter.BigStan && room.chaserFinalClockRunning) {
+            room.extendChaserFinalClock(CHASER_ABILITIES.timeBonusMs);
+        }
+
         if (room.state.chaserScore >= room.state.teamScore) {
             room.dispatch({ type: "finalChaserReachedScore" });
             return;
@@ -490,10 +500,24 @@ export function submitFinalStealAnswer(client: any, message: any, room: any) {
 
     const isCorrect = checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])]);
     let pushedBack = false;
+    let pushbackBlocked = false;
     if (isCorrect) {
         if (room.state.chaserScore > 0) {
-            room.state.chaserScore -= 1;
-            pushedBack = true;
+            const chaser = room.state.players.get(room.state.chaserSeatId);
+            if (chaser?.chaserCharacterId === ChaserCharacter.Bezos && room.state.pushbackImmunityUsesRemaining > 0) {
+                // Bezos's Pushback Immunity (ticket 142, passive/auto-consumed,
+                // 3 uses/game): the steal still resolves as correct for the
+                // team (right-answer confirmation + success reaction below),
+                // it just doesn't move the Chaser back until his charges run
+                // out. Never reached from the chaserScore === 0 branch below —
+                // immunity only ever cancels an actual push-back, never a
+                // target raise; there's nothing to protect at 0.
+                room.state.pushbackImmunityUsesRemaining -= 1;
+                pushbackBlocked = true;
+            } else {
+                room.state.chaserScore -= 1;
+                pushedBack = true;
+            }
         } else {
             room.state.teamScore += 1;
         }
@@ -503,7 +527,9 @@ export function submitFinalStealAnswer(client: any, message: any, room: any) {
     }
     console.log(
         `${seatId} attempted the steal: ${isCorrect ? "correct" : "wrong"}` +
-        (isCorrect ? ` (${pushedBack ? "chaser pushed back" : "team target raised"})` : "")
+        (isCorrect
+            ? ` (${pushbackBlocked ? "pushback blocked (immunity)" : pushedBack ? "chaser pushed back" : "team target raised"})`
+            : "")
     );
     client.send("answerResult", {
         correct: isCorrect,
@@ -518,7 +544,11 @@ export function submitFinalStealAnswer(client: any, message: any, room: any) {
         seatId,
         correct: isCorrect,
         correctAnswer: currentQuestion.answer,
-        pushedBack
+        pushedBack,
+        // ticket 142: distinguishes "correct steal but Bezos's immunity
+        // blocked the push-back" from a normal push-back or a wrong steal —
+        // both pushedBack and pushbackBlocked are false for those.
+        pushbackBlocked
     });
     // Outcome-beat hold before the next question; the frozen clock stays paused
     // through it (ticket 095, on top of 094's resume seam).

@@ -103,6 +103,16 @@ export function canUseAbility(room: any, seatId: string, abilityId: string): Abi
             if (room.finalStealActive) {
                 return { ok: false, reason: "Can not Skip while a steal window is open" };
             }
+            // ticket 142: `finalChaserQuestionResolved` alone isn't a
+            // sufficient guard — if the question bank is exhausted mid-
+            // ChaserFinal, advanceFinalChaserQuestion() leaves it `false`
+            // (see finalRound.test.ts's "bank exhaustion" case) with no live
+            // question object to actually discard. Require a real current
+            // question too, so an exhausted bank can't let Skip "succeed"
+            // with nothing behind it (flagged by the ticket-140 implementer).
+            if (!room.finalRoundQuestions.getCurrentQuestion("chaser")) {
+                return { ok: false, reason: "No live chaser-final question to skip (question bank exhausted)" };
+            }
             return { ok: true };
         }
         default:
@@ -191,7 +201,11 @@ export function applyChaserAbilityEffect(room: any, abilityId: string): void {
             break;
         case "skip":
             room.state.skipUsesRemaining -= 1;
-            // ticket 142: discard the current chaser-final question with no penalty.
+            // ticket 142: discard the current chaser-final question with no
+            // scoring consequence at all — no correct, no wrong, no steal
+            // window opened — then draw the next one via the same path a
+            // normal chaser-final advance already uses.
+            room.advanceFinalChaserQuestion();
             break;
         default:
             console.warn("applyChaserAbilityEffect: unhandled ability id", abilityId);
