@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
 import { McQuestion } from "./opentdb.js";
 
-function shuffle<T>(items: T[]): void {
+export function shuffle<T>(items: T[]): void {
     for (let i = items.length - 1; i > 0; i -= 1) {
         const j = randomInt(i + 1);
         [items[i], items[j]] = [items[j], items[i]];

@@ -267,7 +267,7 @@ export function submitChaseAnswer(client: any, message: any, room: any) {
         console.log(client.sessionId, "Chase answer does not match the current question");
         return;
     }
-    if (message.answerIndex < 0 || message.answerIndex >= question.optionCount) {
+    if (message.answerIndex < 0 || message.answerIndex >= question.options.length) {
         console.log(client.sessionId, "Chase answer index out of range:", message.answerIndex);
         return;
     }

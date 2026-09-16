@@ -3,7 +3,7 @@ import { ColyseusTestServer } from "@colyseus/testing";
 import appConfig from "../src/app.config.js";
 import { GameState } from "../src/rooms/schema/GameState.js";
 import { GamePhase } from "../src/TriviaTypes.js";
-import { CHASER_ABILITIES } from "../src/gameConfig.js";
+import { BOARD, CHASER_ABILITIES, CHASE_QUESTION } from "../src/gameConfig.js";
 import { BankQuestion } from "../src/questions/bank.js";
 import { cleanup, getTestServer } from "./testServer.js";
 import { seatIdOf } from "./seatIdHelper.js";
@@ -467,15 +467,21 @@ describe("chaser ability activation handler (ticket 140)", () => {
             firstQuestion
         } = await reachChaseAsChaserWithBystander(colyseus, "nami", "low");
 
+        // Ticket 141: reRack actually redraws now, so the pre-activation
+        // `firstQuestion` is stale the instant it fires — wait for the fresh
+        // broadcast it triggers and drive the rest of the round from that.
+        const freshQuestion = alice.waitForMessage("question");
         const usedBroadcast = carol.waitForMessage("chaserAbilityUsed");
         carol.send("useChaserAbility", { ability: "reRack" });
         await usedBroadcast;
         assert.strictEqual(room.state.reRackUsedThisTableRound, true);
+        const rerackedQuestion = await freshQuestion;
+        assert.notStrictEqual(rerackedQuestion.questionId, firstQuestion.questionId, "reRack must have drawn a different question");
 
         // Catch Alice (Chaser always correct, contestant always wrong) — with a
         // bystander still waiting, this advances to Bob's CashBuilder next
         // rather than ending the game.
-        let question = firstQuestion;
+        let question = rerackedQuestion;
         for (let round = 0; round < 4 && room.state.currentPhase === GamePhase.Chase; round += 1) {
             const correctIndex = question.options.indexOf("Correct Answer");
             const wrongIndex = (correctIndex + 1) % question.options.length;
@@ -525,5 +531,357 @@ describe("chaser ability activation handler (ticket 140)", () => {
         await sleep(80);
 
         assert.strictEqual(room.state.fiftyFiftyUsesRemaining, before, "none of the malformed payloads should change any counter");
+    });
+});
+
+describe("board-chase ability effects (ticket 141)", () => {
+    let colyseus: ColyseusTestServer<typeof appConfig>;
+
+    beforeEach(async () => {
+        colyseus = await getTestServer();
+        await cleanup();
+    });
+
+    it("fiftyFifty narrows a 3-option question to 2 (both sides get the same narrowed question) and the remaining correct index still resolves correctly", async () => {
+        const { room, contestantClient, chaserClient, firstQuestion } = await reachChaseAsChaser(colyseus, "bezos");
+        assert.strictEqual(firstQuestion.options.length, CHASE_QUESTION.optionCount);
+        // reachChaseAsChaser only awaits the contestant's copy of the first
+        // "question" broadcast — let the Chaser's own socket finish
+        // dispatching its copy too, so the waiter below can't race it and
+        // catch that stale original instead of the narrowed re-broadcast.
+        await sleep(50);
+
+        const contestantNarrowed = contestantClient.waitForMessage("question");
+        const chaserNarrowed = chaserClient.waitForMessage("question");
+        chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
+        const narrowed = await contestantNarrowed;
+        const chaserSideNarrowed = await chaserNarrowed;
+
+        assert.strictEqual(narrowed.questionId, firstQuestion.questionId);
+        assert.strictEqual(narrowed.options.length, 2, "50/50 drops exactly one wrong option");
+        assert.ok(narrowed.options.includes("Correct Answer"), "the correct option must survive the narrowing");
+        assert.ok(!("correctIndex" in narrowed), "the re-broadcast must never leak correctIndex before resolution");
+        // Mutual-benefit/double-edged by design (ticket 141): both sides get
+        // the identical narrowed options, not a Chaser-only view.
+        assert.deepStrictEqual(chaserSideNarrowed.options, narrowed.options);
+
+        const correctIndex = narrowed.options.indexOf("Correct Answer");
+        const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
+        contestantClient.send("submitChaseAnswer", { questionId: narrowed.questionId, answerIndex: correctIndex });
+        chaserClient.send("submitChaseAnswer", { questionId: narrowed.questionId, answerIndex: correctIndex });
+        const result = await resultPromise;
+
+        assert.strictEqual(result.correctIndex, correctIndex);
+        assert.strictEqual(result.contestantCorrect, true);
+        assert.strictEqual(result.chaserCorrect, true);
+    });
+
+    it("reRack replaces the current chase question (different id) without touching board positions or answer counters", async () => {
+        const { room, contestantClient, chaserClient, contestantSeatId, chaserSeatId, firstQuestion } =
+            await reachChaseAsChaser(colyseus, "nami");
+        const contestantBoardPosBefore = room.state.players.get(contestantSeatId).boardPos;
+        const chaserBoardPosBefore = room.state.players.get(chaserSeatId).boardPos;
+        const fiftyFiftyBefore = room.state.fiftyFiftyUsesRemaining;
+
+        const freshQuestion = contestantClient.waitForMessage("question");
+        chaserClient.send("useChaserAbility", { ability: "reRack" });
+        const fresh = await freshQuestion;
+
+        assert.notStrictEqual(fresh.questionId, firstQuestion.questionId, "reRack must draw a different question");
+        assert.strictEqual(fresh.kind, "mc");
+        assert.ok(!("correctIndex" in fresh));
+        assert.strictEqual(room.state.reRackUsedThisTableRound, true);
+        assert.strictEqual(room.state.players.get(contestantSeatId).boardPos, contestantBoardPosBefore, "reRack must not move the contestant");
+        assert.strictEqual(room.state.players.get(chaserSeatId).boardPos, chaserBoardPosBefore, "reRack must not move the Chaser");
+        assert.strictEqual(room.state.fiftyFiftyUsesRemaining, fiftyFiftyBefore, "reRack must not touch unrelated ability counters");
+        assert.deepStrictEqual(room.chaseAnswers, {}, "reRack must not touch the answer counters");
+
+        // The fresh question is fully live — both sides can still answer it.
+        const correctIndex = fresh.options.indexOf("Correct Answer");
+        const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
+        contestantClient.send("submitChaseAnswer", { questionId: fresh.questionId, answerIndex: correctIndex });
+        chaserClient.send("submitChaseAnswer", { questionId: fresh.questionId, answerIndex: correctIndex });
+        const result = await resultPromise;
+        assert.strictEqual(result.contestantCorrect, true);
+        assert.strictEqual(result.chaserCorrect, true);
+    });
+
+    it("jumble's targeted send reaches only the active contestant's client with a valid permutation, and scoring still resolves against the true correctIndex", async () => {
+        const { contestantClient, chaserClient, bystanderClient, room, firstQuestion } =
+            await reachChaseAsChaserWithBystander(colyseus, "maggie", "middle");
+        // reachChaseAsChaserWithBystander only awaits the contestant's copy
+        // of the first "question" broadcast — let the Chaser's and
+        // bystander's own sockets finish dispatching their copies too, so
+        // the "no extra message" waiters below can't race that in-flight
+        // delivery and mistake it for a targeted jumble send.
+        await sleep(50);
+
+        const NOTHING = Symbol("no extra question message");
+        const contestantJumbled = contestantClient.waitForMessage("question");
+        const chaserExtra = Promise.race([chaserClient.waitForMessage("question"), sleep(200).then(() => NOTHING)]);
+        const bystanderExtra = Promise.race([bystanderClient.waitForMessage("question"), sleep(200).then(() => NOTHING)]);
+
+        chaserClient.send("useChaserAbility", { ability: "jumble" });
+
+        const jumbled = await contestantJumbled;
+        assert.strictEqual(jumbled.questionId, firstQuestion.questionId);
+        assert.strictEqual(jumbled.kind, "mc");
+        assert.ok(!("correctIndex" in jumbled));
+        assert.ok(Array.isArray(jumbled.displayOrder), "the contestant's send must carry a displayOrder");
+        assert.deepStrictEqual(
+            [...jumbled.displayOrder].sort((a: number, b: number) => a - b),
+            jumbled.options.map((_option: string, index: number) => index),
+            "displayOrder must be a valid permutation of the real option indices"
+        );
+
+        assert.strictEqual(await chaserExtra, NOTHING, "the Chaser must not receive a targeted jumble send");
+        assert.strictEqual(await bystanderExtra, NOTHING, "a spectator must not receive a targeted jumble send");
+        assert.strictEqual(room.state.jumbleUsedThisTableRound, true);
+
+        // Submitting the real (un-jumbled) index still resolves correctly —
+        // displayOrder is a display-only hint and never touches
+        // correctIndex/resolution.
+        const correctIndex = firstQuestion.options.indexOf("Correct Answer");
+        const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
+        contestantClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+        chaserClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+        const result = await resultPromise;
+        assert.strictEqual(result.contestantCorrect, true);
+        assert.strictEqual(result.chaserCorrect, true);
+    });
+
+    describe("doubleTime board math", () => {
+        it("correct + armed + off-board skips a space (chaserFirstCorrectSpace - 1)", async () => {
+            const { room, contestantClient, chaserClient, chaserSeatId, firstQuestion } =
+                await reachChaseAsChaser(colyseus, "big stan");
+            assert.strictEqual(room.state.players.get(chaserSeatId).boardPos, BOARD.chaserStartOffboard);
+
+            const armedBroadcast = chaserClient.waitForMessage("chaserAbilityUsed");
+            chaserClient.send("useChaserAbility", { ability: "doubleTime" });
+            await armedBroadcast;
+
+            const correctIndex = firstQuestion.options.indexOf("Correct Answer");
+            const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
+            contestantClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+            chaserClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+            const result = await resultPromise;
+
+            assert.strictEqual(result.doubleTimeArmed, true);
+            assert.strictEqual(result.chaserCorrect, true);
+            assert.strictEqual(room.state.players.get(chaserSeatId).boardPos, BOARD.chaserFirstCorrectSpace - 1);
+            assert.strictEqual(room.state.doubleTimeArmed, false, "must clear after resolving regardless of outcome");
+        });
+
+        it("correct + armed + on-board moves max(escapeSpace, boardPos - 2)", async () => {
+            const { room, contestantClient, chaserClient, chaserSeatId, firstQuestion } =
+                await reachChaseAsChaser(colyseus, "big stan");
+            room.state.players.get(chaserSeatId).boardPos = 5;
+
+            const armedBroadcast = chaserClient.waitForMessage("chaserAbilityUsed");
+            chaserClient.send("useChaserAbility", { ability: "doubleTime" });
+            await armedBroadcast;
+
+            const correctIndex = firstQuestion.options.indexOf("Correct Answer");
+            const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
+            contestantClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+            chaserClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+            const result = await resultPromise;
+
+            assert.strictEqual(result.doubleTimeArmed, true);
+            assert.strictEqual(result.chaserCorrect, true);
+            assert.strictEqual(room.state.players.get(chaserSeatId).boardPos, Math.max(BOARD.escapeSpace, 5 - 2));
+            assert.strictEqual(room.state.doubleTimeArmed, false, "must clear after resolving regardless of outcome");
+        });
+
+        it("wrong + armed + on-board retreats one space, capped at chaserFirstCorrectSpace", async () => {
+            const { room, contestantClient, chaserClient, chaserSeatId, firstQuestion } =
+                await reachChaseAsChaser(colyseus, "big stan");
+            room.state.players.get(chaserSeatId).boardPos = 5;
+
+            const armedBroadcast = chaserClient.waitForMessage("chaserAbilityUsed");
+            chaserClient.send("useChaserAbility", { ability: "doubleTime" });
+            await armedBroadcast;
+
+            const correctIndex = firstQuestion.options.indexOf("Correct Answer");
+            const wrongIndex = (correctIndex + 1) % firstQuestion.options.length;
+            const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
+            contestantClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+            chaserClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: wrongIndex });
+            const result = await resultPromise;
+
+            assert.strictEqual(result.doubleTimeArmed, true);
+            assert.strictEqual(result.chaserCorrect, false);
+            assert.strictEqual(room.state.players.get(chaserSeatId).boardPos, Math.min(BOARD.chaserFirstCorrectSpace, 5 + 1));
+            assert.strictEqual(room.state.doubleTimeArmed, false, "must clear after resolving regardless of outcome");
+        });
+
+        it("wrong + armed + off-board applies no extra penalty", async () => {
+            const { room, contestantClient, chaserClient, chaserSeatId, firstQuestion } =
+                await reachChaseAsChaser(colyseus, "big stan");
+            assert.strictEqual(room.state.players.get(chaserSeatId).boardPos, BOARD.chaserStartOffboard);
+
+            const armedBroadcast = chaserClient.waitForMessage("chaserAbilityUsed");
+            chaserClient.send("useChaserAbility", { ability: "doubleTime" });
+            await armedBroadcast;
+
+            const correctIndex = firstQuestion.options.indexOf("Correct Answer");
+            const wrongIndex = (correctIndex + 1) % firstQuestion.options.length;
+            const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
+            contestantClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+            chaserClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: wrongIndex });
+            const result = await resultPromise;
+
+            assert.strictEqual(result.doubleTimeArmed, true);
+            assert.strictEqual(result.chaserCorrect, false);
+            assert.strictEqual(
+                room.state.players.get(chaserSeatId).boardPos,
+                BOARD.chaserStartOffboard,
+                "an armed miss while still off-board has nothing to retreat from"
+            );
+            assert.strictEqual(room.state.doubleTimeArmed, false, "must clear after resolving regardless of outcome");
+        });
+
+        it("clears even when the lockout window expires with the Chaser never answering (counts as wrong)", async () => {
+            const { room, contestantClient, chaserClient, chaserSeatId, firstQuestion } =
+                await reachChaseAsChaser(colyseus, "big stan");
+            room.chaseAnswerWindowMs = 200;
+            room.state.players.get(chaserSeatId).boardPos = 5;
+
+            const armedBroadcast = chaserClient.waitForMessage("chaserAbilityUsed");
+            chaserClient.send("useChaserAbility", { ability: "doubleTime" });
+            await armedBroadcast;
+
+            const correctIndex = firstQuestion.options.indexOf("Correct Answer");
+            const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
+            // Only the contestant answers — the Chaser never does, so the
+            // lockout window closes the question and it counts as a miss.
+            contestantClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+            const result = await resultPromise;
+
+            assert.strictEqual(result.doubleTimeArmed, true);
+            assert.strictEqual(result.chaserCorrect, false);
+            assert.strictEqual(room.state.players.get(chaserSeatId).boardPos, Math.min(BOARD.chaserFirstCorrectSpace, 5 + 1));
+            assert.strictEqual(room.state.doubleTimeArmed, false, "must clear after resolving regardless of outcome");
+        });
+    });
+
+    describe("a full chase round using each ability once still ends in a valid escape/caught dispatch", () => {
+        it("big stan: fiftyFifty + doubleTime, driven to a catch", async () => {
+            const { room, contestantClient, chaserClient, contestantSeatId } =
+                await reachChaseAsChaser(colyseus, "big stan", { offer: "low" });
+
+            const narrowedPromise = contestantClient.waitForMessage("question");
+            chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
+            const narrowed = await narrowedPromise;
+            assert.strictEqual(narrowed.options.length, 2);
+
+            const armedBroadcast = chaserClient.waitForMessage("chaserAbilityUsed");
+            chaserClient.send("useChaserAbility", { ability: "doubleTime" });
+            await armedBroadcast;
+
+            // Contestant always wrong, Chaser always correct — catches
+            // quickly from a "low" start.
+            let question = narrowed;
+            for (let round = 0; round < 6 && room.state.currentPhase === GamePhase.Chase; round += 1) {
+                const correctIndex = question.options.indexOf("Correct Answer");
+                const wrongIndex = (correctIndex + 1) % question.options.length;
+                const nextQuestionOrPhase = Promise.race([
+                    contestantClient.waitForMessage("question").then((q: any) => ({ q })),
+                    (async () => {
+                        while (room.state.currentPhase === GamePhase.Chase) {
+                            await sleep(10);
+                        }
+                        return { q: null };
+                    })()
+                ]);
+                contestantClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: wrongIndex });
+                chaserClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+                const { q } = await nextQuestionOrPhase;
+                question = q;
+            }
+
+            await waitForPhase(room, GamePhase.TeamFinal);
+            assert.strictEqual(room.state.players.get(contestantSeatId).isEliminated, true, "the chase round resolved as a valid catch");
+        });
+
+        it("nami: fiftyFifty + reRack, driven to an escape", async () => {
+            const { room, contestantClient, chaserClient, contestantSeatId, firstQuestion } =
+                await reachChaseAsChaser(colyseus, "nami", { offer: "low" });
+
+            const freshPromise = contestantClient.waitForMessage("question");
+            chaserClient.send("useChaserAbility", { ability: "reRack" });
+            const fresh = await freshPromise;
+            assert.notStrictEqual(fresh.questionId, firstQuestion.questionId);
+
+            const narrowedPromise = contestantClient.waitForMessage("question");
+            chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
+            const narrowed = await narrowedPromise;
+            assert.strictEqual(narrowed.options.length, 2);
+
+            // Contestant always correct, Chaser always wrong — escapes
+            // quickly from a "low" start (BOARD.startLow rounds to reach 0).
+            let question = narrowed;
+            for (let round = 0; round < BOARD.startLow + 2 && room.state.currentPhase === GamePhase.Chase; round += 1) {
+                const correctIndex = question.options.indexOf("Correct Answer");
+                const wrongIndex = (correctIndex + 1) % question.options.length;
+                const nextQuestionOrPhase = Promise.race([
+                    contestantClient.waitForMessage("question").then((q: any) => ({ q })),
+                    (async () => {
+                        while (room.state.currentPhase === GamePhase.Chase) {
+                            await sleep(10);
+                        }
+                        return { q: null };
+                    })()
+                ]);
+                contestantClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+                chaserClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: wrongIndex });
+                const { q } = await nextQuestionOrPhase;
+                question = q;
+            }
+
+            await waitForPhase(room, GamePhase.TeamFinal);
+            assert.strictEqual(room.state.players.get(contestantSeatId).madeItBack, true, "the chase round resolved as a valid escape");
+        });
+
+        it("maggie: fiftyFifty + jumble, driven to a catch", async () => {
+            const { room, contestantClient, chaserClient, contestantSeatId } =
+                await reachChaseAsChaser(colyseus, "maggie", { offer: "low" });
+
+            const narrowedPromise = contestantClient.waitForMessage("question");
+            chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
+            const narrowed = await narrowedPromise;
+            assert.strictEqual(narrowed.options.length, 2);
+
+            const jumbledPromise = contestantClient.waitForMessage("question");
+            chaserClient.send("useChaserAbility", { ability: "jumble" });
+            const jumbled = await jumbledPromise;
+            assert.ok(Array.isArray(jumbled.displayOrder));
+            assert.strictEqual(jumbled.questionId, narrowed.questionId);
+
+            // The contestant answers using the real (un-jumbled) option index
+            // — displayOrder never changes what index scores correctly.
+            // Contestant always wrong, Chaser always correct — a catch.
+            let question = jumbled;
+            for (let round = 0; round < 6 && room.state.currentPhase === GamePhase.Chase; round += 1) {
+                const correctIndex = question.options.indexOf("Correct Answer");
+                const wrongIndex = (correctIndex + 1) % question.options.length;
+                const nextQuestionOrPhase = Promise.race([
+                    contestantClient.waitForMessage("question").then((q: any) => ({ q })),
+                    (async () => {
+                        while (room.state.currentPhase === GamePhase.Chase) {
+                            await sleep(10);
+                        }
+                        return { q: null };
+                    })()
+                ]);
+                contestantClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: wrongIndex });
+                chaserClient.send("submitChaseAnswer", { questionId: question.questionId, answerIndex: correctIndex });
+                const { q } = await nextQuestionOrPhase;
+                question = q;
+            }
+
+            await waitForPhase(room, GamePhase.TeamFinal);
+            assert.strictEqual(room.state.players.get(contestantSeatId).isEliminated, true, "the chase round resolved as a valid catch");
+        });
     });
 });

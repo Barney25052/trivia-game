@@ -70,12 +70,16 @@ interface OfferAmounts {
 }
 
 /** The chase question currently in play, held server-side only. `correctIndex`
- * indexes into the narrowed options shown to clients and is never broadcast
- * until the question resolves. */
+ * indexes into `options` and is never broadcast until the question resolves.
+ * `prompt`/`options` are kept here (not just the id) so 50/50 can narrow
+ * `options` in place and re-broadcast, and Jumble can re-send the same
+ * prompt/options to the contestant with an added display-order hint (ticket
+ * 141) — both without a second question draw. */
 interface ActiveChaseQuestion {
   id: string;
+  prompt: string;
+  options: string[];
   correctIndex: number;
-  optionCount: number;
 }
 
 type ChaseRole = "contestant" | "chaser";
@@ -226,6 +230,36 @@ export class TriviaRoom extends Room {
       questionId,
     };
     this.broadcast("question", payload);
+  }
+
+  /** Jumble (ticket 141): re-sends the current chase question to just the
+   * active contestant's own client with an added `displayOrder` permutation
+   * — the Chaser and any spectators already have the question from the
+   * original `broadcastQuestion` call (no `displayOrder`, natural order) and
+   * get nothing further here. Scoring never reads `displayOrder`:
+   * `resolveChaseQuestion` always checks the real submitted index against
+   * `correctIndex`; this is purely a display-order hint for the contestant's
+   * own client to consume (ticket 146). */
+  private sendJumbledQuestionToContestant(displayOrder: number[]) {
+    const question = this.currentChaseQuestion;
+    if (!question) {
+      return;
+    }
+    const contestantSeatId = this.state.activeContestantSeatId;
+    for (const client of this.clients) {
+      if (this.seatIdForClient(client) === contestantSeatId) {
+        client.send("question", {
+          round: this.state.activeRound,
+          targetSeatId: contestantSeatId,
+          kind: "mc",
+          prompt: question.prompt,
+          options: question.options,
+          questionId: question.id,
+          displayOrder,
+        });
+        return;
+      }
+    }
   }
 
   /** Broadcasts the public `reaction` cue for a seat's answer outcome (ticket
@@ -468,7 +502,7 @@ export class TriviaRoom extends Room {
     }
 
     const { options, correctIndex } = pickChaseOptions(question, CHASE_QUESTION.optionCount);
-    this.currentChaseQuestion = { id: question.id, correctIndex, optionCount: options.length };
+    this.currentChaseQuestion = { id: question.id, prompt: question.question, options, correctIndex };
 
     this.broadcastQuestion(
       this.state.activeRound,
@@ -498,8 +532,12 @@ export class TriviaRoom extends Room {
     const answers = this.chaseAnswers;
     this.currentChaseQuestion = null;
     this.chaseAnswers = {};
-    // Double Time (ticket 140) is consumed either way once its question
-    // resolves — the actual board-math consumption is ticket 141's scope.
+    // Double Time (ticket 140/141) is armed for exactly one chase question —
+    // capture it before clearing so the board math below can still branch on
+    // it, then clear it either way: a correct answer, a wrong one, and the
+    // lockout window simply expiring with the Chaser never answering (which
+    // reads as "wrong" below) all consume the arm.
+    const doubleTimeArmed = this.state.doubleTimeArmed;
     this.state.doubleTimeArmed = false;
 
     const contestantSeatId = this.state.activeContestantSeatId;
@@ -512,10 +550,21 @@ export class TriviaRoom extends Room {
     if (contestant && contestantCorrect) {
       contestant.boardPos = Math.max(BOARD.escapeSpace, contestant.boardPos - 1);
     }
-    if (chaser && chaserCorrect) {
-      chaser.boardPos = chaser.boardPos === BOARD.chaserStartOffboard
-        ? BOARD.chaserFirstCorrectSpace
-        : Math.max(BOARD.escapeSpace, chaser.boardPos - 1);
+    if (chaser) {
+      const chaserOffboard = chaser.boardPos === BOARD.chaserStartOffboard;
+      if (chaserCorrect) {
+        // Double Time (ticket 141): armed and correct moves an extra space,
+        // whether that first move is on from off-board or already on-board.
+        chaser.boardPos = doubleTimeArmed
+          ? (chaserOffboard ? BOARD.chaserFirstCorrectSpace - 1 : Math.max(BOARD.escapeSpace, chaser.boardPos - 2))
+          : (chaserOffboard ? BOARD.chaserFirstCorrectSpace : Math.max(BOARD.escapeSpace, chaser.boardPos - 1));
+      } else if (doubleTimeArmed && !chaserOffboard) {
+        // Double Time (ticket 141): armed and wrong retreats the Chaser one
+        // space while already on-board, capped so it never falls fully back
+        // off-board. An armed miss still off-board has nothing to retreat
+        // from, so it's left as an ordinary miss (no extra penalty).
+        chaser.boardPos = Math.min(BOARD.chaserFirstCorrectSpace, chaser.boardPos + 1);
+      }
     }
 
     this.broadcast("chaseQuestionResult", {
@@ -525,6 +574,10 @@ export class TriviaRoom extends Room {
       chaserCorrect,
       contestantBoardPos: contestant?.boardPos ?? null,
       chaserBoardPos: chaser?.boardPos ?? null,
+      // Lets the client tell a Double-Time-affected move apart from a normal
+      // one (ticket 141/146) — always present, true only when this question
+      // was resolved while armed.
+      doubleTimeArmed,
     });
 
     if (contestant) {

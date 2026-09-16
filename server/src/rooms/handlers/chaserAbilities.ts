@@ -1,4 +1,6 @@
+import { randomInt } from "node:crypto";
 import { GamePhase } from "../../TriviaTypes.js";
+import { shuffle } from "../../questions/chaseOptions.js";
 
 export type AbilityCheckResult = { ok: true } | { ok: false; reason: string };
 
@@ -108,33 +110,84 @@ export function canUseAbility(room: any, seatId: string, abilityId: string): Abi
     }
 }
 
-/** The actual per-ability mutation. This ticket (140) implements only the
- * counter/flag bookkeeping — decrementing the relevant uses-remaining
- * counter, or setting the relevant per-table-round/armed boolean. The real
- * board/final-round mutations (50/50's option removal, Double Time's board
- * math, Re-rack's redraw, Jumble's shuffle, Skip's question-discard) are
- * ticket 141/142's scope — each branch below leaves a comment marking where
- * that effect plugs in. Assumes the caller already validated via
- * `canUseAbility`. */
+/** The actual per-ability mutation. Ticket 140 wired the counter/flag
+ * bookkeeping — decrementing the relevant uses-remaining counter, or setting
+ * the relevant per-table-round/armed boolean. Ticket 141 wires the real
+ * board-chase effects for the four abilities that fire mid-Chase (50/50,
+ * Double Time's arming, Re-rack, Jumble); Double Time's actual board math
+ * lives in `TriviaRoom.resolveChaseQuestion`, since it only applies once the
+ * armed question resolves. Skip's chaser-final question-discard stays ticket
+ * 142's scope. Assumes the caller already validated via `canUseAbility`. */
 export function applyChaserAbilityEffect(room: any, abilityId: string): void {
     switch (abilityId) {
-        case "fiftyFifty":
+        case "fiftyFifty": {
             room.state.fiftyFiftyUsesRemaining -= 1;
-            // ticket 141: remove one wrong option from the current chase question.
+            // Design choice (ticket 141): the contestant and the Chaser see
+            // and answer the same shared chase question — there is no
+            // per-recipient option split anywhere in
+            // TriviaRoom.startNextChaseQuestion/submitChaseAnswer today — so
+            // narrowing the options here is deliberately mutual-benefit and
+            // double-edged: it makes the question easier for whichever side
+            // needed the help *and* for the other side at the same instant.
+            // That's one valid reading of "the Chaser plays a 50/50" (raise
+            // their own odds at the cost of also helping the contestant
+            // catch up). A future ticket could split per-recipient question
+            // views to make this Chaser-only; that's out of scope here.
+            const question = room.currentChaseQuestion;
+            if (question) {
+                const wrongIndexes: number[] = [];
+                for (let index = 0; index < question.options.length; index += 1) {
+                    if (index !== question.correctIndex) {
+                        wrongIndexes.push(index);
+                    }
+                }
+                // Nothing left to drop if a question is already down to just
+                // the correct option (e.g. only 2 options to begin with).
+                if (wrongIndexes.length > 0) {
+                    const dropIndex = wrongIndexes[randomInt(wrongIndexes.length)];
+                    question.options = question.options.filter((_: string, index: number) => index !== dropIndex);
+                    question.correctIndex = question.correctIndex > dropIndex
+                        ? question.correctIndex - 1
+                        : question.correctIndex;
+                    room.broadcastQuestion(
+                        room.state.activeRound,
+                        room.state.activeContestantSeatId,
+                        "mc",
+                        question.id,
+                        question.prompt,
+                        question.options
+                    );
+                }
+            }
             break;
+        }
         case "reRack":
             room.state.reRackUsedThisTableRound = true;
-            // ticket 141: redraw the current board-chase question.
+            // "Redraw now" via the exact same draw+broadcast path a normal
+            // chase-question advance already uses — not a parallel path.
+            room.startNextChaseQuestion().catch((error: unknown) => {
+                console.error("Re-rack failed to draw the next chase question:", error);
+            });
             break;
-        case "jumble":
+        case "jumble": {
             room.state.jumbleUsedThisTableRound = true;
-            // ticket 141: shuffle the answer-button order on the contestant's own screen.
+            const question = room.currentChaseQuestion;
+            if (question) {
+                const displayOrder = question.options.map((_: string, index: number) => index);
+                shuffle(displayOrder);
+                // Targeted: only the active contestant's own client gets this
+                // extra displayOrder hint. correctIndex/resolution never
+                // reads it — see sendJumbledQuestionToContestant.
+                room.sendJumbledQuestionToContestant(displayOrder);
+            }
             break;
+        }
         case "doubleTime":
             room.state.doubleTimeUsedThisTableRound = true;
             room.state.doubleTimeArmed = true;
-            // ticket 141: the next correct chase answer moves 2 spaces instead of
-            // 1; a miss while armed costs a space back.
+            // The board-math consumption lives in
+            // TriviaRoom.resolveChaseQuestion, since it only applies once
+            // the armed question actually resolves.
             break;
         case "skip":
             room.state.skipUsesRemaining -= 1;
