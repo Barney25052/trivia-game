@@ -15,9 +15,16 @@ const props = defineProps({
     teamPot: { type: Number, default: 0 },
     // Per-seat face reaction store (ticket 103): seatId -> expression, see
     // App.vue's reactionsBySeat.
-    reactions: { type: Object, default: () => ({}) }
+    reactions: { type: Object, default: () => ({}) },
+    // Ticket 145: ability tray plumbing, passed straight through to
+    // ChaserPanel — see App.vue for where these come from. No active
+    // ability is usable during Offer (ChaserPanel's phase="offer" shows
+    // passives only), so there's no abilityWindowOpen to compute here.
+    abilityCounters: { type: Object, default: () => ({}) },
+    abilityCueText: { type: String, default: "" },
+    abilityCueKey: { type: Number, default: 0 }
 });
-const emit = defineEmits(["setLow", "setHigh", "choose", "send-quip"]);
+const emit = defineEmits(["setLow", "setHigh", "choose", "send-quip", "use-ability"]);
 
 // Mirrors server/src/gameConfig.ts OFFER — duplicated client-side the same
 // way GamePhase is (see AGENTS.md gotchas): no shared module between the two
@@ -128,7 +135,12 @@ function submitHigh() {
                     :quip-text="chaserQuipText"
                     :quip-key="chaserQuipKey"
                     :is-chaser="isChaser"
+                    phase="offer"
+                    :ability-counters="abilityCounters"
+                    :ability-cue-text="abilityCueText"
+                    :ability-cue-key="abilityCueKey"
                     @send-quip="emit('send-quip', $event)"
+                    @use-ability="emit('use-ability', $event)"
                 />
 
                 <div class="offerTierPlaques">

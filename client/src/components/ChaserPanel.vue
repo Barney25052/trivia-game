@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { CHASER_PORTRAITS, CHASER_NAMES } from "../chaserPortraits.ts";
+import { CHASER_ABILITY_COPY, SHARED_CHASER_ABILITY_COPY } from "../chaserAbilities.ts";
 
 // Mirrors server/src/gameConfig.ts CHASER_QUIP.maxLength — duplicated
 // client-side the same way GamePhase is (see AGENTS.md gotchas).
@@ -45,12 +46,129 @@ const props = defineProps({
     // ChaserFinalScreen's own-turn banner sets this, and only the Chase
     // board sets circlePortrait). Defaults to false so every other caller
     // (Offer, the Chase board) is unaffected.
-    bannerPortrait: { type: Boolean, default: false }
+    bannerPortrait: { type: Boolean, default: false },
+    // Ticket 145: ability tray plumbing. `phase` tells the tray which
+    // manually-activated abilities are even relevant to show as buttons on
+    // this screen — mirrors the server's own phase gates
+    // (server/src/rooms/handlers/chaserAbilities.ts: fiftyFifty/doubleTime/
+    // reRack/jumble are Chase-only via chaseTimingGate, skip is
+    // ChaserFinal-only). Passed as a literal by each screen's own
+    // ChaserPanel usage rather than derived here, since the screen already
+    // knows which one it is; see PHASE_ACTIVE_ABILITY_IDS below.
+    phase: { type: String, default: "" },
+    // Synced GameState ability counters/flags (ticket 140), mirrored in
+    // App.vue's onStateChange the same way chaserPot/teamPot already are —
+    // public info, not secret (see GameState.ts's own comment on these
+    // fields). Keys: fiftyFiftyUsesRemaining, skipUsesRemaining,
+    // pushbackImmunityUsesRemaining, doubleTimeUsedThisTableRound,
+    // reRackUsedThisTableRound, jumbleUsedThisTableRound, doubleTimeArmed.
+    abilityCounters: { type: Object, default: () => ({}) },
+    // Best-effort client mirror of canUseAbility's timing gate — true when
+    // there's a live question nobody has committed an answer to yet (mid-
+    // Chase) or a live chaser-final question with no steal window open. The
+    // server remains authoritative and re-validates on click regardless;
+    // this only drives the disabled-button UX/tooltip.
+    abilityWindowOpen: { type: Boolean, default: false },
+    // Public "the Chaser just used X" cue (ticket 140's chaserAbilityUsed
+    // broadcast) — a short-lived toast, deliberately a separate prop pair
+    // from quipText/quipKey (not folded into the quip channel) so it can
+    // never clobber, or be clobbered by, a real quip (055/057).
+    abilityCueText: { type: String, default: "" },
+    abilityCueKey: { type: Number, default: 0 }
 });
-const emit = defineEmits(["send-quip"]);
+const emit = defineEmits(["send-quip", "use-ability"]);
 
 const portrait = computed(() => CHASER_PORTRAITS[props.characterId] ?? null);
 const displayName = computed(() => CHASER_NAMES[props.characterId] ?? "");
+
+// Ticket 145: which manually-activated ability ids are relevant to show per
+// phase. Offer has none — no manually-activated ability is usable during
+// Offer today (all five gate on Chase or ChaserFinal). fiftyFifty/skip are
+// "shared" abilities every Chaser character gets regardless of pick (see
+// chaserAbilities.ts's SHARED_CHASER_ABILITY_COPY / GOAL.md's "every Chaser
+// gets 2 shared abilities regardless of pick") — Bezos included, even though
+// his own CHASER_ABILITY_COPY.active is empty (he has no *character-specific*
+// active; the two shared ones still apply to him).
+const PHASE_ACTIVE_ABILITY_IDS = {
+    offer: [],
+    chase: ["fiftyFifty", "doubleTime", "reRack", "jumble"],
+    chaserFinal: ["skip"]
+};
+
+// Mirrors server/src/gameConfig.ts CHASER_ABILITIES (usesPerGame for
+// fiftyFifty/skip; the three character actives are usesPerTableRound, always
+// 1) — same client-side duplication precedent as chaserAbilities.ts itself.
+const ABILITY_MAX_USES = {
+    fiftyFifty: 4,
+    skip: 2,
+    doubleTime: 1,
+    reRack: 1,
+    jumble: 1
+};
+
+// Which GameState boolean flag backs each once-per-table-round active.
+const ABILITY_TABLE_ROUND_FLAG = {
+    doubleTime: "doubleTimeUsedThisTableRound",
+    reRack: "reRackUsedThisTableRound",
+    jumble: "jumbleUsedThisTableRound"
+};
+
+const characterAbilities = computed(() => CHASER_ABILITY_COPY[props.characterId] ?? null);
+
+const visiblePassives = computed(() => characterAbilities.value?.passive ?? []);
+
+const visibleActiveAbilities = computed(() => {
+    const allowedIds = PHASE_ACTIVE_ABILITY_IDS[props.phase] ?? [];
+    if (allowedIds.length === 0) return [];
+    const all = [...SHARED_CHASER_ABILITY_COPY, ...(characterAbilities.value?.active ?? [])];
+    return all.filter((ability) => allowedIds.includes(ability.id));
+});
+
+function chargesRemaining(id) {
+    if (id === "fiftyFifty") return props.abilityCounters.fiftyFiftyUsesRemaining ?? 0;
+    if (id === "skip") return props.abilityCounters.skipUsesRemaining ?? 0;
+    const flag = ABILITY_TABLE_ROUND_FLAG[id];
+    if (flag) return props.abilityCounters[flag] ? 0 : 1;
+    return 0;
+}
+
+function chargesLabel(id) {
+    return `${chargesRemaining(id)}/${ABILITY_MAX_USES[id] ?? 1}`;
+}
+
+// Empty string = usable. Anything else is the disabled reason, also used to
+// extend the hover tooltip so a dimmed button still explains itself.
+function disabledReason(id) {
+    if (chargesRemaining(id) <= 0) {
+        return ABILITY_TABLE_ROUND_FLAG[id] ? "Already used this table round" : "No uses remaining";
+    }
+    if (id === "doubleTime" && props.abilityCounters.doubleTimeArmed) {
+        return "Already armed — resolves on the next chase question";
+    }
+    if (!props.abilityWindowOpen) {
+        return "Not usable right now";
+    }
+    return "";
+}
+
+function isAbilityUsable(id) {
+    return props.isChaser && disabledReason(id) === "";
+}
+
+function abilityTip(ability) {
+    const reason = disabledReason(ability.id);
+    return reason ? `${ability.description} (${reason})` : ability.description;
+}
+
+// Pushback Immunity is the one passive with a live public counter (3 uses a
+// game) — worth surfacing since it's already synced GameState, not secret.
+// Every other passive is purely descriptive (always-on, no charges to track).
+function passiveTip(passive) {
+    if (passive.id === "pushbackImmunity" && typeof props.abilityCounters.pushbackImmunityUsesRemaining === "number") {
+        return `${passive.description} (${props.abilityCounters.pushbackImmunityUsesRemaining}/3 left)`;
+    }
+    return passive.description;
+}
 
 const quipDraft = ref("");
 const onCooldown = ref(false);
@@ -115,11 +233,46 @@ function submitQuip() {
         <Transition name="chaser-bubble-pop">
             <div v-if="answerText" :key="answerKey" class="chaserPanelBubble chaserPanelAnswerBubble">{{ answerText }}</div>
         </Transition>
+        <Transition name="ability-cue-pop">
+            <div v-if="abilityCueText" :key="abilityCueKey" class="chaserAbilityCue">{{ abilityCueText }}</div>
+        </Transition>
         <p
             v-if="displayName"
             class="playerName chaserPanelName"
             :class="{ 'chaserPanelName-banner': bannerPortrait }"
         >{{ displayName }}</p>
+
+        <div
+            v-if="isChaser && (visiblePassives.length > 0 || visibleActiveAbilities.length > 0)"
+            class="chaserAbilityTray"
+        >
+            <div v-if="visiblePassives.length > 0" class="chaserAbilityPassiveRow">
+                <span
+                    v-for="passive in visiblePassives"
+                    :key="passive.id"
+                    class="p5-ability-chip p5-ability-chip-passive"
+                    :data-tip="passiveTip(passive)"
+                >{{ passive.name }}</span>
+            </div>
+            <div v-if="visibleActiveAbilities.length > 0" class="chaserAbilityActiveRow">
+                <span
+                    v-for="ability in visibleActiveAbilities"
+                    :key="ability.id"
+                    class="chaserAbilityBtnWrap"
+                    :data-tip="abilityTip(ability)"
+                >
+                    <button
+                        type="button"
+                        class="chaserAbilityBtn"
+                        :disabled="!isAbilityUsable(ability.id)"
+                        @click="emit('use-ability', ability.id)"
+                    >
+                        <span class="chaserAbilityBtnName">{{ ability.name }}</span>
+                        <span class="chaserAbilityBtnCharges">{{ chargesLabel(ability.id) }}</span>
+                    </button>
+                </span>
+            </div>
+        </div>
 
         <div v-if="isChaser && quipInput" class="chaserPanelInputRow">
             <input

@@ -26,9 +26,14 @@ const props = defineProps({
     // moment it last saw either change as chaserFinalClockSyncedAt.
     chaserFinalClockRunning: { type: Boolean, default: false },
     chaserFinalRemainingMs: { type: Number, default: 0 },
-    chaserFinalClockSyncedAt: { type: Number, default: () => Date.now() }
+    chaserFinalClockSyncedAt: { type: Number, default: () => Date.now() },
+    // Ticket 145: ability tray plumbing, passed straight through to
+    // ChaserPanel — see App.vue for where these come from.
+    abilityCounters: { type: Object, default: () => ({}) },
+    abilityCueText: { type: String, default: "" },
+    abilityCueKey: { type: Number, default: 0 }
 });
-const emit = defineEmits(["submit-final-chaser-answer", "submit-final-steal-answer", "auto-quip", "send-quip"]);
+const emit = defineEmits(["submit-final-chaser-answer", "submit-final-steal-answer", "auto-quip", "send-quip", "use-ability"]);
 
 const isChaser = computed(() => props.mySeatId !== "" && props.mySeatId === props.chaserSeatId);
 const teamPlayers = computed(() => props.players.filter((p) => p.seatId !== props.chaserSeatId));
@@ -196,6 +201,15 @@ const stealWindowEndsAt = computed(() =>
 // the only signal they get for "nobody answered in time".
 const manuallyClosed = ref(false);
 const stealActive = computed(() => props.finalSteal !== null && !manuallyClosed.value);
+
+// Ticket 145: best-effort client mirror of Skip's own gate in canUseAbility
+// (server/src/rooms/handlers/chaserAbilities.ts) for the ability tray's
+// disabled state — a live chaser-final question exists and no steal window
+// is open. Doesn't attempt to mirror the finer bank-exhaustion edge case
+// (finalRoundQuestions.getCurrentQuestion) — the server re-validates
+// regardless (canUseAbility), so a rare stale-enabled click there just gets
+// silently rejected server-side same as any other race.
+const chaserAbilityWindowOpen = computed(() => props.finalQuestion !== null && !stealActive.value);
 const stealSecondsLeft = computed(() =>
     stealActive.value ? Math.max(0, Math.ceil((stealWindowEndsAt.value - nowTick.value) / 1000)) : 0
 );
@@ -398,7 +412,13 @@ const chaserFinalStageClass = computed(() => (stealActive.value ? "chaserFinalSt
             :answer-key="chaserAnswerBubbleKey"
             :is-chaser="isChaser"
             :quip-input="false"
+            phase="chaserFinal"
+            :ability-counters="abilityCounters"
+            :ability-window-open="chaserAbilityWindowOpen"
+            :ability-cue-text="abilityCueText"
+            :ability-cue-key="abilityCueKey"
             @send-quip="emit('send-quip', $event)"
+            @use-ability="emit('use-ability', $event)"
         />
       </div>
 

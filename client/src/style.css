@@ -1761,6 +1761,178 @@ h1, h2, h3, h4 {
   cursor: not-allowed;
 }
 
+/* ---------- Chaser ability tray (ticket 145) ----------
+   Chaser-only (mirrors the .chaserPanelInputRow isChaser gate just above) —
+   contestants/spectators don't get a control tray for buttons only the
+   Chaser can press; they see the public .chaserAbilityCue toast below
+   instead when an ability actually fires. Passives reuse ticket 150's
+   .p5-ability-chip/-passive + data-tip tooltip verbatim (same public
+   character-trait content, just a second place it's shown); the
+   active-ability buttons are new since nothing before this ticket was a
+   real clickable trigger. */
+.chaserAbilityTray {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  width: 220px;
+}
+
+.chaserAbilityPassiveRow,
+.chaserAbilityActiveRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Anchor for the data-tip tooltip — the same mechanism as
+   .p5-ability-chip::before/::after (ticket 150), duplicated here rather than
+   generalized into a shared selector so this ticket doesn't risk touching
+   150's already-shipped rule. A separate wrapper around the button (instead
+   of data-tip straight on .chaserAbilityBtn) so the tooltip still works
+   while the button itself is :disabled, which is unreliable for :hover in
+   some browsers. */
+.chaserAbilityBtnWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.chaserAbilityBtnWrap::before,
+.chaserAbilityBtnWrap::after {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 20;
+}
+
+.chaserAbilityBtnWrap::before {
+  content: attr(data-tip);
+  width: max-content;
+  max-width: 180px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--ink-chase);
+  border: 2px solid var(--btn-ink);
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+  box-shadow: 3px 3px 0 rgba(var(--color-black-rgb), 0.4);
+}
+
+.chaserAbilityBtnWrap::after {
+  content: "";
+  bottom: calc(100% + 2px);
+  border: 6px solid transparent;
+  border-top-color: var(--btn-ink);
+}
+
+.chaserAbilityBtnWrap:hover::before,
+.chaserAbilityBtnWrap:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+/* Available state: flat gold fill + thick ink border + hard offset shadow —
+   the same chunky flat-press button language as .btn-primary/.btn-outline,
+   coloured gold to match .p5-ability-chip-active's "this is an active
+   ability" colour role on the roster picker. */
+.chaserAbilityBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 64px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 3px solid var(--btn-ink);
+  background: var(--color-gold);
+  color: var(--btn-ink);
+  font-family: var(--font-body);
+  cursor: pointer;
+  box-shadow: 3px 3px 0 rgba(var(--color-black-rgb), 0.4);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.chaserAbilityBtn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(var(--color-black-rgb), 0.4);
+}
+
+.chaserAbilityBtn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(var(--color-black-rgb), 0.4);
+}
+
+/* disabled-no-charges and disabled-wrong-phase share the same dimmed look
+   (both are "can't press this right now") — the hover tooltip (abilityTip
+   above) is what tells them apart, same split as the mockup direction memo's
+   general "dim + explain on hover" pattern. */
+.chaserAbilityBtn:disabled {
+  background: var(--color-grey-disabled-bg);
+  color: var(--color-grey-disabled-text);
+  border-color: var(--color-grey-disabled-text);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.chaserAbilityBtnName {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Charges remaining as an "x/y" count (not pips) in the HUD pixel font,
+   consistent with how every other numeric readout in the game (timers, room
+   codes, board wagers) already uses VT323. */
+.chaserAbilityBtnCharges {
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Public "the Chaser just used X" cue (ticket 140's chaserAbilityUsed
+   broadcast) — a small overlay badge pinned to the panel's own corner
+   instead of folding into the quip bubble, so it can never collide with or
+   get clobbered by a real quip (055/057) showing at the same time. Position
+   is plain top/right (not transform) so the ability-cue-pop keyframes below
+   are free to use transform purely for the pop-in scale. */
+.chaserAbilityCue {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  max-width: 160px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: var(--color-gold);
+  color: var(--btn-ink);
+  border: 2px solid var(--btn-ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  text-align: center;
+  box-shadow: 3px 3px 0 rgba(var(--color-black-rgb), 0.4);
+  z-index: 5;
+}
+
+.ability-cue-pop-enter-active {
+  animation: ability-cue-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes ability-cue-pop {
+  0%   { transform: scale(0.3); }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
 /* Ticket 134: replaces the old .offerBoard vertical 7-space track (a
    bespoke box mirroring the real Chase board's spaces, ticket 052) with the
    shared moneyPlaque component itself — one plaque per tier, in a

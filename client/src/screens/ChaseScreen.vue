@@ -19,9 +19,14 @@ const props = defineProps({
     chaseWagerAmount: { type: Number, default: 0 },
     // Per-seat face reaction store (ticket 103): seatId -> expression, see
     // App.vue's reactionsBySeat.
-    reactions: { type: Object, default: () => ({}) }
+    reactions: { type: Object, default: () => ({}) },
+    // Ticket 145: ability tray plumbing, passed straight through to
+    // ChaserPanel — see App.vue for where these come from.
+    abilityCounters: { type: Object, default: () => ({}) },
+    abilityCueText: { type: String, default: "" },
+    abilityCueKey: { type: Number, default: 0 }
 });
-const emit = defineEmits(["submit-chase-answer", "auto-quip", "send-quip"]);
+const emit = defineEmits(["submit-chase-answer", "auto-quip", "send-quip", "use-ability"]);
 
 // Mirrors server/src/gameConfig.ts BOARD + CHASE_QUESTION — duplicated
 // client-side the same way GamePhase is (see AGENTS.md gotchas): no shared
@@ -46,6 +51,15 @@ onMounted(() => {
 const isChaser = computed(() => props.mySeatId !== "" && props.mySeatId === props.chaserSeatId);
 const isContestant = computed(() => props.mySeatId !== "" && props.mySeatId === props.activeContestantSeatId);
 const isParticipant = computed(() => isChaser.value || isContestant.value);
+
+// Ticket 145: best-effort client mirror of chaseTimingGate (server/src/
+// rooms/handlers/chaserAbilities.ts) for the ability tray's disabled state —
+// a live question exists and no reveal is in progress yet. chaseQuestionResult
+// gets set the instant either side answers (see App.vue's chaseQuestionResult
+// handling), so "no result yet" is a reasonable proxy for "nobody has
+// committed an answer yet" without threading a new message down just for
+// this. The server re-validates regardless (canUseAbility).
+const chaseAbilityWindowOpen = computed(() => props.currentQuestion !== null && props.chaseQuestionResult === null);
 
 const contestantPos = computed(
     () => props.players.find((p) => p.seatId === props.activeContestantSeatId)?.boardPos ?? ESCAPE_SPACE
@@ -326,7 +340,13 @@ onUnmounted(() => {
               :is-chaser="isChaser"
               :countdown-seconds="chaserCountdownSeconds"
               :countdown-urgent="lockoutUrgent"
+              phase="chase"
+              :ability-counters="abilityCounters"
+              :ability-window-open="chaseAbilityWindowOpen"
+              :ability-cue-text="abilityCueText"
+              :ability-cue-key="abilityCueKey"
               @send-quip="emit('send-quip', $event)"
+              @use-ability="emit('use-ability', $event)"
           />
 
           <div class="board">

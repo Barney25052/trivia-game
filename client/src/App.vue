@@ -3,6 +3,8 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Client } from "@colyseus/sdk";
 import { GamePhase } from "./TriviaTypes.ts";
 import { preloadImages } from "./assetPreload.js";
+import { CHASER_ABILITY_COPY, SHARED_CHASER_ABILITY_COPY } from "./chaserAbilities.ts";
+import { CHASER_NAMES } from "./chaserPortraits.ts";
 import HomeScreen from "./screens/HomeScreen.vue"
 import AddQuestionScreen from "./screens/AddQuestionScreen.vue";
 import LobbyScreen from "./screens/LobbyScreen.vue";
@@ -76,6 +78,42 @@ const chaserQuipText = ref("");
 const chaserQuipKey = ref(0);
 let chaserQuipClearTimeout = null;
 const CHASER_QUIP_DISPLAY_MS = 6000;
+// Chaser ability-use counters/flags (ticket 140's GameState fields, ticket
+// 139's config) mirrored here the same way chaserPot/teamPot already are —
+// public info, not secret, per GameState.ts's own comment on these fields.
+// ChaserPanel.vue reads them (as the abilityCounters prop below) to decide
+// each active-ability button's disabled/charges-remaining display.
+const fiftyFiftyUsesRemaining = ref(0);
+const skipUsesRemaining = ref(0);
+const pushbackImmunityUsesRemaining = ref(0);
+const doubleTimeUsedThisTableRound = ref(false);
+const reRackUsedThisTableRound = ref(false);
+const jumbleUsedThisTableRound = ref(false);
+const doubleTimeArmed = ref(false);
+const abilityCounters = computed(() => ({
+  fiftyFiftyUsesRemaining: fiftyFiftyUsesRemaining.value,
+  skipUsesRemaining: skipUsesRemaining.value,
+  pushbackImmunityUsesRemaining: pushbackImmunityUsesRemaining.value,
+  doubleTimeUsedThisTableRound: doubleTimeUsedThisTableRound.value,
+  reRackUsedThisTableRound: reRackUsedThisTableRound.value,
+  jumbleUsedThisTableRound: jumbleUsedThisTableRound.value,
+  doubleTimeArmed: doubleTimeArmed.value
+}));
+// Public "the Chaser just used X" cue (ticket 140's chaserAbilityUsed
+// broadcast) — a short-lived toast rendered by ChaserPanel.vue, deliberately
+// its own text/key pair (mirrors chaserQuipText/chaserQuipKey above) so it
+// can never clobber, or be clobbered by, a real quip.
+const abilityCueText = ref("");
+const abilityCueKey = ref(0);
+let abilityCueTimeout = null;
+const ABILITY_CUE_DISPLAY_MS = 4000;
+// Flat ability-id -> display-name lookup built once from chaserAbilities.ts
+// (ticket 150's copy) so the toast text doesn't need to know which character
+// owns which ability, just the id the server broadcasts.
+const ABILITY_NAME_BY_ID = Object.fromEntries([
+  ...SHARED_CHASER_ABILITY_COPY.map((a) => [a.id, a.name]),
+  ...Object.values(CHASER_ABILITY_COPY).flatMap((c) => c.active.map((a) => [a.id, a.name]))
+]);
 // Per-seat face reaction store (ticket 103): seatId -> "smile"/"frown"/"teary",
 // fed by the server's `reaction` broadcast and read by CharacterFace instances
 // on CashBuilder/Offer/Chase/TeamFinal/ChaserFinal. Same client-only-constant
@@ -234,6 +272,17 @@ function showChaserQuip(text) {
   }, CHASER_QUIP_DISPLAY_MS);
 }
 
+function showAbilityCue(ability) {
+  const abilityName = ABILITY_NAME_BY_ID[ability] ?? ability;
+  const chaserName = CHASER_NAMES[chaserCharacterId.value] || "The Chaser";
+  abilityCueText.value = `${chaserName} used ${abilityName}!`;
+  abilityCueKey.value += 1;
+  if (abilityCueTimeout) clearTimeout(abilityCueTimeout);
+  abilityCueTimeout = setTimeout(() => {
+    abilityCueText.value = "";
+  }, ABILITY_CUE_DISPLAY_MS);
+}
+
 async function handleJoin({ playerName, roomCode }) {
   await joinLobby(playerName, roomCode);
 }
@@ -286,6 +335,13 @@ async function joinLobby(playerName, roomCode) {
       contestantsOrder.value = Array.from(newState.contestantsOrder);
       chaseWagerAmount.value = newState.chaseWagerAmount;
       cashBuilderDurationMs.value = newState.cashBuilderDurationMs;
+      fiftyFiftyUsesRemaining.value = newState.fiftyFiftyUsesRemaining;
+      skipUsesRemaining.value = newState.skipUsesRemaining;
+      pushbackImmunityUsesRemaining.value = newState.pushbackImmunityUsesRemaining;
+      doubleTimeUsedThisTableRound.value = newState.doubleTimeUsedThisTableRound;
+      reRackUsedThisTableRound.value = newState.reRackUsedThisTableRound;
+      jumbleUsedThisTableRound.value = newState.jumbleUsedThisTableRound;
+      doubleTimeArmed.value = newState.doubleTimeArmed;
     });
 
     room.value.onMessage("seatId", (message) => {
@@ -384,6 +440,12 @@ async function joinLobby(playerName, roomCode) {
 
     room.value.onMessage("chaserQuip", (message) => {
       showChaserQuip(message.text);
+    });
+
+    // Public "the Chaser just used X" cue (ticket 140's broadcast) — every
+    // client (Chaser included) sees the same toast via ChaserPanel.vue.
+    room.value.onMessage("chaserAbilityUsed", (message) => {
+      showAbilityCue(message.ability);
     });
 
     room.value.onMessage("chaserCharacterReveal", (message) => {
@@ -661,6 +723,15 @@ function sendChaserQuip(text) {
   }
 }
 
+function sendChaserAbility(ability) {
+  try {
+    room.value?.send("useChaserAbility", { ability });
+
+  } catch (e) {
+    console.error("Failed to use chaser ability:", e);
+  }
+}
+
 // Ticket 153 (bug-020): AGENTS.md documents sessionId as ephemeral and a
 // reload/navigate-away as an intentional "forfeit the seat" — there is no
 // reconnection story here (host-reconnect is a separate, not-yet-built
@@ -759,11 +830,15 @@ onUnmounted(() => {
       :chaserPot="chaserPot"
       :teamPot="teamPot"
       :reactions="reactionsBySeat"
+      :abilityCounters="abilityCounters"
+      :abilityCueText="abilityCueText"
+      :abilityCueKey="abilityCueKey"
       @choose="chooseOffer"
       @setLow="setChaserLowOffer"
       @setHigh="setChaserHighOffer"
       @auto-quip="showChaserQuip"
       @send-quip="sendChaserQuip"
+      @use-ability="sendChaserAbility"
     />
     <ChaseScreen
       v-if="currentScreen=='chase'"
@@ -780,9 +855,13 @@ onUnmounted(() => {
       :chaseLockout="chaseLockout"
       :chaseWagerAmount="chaseWagerAmount"
       :reactions="reactionsBySeat"
+      :abilityCounters="abilityCounters"
+      :abilityCueText="abilityCueText"
+      :abilityCueKey="abilityCueKey"
       @submit-chase-answer="sendChaseAnswer"
       @auto-quip="showChaserQuip"
       @send-quip="sendChaserQuip"
+      @use-ability="sendChaserAbility"
     />
     <TeamFinalIntroScreen
       v-if="currentScreen=='teamFinalIntro'"
@@ -822,10 +901,14 @@ onUnmounted(() => {
       :chaserFinalClockRunning="chaserFinalClockRunning"
       :chaserFinalRemainingMs="chaserFinalRemainingMs"
       :chaserFinalClockSyncedAt="chaserFinalClockSyncedAt"
+      :abilityCounters="abilityCounters"
+      :abilityCueText="abilityCueText"
+      :abilityCueKey="abilityCueKey"
       @submit-final-chaser-answer="submitFinalChaserAnswer"
       @submit-final-steal-answer="submitFinalStealAnswer"
       @auto-quip="showChaserQuip"
       @send-quip="sendChaserQuip"
+      @use-ability="sendChaserAbility"
     />
     <ResultsScreen
       v-if="currentScreen=='gameEnd'"
