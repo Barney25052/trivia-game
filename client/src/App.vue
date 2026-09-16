@@ -397,6 +397,10 @@ async function joinLobby(playerName, roomCode) {
         middle: message.middle,
         low: message.low,
         high: null,
+        // Bezos's No Middle passive (ticket 143) — captured here so the
+        // client doesn't silently drop it; ticket 147 is the one that
+        // actually renders it (plumbing only, no UI change here).
+        middleVoided: message.middleVoided,
         chaserCharacterId: message.chaserCharacterId,
         chaserCharacterName: message.chaserCharacterName,
         chaserCharacterTagline: message.chaserCharacterTagline,
@@ -418,6 +422,10 @@ async function joinLobby(playerName, roomCode) {
         middle: message.offers.middle,
         low: message.offers.low,
         high: message.offers.high,
+        // Bezos's No Middle passive (ticket 143) — captured here so the
+        // client doesn't silently drop it; ticket 147 is the one that
+        // actually renders it (plumbing only, no UI change here).
+        middleVoided: message.middleVoided,
         chaserCharacterId: message.chaserCharacterId,
         chaserCharacterName: message.chaserCharacterName,
         chaserCharacterTagline: message.chaserCharacterTagline,

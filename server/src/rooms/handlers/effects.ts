@@ -138,23 +138,33 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           room.questionManager.clearContestant(effect.seatId);
           const player = room.state.players.get(effect.seatId);
           const take = player?.cashBuilderMoney ?? 0;
+          const chaser = room.state.players.get(room.state.chaserSeatId);
+          const chaserCharId = chaser?.chaserCharacterId ?? "";
+          const chaserChar = CHASER_CHARACTERS.find((c) => c.id === chaserCharId);
+          // Bezos's No Middle passive (ticket 143): every offer he sets voids
+          // the middle tier as a pickable choice. The internal middle number
+          // itself is untouched — it still exists and still bounds low/high
+          // exactly as before (ticket 051) — only offerChoice's "middle" pick
+          // is rejected for it, enforced server-side in messageHandlers.ts.
+          const middleVoided = chaserCharId === ChaserCharacter.Bezos;
           // A $0 middle has no legal low offer (ticket 058) — skip the low-offer
           // step by pre-filling it with $0 instead of waiting on the Chaser.
+          // This pre-fill is unrelated to No Middle and behaves identically
+          // whether or not middleVoided is true.
           room.currentOffer = {
             low: take === 0 ? 0 : null,
             middle: take,
-            high: null
+            high: null,
+            middleVoided
           };
           room.currentOfferAmount = take;
           const waitingFor = take === 0 ? "high" : "low/high";
           console.log(`Offer for ${effect.seatId}: middle ${take} — waiting for the Chaser to set ${waitingFor}`);
-          const chaser = room.state.players.get(room.state.chaserSeatId);
-          const chaserCharId = chaser?.chaserCharacterId ?? "";
-          const chaserChar = CHASER_CHARACTERS.find((c) => c.id === chaserCharId);
           room.broadcast("offerStart", {
             seatId: effect.seatId,
             middle: take,
             low: room.currentOffer.low,
+            middleVoided,
             chaserCharacterId: chaserCharId,
             chaserCharacterName: chaserChar?.name ?? "",
             chaserCharacterTagline: chaserChar?.tagline ?? "",
@@ -178,6 +188,7 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           room.broadcast("offer", {
             seatId: effect.seatId,
             offers: room.currentOffer,
+            middleVoided: room.currentOffer.middleVoided,
             chaserCharacterId: chaserCharId,
             chaserCharacterName: chaserChar?.name ?? "",
             chaserCharacterTagline: chaserChar?.tagline ?? "",

@@ -479,8 +479,11 @@ describe("leaveFlow (integration)", () => {
         await sleep(30);
         alice.send("setChaserHighOffer", { amount: 1000 });
         await sleep(30);
+        // "low", not "middle": Alice is Bezos in this test (No Middle passive,
+        // ticket 143) and low is already set to the same $0 amount, so the
+        // resulting wager is identical either way.
         const bobQuestionMessage = bob.waitForMessage("question");
-        bob.send("offerChoice", { offer: "middle" });
+        bob.send("offerChoice", { offer: "low" });
         let bobQuestion = await bobQuestionMessage;
         for (let round = 0; round < 6 && room.state.currentPhase === GamePhase.Chase; round += 1) {
             const nextQuestionOrPhase = Promise.race([

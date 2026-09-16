@@ -129,8 +129,12 @@ async function reachChaseAsChaser(
     carol.send("setChaserHighOffer", { amount: 2000 });
     await sleep(30);
 
+    // Default "low" (not "middle"): this helper is called with "bezos" as the
+    // deterministic chaser character across many of these tests, and ticket
+    // 143's No Middle passive voids the middle pick against him — "low" keeps
+    // every caller that doesn't care which tier it picks working unchanged.
     const questionMessage = alice.waitForMessage("question");
-    alice.send("offerChoice", { offer: opts?.offer ?? "middle" });
+    alice.send("offerChoice", { offer: opts?.offer ?? "low" });
     const firstQuestion = await questionMessage;
 
     return { room, contestantClient: alice, chaserClient: carol, contestantSeatId, chaserSeatId, firstQuestion };

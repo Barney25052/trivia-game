@@ -67,6 +67,11 @@ interface OfferAmounts {
   low: number | null;
   middle: number;
   high: number | null;
+  /** True when the Chaser is Bezos (ticket 143's No Middle passive) — the
+   * middle tier still exists and still bounds low/high (ticket 051), it is
+   * just never a legal contestant pick. Server-computed in startOffer and
+   * enforced by offerChoice; never trust a client to just not send "middle". */
+  middleVoided: boolean;
 }
 
 /** The chase question currently in play, held server-side only. `correctIndex`

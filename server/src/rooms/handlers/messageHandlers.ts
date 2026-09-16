@@ -233,6 +233,14 @@ export function offerChoice(client: any, message: any, room: any) {
         console.log(client.sessionId, "Ignoring invalid offer choice:", message?.offer);
         return;
     }
+    // Bezos's No Middle passive (ticket 143): the middle tier still exists
+    // internally (it still bounds low/high, ticket 051) but is never a legal
+    // pick against him — server-authoritative per AGENTS.md, never trust the
+    // client to simply not send "middle".
+    if (offer === "middle" && room.currentOffer.middleVoided) {
+        console.log(client.sessionId, "Can not choose the middle offer — voided by the Chaser's No Middle passive");
+        return;
+    }
     room.currentOfferAmount = room.currentOffer[offer as "low" | "middle" | "high"];
     room.state.chaseWagerAmount = room.currentOfferAmount;
     room.dispatch({ type: "contestantChoice", offer });

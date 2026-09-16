@@ -79,7 +79,11 @@ async function reachOfferReady(
 
     alice.send("startGame");
     await waitForPhase(room, GamePhase.RolesReveal);
-    alice.send("revealReady", { characterId: "bezos" });
+    // Neither side is "bezos" here: the chaser is picked randomly between
+    // Alice and Bob, and this file's default offer pick below is "middle" —
+    // ticket 143's No Middle passive would void that pick for whichever of
+    // them ends up as a Bezos chaser, so keep both non-Bezos.
+    alice.send("revealReady", { characterId: "maggie" });
     bob.send("revealReady", { characterId: "nami" });
     await waitForPhase(room, GamePhase.CashBuilder);
     room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney = 1000;

@@ -330,7 +330,10 @@ describe("roomFlow", () => {
     const first = bySession.get(room.state.activeContestantSeatId);
     await setChaserOffers(chaserClient, 0, 2000);
     armChaseAutoAnswer(first, chaserClient, true);
-    first.send("offerChoice", { offer: "middle" });
+    // "high", not "middle": every player here picked "bezos" (asserted above),
+    // so the chaser is deterministically Bezos — ticket 143's No Middle
+    // passive voids the middle pick against him.
+    first.send("offerChoice", { offer: "high" });
     await waitForChaseResolved(room);
 
     // Round 2: cashBuilder timeout skips straight to Offer — no reveal replay.
@@ -475,7 +478,10 @@ alice.send("startGame");
     await setChaserOffers(chaserClient, 0, 2000);
 
     armChaseAutoAnswer(second, chaserClient, false);
-    second.send("offerChoice", { offer: "middle" });
+    // "low", not "middle": every player here picked "bezos" too, so the
+    // chaser is deterministically Bezos — ticket 143's No Middle passive
+    // voids the middle pick against him.
+    second.send("offerChoice", { offer: "low" });
     await waitForChaseResolved(room);
     await waitForPhase(room, GamePhase.TeamFinal);
     assert.strictEqual(room.state.players.get(seatIdOf(room, second)).isEliminated, true);
@@ -825,7 +831,11 @@ alice.send("chaserVote", { targetSeatId: seatIdOf(room, bob) });
 
       alice.send("startGame");
       await waitForPhase(room, GamePhase.RolesReveal);
-      alice.send("revealReady", { characterId: "bezos" });
+      // Neither side is "bezos" here: the chaser is picked randomly between
+      // Alice and Bob, and this describe block's tests pick "middle" freely —
+      // ticket 143's No Middle passive would void that pick for whichever of
+      // them ends up as a Bezos chaser, so keep both non-Bezos.
+      alice.send("revealReady", { characterId: "maggie" });
       bob.send("revealReady", { characterId: "nami" });
       await waitForPhase(room, GamePhase.CashBuilder);
       room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney = 5000;
@@ -851,7 +861,9 @@ alice.send("chaserVote", { targetSeatId: seatIdOf(room, bob) });
       const offerPromise = activeClient.waitForMessage("offer");
       chaserClient.send("setChaserHighOffer", { amount: 12000 });
       const offer = await offerPromise;
-      assert.deepStrictEqual(offer.offers, { low: 1000, middle: 5000, high: 12000 });
+      // middleVoided: false — neither Alice ("maggie") nor Bob ("nami") is
+      // Bezos, so ticket 143's No Middle passive never applies here.
+      assert.deepStrictEqual(offer.offers, { low: 1000, middle: 5000, high: 12000, middleVoided: false });
 
       activeClient.send("offerChoice", { offer: "high" });
       await waitForPhase(room, GamePhase.Chase);
@@ -1040,7 +1052,11 @@ alice.send("chaserVote", { targetSeatId: seatIdOf(room, bob) });
 
       alice.send("startGame");
       await waitForPhase(room, GamePhase.RolesReveal);
-      alice.send("revealReady", { characterId: "bezos" });
+      // Neither side is "bezos" here (chaser is picked randomly): this test
+      // ends by picking "middle", which ticket 143's No Middle passive would
+      // void for a Bezos chaser — see the dedicated No Middle test suite for
+      // the Bezos-specific version of this $0-prefill interaction.
+      alice.send("revealReady", { characterId: "maggie" });
       bob.send("revealReady", { characterId: "nami" });
       await waitForPhase(room, GamePhase.CashBuilder);
       // Leave cashBuilderMoney at its default $0 — the contestant answers nothing correctly,
