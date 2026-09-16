@@ -126,6 +126,24 @@ const resultForCurrentQuestion = computed(() => {
 const revealed = computed(() => resultForCurrentQuestion.value !== null);
 const hasAnswered = computed(() => myAnswerIndex.value !== null);
 
+// Ticket 146 (Double Time reveal): resolveChaseQuestion (server) only ever
+// moves the Chaser's boardPos in two situations — a correct answer, or a
+// wrong one while Double Time is armed and the Chaser is already on-board
+// (see TriviaRoom.ts's own comment on that branch). That means a wrong
+// answer that leaves the Chaser off-board (chaserBoardPos still
+// CHASER_OFFBOARD) can never be a Double-Time knock-back, and any wrong
+// answer that leaves the Chaser on-board while armed can only be one — no
+// need to separately track the Chaser's pre-resolution position client-side.
+const doubleTimeResultText = computed(() => {
+    const result = resultForCurrentQuestion.value;
+    if (!result || !result.doubleTimeArmed) return "";
+    if (result.chaserCorrect) return "Double Time! The Chaser jumps two spaces.";
+    if (result.chaserBoardPos !== null && result.chaserBoardPos !== CHASER_OFFBOARD) {
+        return "Double Time backfires — the Chaser is knocked back a space.";
+    }
+    return "Double Time fizzles — the Chaser missed and stays off the board.";
+});
+
 // The 5s lockout pulse + countdown (ticket 072) are not self-reported: they're
 // driven by the shared `chaseLockout` signal the server broadcasts the moment
 // either side answers first, so the contestant, the Chaser, and spectators all
@@ -212,6 +230,36 @@ const optionFontClass = computed(() => {
     if (longest > 24) return "chaseOptionButton-fontSm";
     return "";
 });
+
+// Ticket 146 (Jumble): displayOrder only ever arrives on the active
+// contestant's own client (TriviaRoom.sendJumbledQuestionToContestant) — the
+// Chaser and spectators keep getting the plain "question" broadcast with no
+// displayOrder, so this falls back to natural order for them automatically.
+// Convention: displayOrder[visualPosition] is the REAL option index shown at
+// that visual slot — renderedOptions bakes that mapping in once here so
+// every template comparison (picked/correct/wrong/dimmed) and the click
+// handler below can keep comparing against realIndex exactly like the old
+// plain `index` did, with no separate "un-shuffle" step anywhere else.
+// Guarded on matching lengths so a stale displayOrder (e.g. a 50/50 narrowing
+// this same question right after a Jumble, which re-broadcasts "question"
+// with a shorter options array and no displayOrder of its own — see
+// chaserAbilities.ts's fiftyFifty case) can never index out of range; it just
+// falls back to natural order, which is still correct, only no longer
+// visually shuffled.
+const renderedOptions = computed(() => {
+    const question = props.currentQuestion;
+    if (!question) return [];
+    const order = Array.isArray(question.displayOrder) && question.displayOrder.length === question.options.length
+        ? question.displayOrder
+        : question.options.map((_, i) => i);
+    return order.map((realIndex) => ({ text: question.options[realIndex], realIndex }));
+});
+
+// Contestant-only "Shuffled!" tag (ticket 146) — the Chaser/spectators never
+// receive displayOrder at all, so this is naturally false for them without
+// an extra isContestant check baked into the condition itself; kept explicit
+// below anyway for clarity at the call site.
+const isJumbled = computed(() => Array.isArray(props.currentQuestion?.displayOrder));
 
 function selectOption(index) {
     if (!isParticipant.value || hasAnswered.value || revealed.value || !props.currentQuestion) return;
@@ -386,30 +434,32 @@ onUnmounted(() => {
               :key="currentQuestion.questionId"
               :class="{ 'chaseQuestionBox-buttons-hidden': !buttonsRevealed }"
             >
+              <span v-if="isContestant && isJumbled" class="chaseJumbleBadge">Shuffled!</span>
               <p class="chaseQuestion">{{ currentQuestion.prompt }}</p>
-              <div class="chaseOptions chaseOptions-row">
+              <TransitionGroup tag="div" name="chase-option-fade" class="chaseOptions chaseOptions-row">
                 <button
-                  v-for="(option, index) in currentQuestion.options"
-                  :key="index"
+                  v-for="entry in renderedOptions"
+                  :key="entry.text"
                   class="answer-btn"
                   :class="[
                     {
-                      picked: myAnswerIndex === index,
-                      dimmed: hasAnswered && myAnswerIndex !== index && !(revealed && resultForCurrentQuestion.correctIndex === index),
-                      'chaseOptionButton-correct': revealed && resultForCurrentQuestion.correctIndex === index,
-                      'chaseOptionButton-wrong': revealed && myAnswerIndex === index && resultForCurrentQuestion.correctIndex !== index,
+                      picked: myAnswerIndex === entry.realIndex,
+                      dimmed: hasAnswered && myAnswerIndex !== entry.realIndex && !(revealed && resultForCurrentQuestion.correctIndex === entry.realIndex),
+                      'chaseOptionButton-correct': revealed && resultForCurrentQuestion.correctIndex === entry.realIndex,
+                      'chaseOptionButton-wrong': revealed && myAnswerIndex === entry.realIndex && resultForCurrentQuestion.correctIndex !== entry.realIndex,
                       'chase-pop-in': buttonsRevealed
                     },
                     optionFontClass
                   ]"
                   :disabled="!isParticipant || hasAnswered || revealed"
-                  @click="selectOption(index)"
-                >{{ option }}</button>
-              </div>
+                  @click="selectOption(entry.realIndex)"
+                >{{ entry.text }}</button>
+              </TransitionGroup>
             </div>
 
             <p v-if="isParticipant && hasAnswered && !revealed" class="playerName chaseWaitingStatus">Locked in…</p>
             <p v-else-if="!isParticipant && !revealed" class="playerName chaseWaitingStatus">{{ activeContestantName }} and the Chaser are answering…</p>
+            <p v-else-if="revealed && doubleTimeResultText" class="playerName chaseWaitingStatus chaseDoubleTimeResult">{{ doubleTimeResultText }}</p>
           </template>
           <p v-else class="playerName">Waiting for the next question…</p>
         </div>

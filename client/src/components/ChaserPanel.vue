@@ -218,6 +218,12 @@ function submitQuip() {
             >
                 <span class="countdown-num">{{ countdownSeconds }}</span>
             </div>
+            <!-- Ticket 146: armed for exactly one chase question (see
+                 TriviaRoom.startNextChaseQuestion/resolveChaseQuestion) — public
+                 GameState, so this reads the same abilityCounters prop every
+                 caller already threads through for the ability tray's own
+                 disabled-state check, rather than a new prop. -->
+            <span v-if="abilityCounters.doubleTimeArmed" class="doubleTimeArmedBadge">ARMED</span>
         </div>
         <div v-else class="chaserPanelMask">
             <img

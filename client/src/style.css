@@ -2445,6 +2445,16 @@ h1, h2, h3, h4 {
   margin: 10px auto;
 }
 
+/* Ticket 146 (Double Time): reuses .chaseWaitingStatus's own slot in the
+   status-line area (it's otherwise blank once revealed — see
+   ChaseScreen.vue's v-else-if chain) instead of a separate banner, per the
+   ticket's direction to extend the existing chaseQuestionResult reveal beat
+   rather than invent a new one. */
+.chaseDoubleTimeResult {
+  color: var(--color-gold);
+  font-weight: 700;
+}
+
 .chaseOutcomeBanner {
   position: fixed;
   top: 40%;
@@ -3484,6 +3494,30 @@ h1, h2, h3, h4 {
   100% { opacity: 1; transform: scale(1); }
 }
 
+/* Ticket 146 (50/50): the option buttons moved from a plain v-for to a
+   <TransitionGroup> keyed by option text (ChaseScreen.vue's renderedOptions)
+   so a 50/50 narrowing — the same "question" broadcast, same questionId,
+   just a shorter options array — reads as the dropped option visibly
+   shrinking away rather than a survivor's button abruptly relabeling itself
+   (keying by text, not array index, is what keeps a surviving option's own
+   DOM node untouched even though its array index shifts down). A genuinely
+   new question still remounts .chaseQuestionBox wholesale (keyed on
+   questionId), so this leave transition never plays there — only a real
+   narrowing of the same live question triggers it. -move handles the
+   remaining buttons sliding over once the dropped one is gone (Vue's FLIP
+   transition, pure CSS). */
+.chase-option-fade-leave-active {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  position: relative;
+}
+.chase-option-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.8);
+}
+.chase-option-fade-move {
+  transition: transform 0.35s ease;
+}
+
 /* ---------- question box: a real card, with the wipe-in entrance beat ----------
    Neutral, not the chase-tinted --ink-raised-adjacent red — the question
    itself belongs to neither side. Height never changes across the entrance
@@ -3507,6 +3541,29 @@ h1, h2, h3, h4 {
   flex-direction: column;
   align-items: center;
   animation: chase-question-wipe 0.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+/* Ticket 146 (Jumble): tells the contestant — and only the contestant, see
+   ChaseScreen.vue's isJumbled/isContestant guard — why the answer order just
+   changed, without a second popup competing with the existing
+   .chaserAbilityCue "Maggie used Jumble!" toast the Chaser/spectators see.
+   Pinned to the question box's own corner (absolute, same overlapping-badge
+   language as .chaserAbilityCue/.chaseCountdownBadge) so it never pushes the
+   prompt/buttons down. */
+.chaseJumbleBadge {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: var(--color-gold);
+  color: var(--btn-ink);
+  border: 2px solid var(--btn-ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  box-shadow: 3px 3px 0 rgba(var(--color-black-rgb), 0.4);
+  z-index: 5;
 }
 @keyframes chase-question-wipe {
   from { clip-path: inset(0 100% 0 0 round 14px); }
@@ -3559,6 +3616,36 @@ h1, h2, h3, h4 {
   position: absolute;
   bottom: -10px;
   right: -10px;
+}
+
+/* Ticket 146 (Double Time): while armed (abilityCounters.doubleTimeArmed,
+   ChaserPanel.vue), a persistent badge on the Chaser's own circle — opposite
+   corner from .chaseCountdownBadge so the two never collide when a lockout
+   countdown is also showing. Public state (every client, not just the
+   Chaser, sees the same GameState flag — AGENTS.md's "never broadcast the
+   correct answer" rule doesn't apply to armed/not-armed), so everyone
+   watching sees the threat coming before the question resolves. Clears the
+   instant resolveChaseQuestion consumes the arm (same tick as
+   chaseQuestionResult), handing off to .chaseDoubleTimeResult for the
+   outcome rather than overlapping with it. */
+.doubleTimeArmedBadge {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--color-gold);
+  color: var(--btn-ink);
+  border: 2px solid var(--btn-ink);
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  box-shadow: 0 0 10px rgba(var(--color-gold-rgb), 0.7);
+  z-index: 5;
+  animation: double-time-armed-glow 0.9s ease-in-out infinite;
+}
+@keyframes double-time-armed-glow {
+  0%, 100% { box-shadow: 0 0 6px rgba(var(--color-gold-rgb), 0.5); }
+  50%      { box-shadow: 0 0 16px rgba(var(--color-gold-rgb), 0.95); }
 }
 
 /* ---------- Caught / Escaped cutscenes ----------
@@ -3669,10 +3756,13 @@ h1, h2, h3, h4 {
 
 @media (prefers-reduced-motion: reduce) {
   .chaseWipeBar, .chaseQuestionBox, .answer-btn.chase-pop-in,
-  .countdown-chip.urgent,
+  .countdown-chip.urgent, .doubleTimeArmedBadge,
   .chaseCutscene-caught, .chaseCutsceneChaser-caught, .chaseCutsceneChaser-escaped,
   .chaseCutsceneContestant-caught, .chaseCutsceneContestant-escaped, .chaseCutsceneFlash {
     animation: none !important;
+  }
+  .chase-option-fade-leave-active, .chase-option-fade-move {
+    transition: none !important;
   }
   /* Without their (disabled) animations, these two would otherwise render
      mid-transform/mid-fade forever at their end state — pin them to a plain
