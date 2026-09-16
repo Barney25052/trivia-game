@@ -155,7 +155,7 @@ Custom-pickable contestant avatars (5 hairstyles, 3 faces, hair/face/shirt colou
 | 103 | Contestant reactions — server `reaction` cues + flash/revert face expressions (UI sign-off required) | done************** |
 
 ### Whole-app polish
-| 067 | Full layout/design pass across all screens once every phase is implemented (discussion, not a solo build) | backlog |
+| 067 | Full layout/design pass across all screens once every phase is implemented (discussion, not a solo build) | done********************************************************************* |
 
 ### Follow-up bug fixes (found 2026-09-13, overnight session)
 | 104 | Fix invalid WebSocket close code on host disconnect (`bug-014`) | done*************** |
@@ -405,6 +405,8 @@ Scoped to the Chase→Team-Final boundary specifically, as instructed — did no
 \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 152: took the ticket's own recommended default (option 1 — no indication anywhere in the repo that Colyseus Cloud, not self-hosted PM2, is the actual deploy target). `instances: os.cpus().length` → `instances: 1` in `server/ecosystem.config.cjs`, dropped the now-unused `os` import, added a header comment pointing at this ticket so it isn't quietly reintroduced; AGENTS.md's PM2 bullet now states the single-instance invariant explicitly and what multi-instance support would actually require (shared presence/driver, per-instance ports, converting process-local guards like ticket 132's room cap). Config/doc-only change. `server/npm build` green; `npm test` 339 green (unaffected).
 
 \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 153: root cause confirmed — the installed `@colyseus/sdk` enables automatic reconnection by default (15 retries, exponential backoff) and treats the close codes a page unload actually produces (1001/1006/1005/4010) as "unexpected drop, try to reconnect"; only a consented `room.leave()` avoids that path, and nothing in `App.vue` ever called it before unload. Fixed with a `beforeunload` listener calling `room.value?.leave()`, registered in `onMounted`/cleaned up in `onUnmounted` — client-only, server's own `onLeave` handling needed no change. Live-verified before (forced an abrupt disconnect past the SDK's 5s minUptime gate — reproduced the full 15-attempt storm exactly, ending in the SDK's own "Reconnection failed after 15 attempts") and after (real reload + a synthetic `beforeunload` dispatch, both clean, zero retry noise, server logs show a normal disconnect/dispose). `client/npm run build` green; `server/npm test` 339 green (unaffected, confirmed no server change needed).
+
+\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 067: closed out — the ticket's own "not covered" list (Home, RolesReveal, ChaserSelection/ChaserWheel, ChaserCharacterReveal, ContestantLineup, Offer, Results/GameEnd) is now fully covered by the tickets it spawned (123–125, 133–136) and the arc's own foundation (115), all verified end-to-end by ticket 137's whole-project acceptance review. See the ticket file's own "Closed out (2026-09-16)" section.
 
 Status values: `backlog`, `in-progress`, `done`.
 
