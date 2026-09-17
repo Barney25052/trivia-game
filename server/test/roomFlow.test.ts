@@ -428,7 +428,28 @@ describe("roomFlow", () => {
       revealReadyCooldownMs: 80,
       lineupDurationMs: 80,
       teamFinalIntroDurationMs: 80,
-      teamFinalDurationMs: 80
+      teamFinalDurationMs: 80,
+      // ticket 158 / bug-022: this test drives an entire game end-to-end
+      // through the Chaser's own sessionId — two rounds of offer-setting
+      // plus every chase-question answer for both rounds, all real messages
+      // hitting `checkRateLimit` (per-room-per-sessionId, real wall clock).
+      // Investigation confirmed the Chaser's own message count legitimately
+      // lands in the high teens to low twenties depending on which player is
+      // randomly picked as chaser and how many chase questions each round
+      // needs — close enough to the production `RATE_LIMIT.maxMessages: 20`
+      // that it intermittently tripped when the whole ~1.2s test happened to
+      // land inside one real `RATE_LIMIT.windowMs` window (i.e. basically
+      // always), causing a later message (e.g. the final chase/offer step)
+      // to be silently rate-limited and the test to time out waiting for
+      // `endGame`. This is a deliberately fast, unpaced stub-handler
+      // walkthrough, not a real abusive client, so — same tool `clampOptions`
+      // already exists for (AGENTS.md "Clamp room options"), same precedent
+      // as ticket 114's wall-clock-flake fix — give just this room a
+      // generous rate-limit override instead of touching the production
+      // default. Clamped by `clampRoomOptions` to `RATE_LIMIT.maxMaxMessages`
+      // / `RATE_LIMIT.maxWindowMs` (see `rateLimit.test.ts`'s clamp test).
+      rateLimitMaxMessages: 9999,
+      rateLimitWindowMs: 60_000
     });
     room.mcQuestionSource = stubChaseSource();
 
