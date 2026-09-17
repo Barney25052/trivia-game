@@ -340,6 +340,34 @@ describe("chaser ability activation handler (ticket 140)", () => {
         assert.strictEqual(room.state.fiftyFiftyUsesRemaining, before, "50/50 must be rejected once either side has answered");
     });
 
+    it("a second fiftyFifty activation on the same still-unanswered question is rejected (ticket 156)", async () => {
+        const { room, contestantClient, chaserClient, firstQuestion } = await reachChaseAsChaser(colyseus, "bezos");
+        assert.strictEqual(firstQuestion.options.length, CHASE_QUESTION.optionCount);
+        // Let the Chaser's own socket finish dispatching its copy of the
+        // original broadcast too, so the second-activation waiter below can't
+        // race it (mirrors the same sleep used by the ticket-141 narrowing test).
+        await sleep(50);
+
+        const narrowedPromise = contestantClient.waitForMessage("question");
+        chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
+        const narrowed = await narrowedPromise;
+        assert.strictEqual(narrowed.options.length, 2, "the first activation narrows 3 options to 2");
+        const afterFirstUse = room.state.fiftyFiftyUsesRemaining;
+
+        // Nobody has answered yet — the old chaseAnswers-non-empty gate alone
+        // would let this second activation through. It must now be rejected:
+        // no re-narrowed broadcast, and the charge must not be spent.
+        const NOTHING = Symbol("no second question broadcast");
+        const outcome = Promise.race([
+            contestantClient.waitForMessage("question"),
+            sleep(150).then(() => NOTHING)
+        ]);
+        chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
+        assert.strictEqual(await outcome, NOTHING, "a second 50/50 activation on the same question must not re-narrow it");
+        assert.strictEqual(room.state.fiftyFiftyUsesRemaining, afterFirstUse, "the second activation must not spend another charge");
+        assert.strictEqual(room.currentChaseQuestion.options.length, 2, "the question must stay at 2 options, not be narrowed to 1");
+    });
+
     it("reRack is rejected once chaseAnswers is non-empty", async () => {
         const { room, contestantClient, chaserClient, firstQuestion } = await reachChaseAsChaser(colyseus, "nami");
 

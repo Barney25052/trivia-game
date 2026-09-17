@@ -61,7 +61,21 @@ export function canUseAbility(room: any, seatId: string, abilityId: string): Abi
             if (room.state.fiftyFiftyUsesRemaining <= 0) {
                 return { ok: false, reason: "No 50/50 uses remaining" };
             }
-            return chaseTimingGate(room);
+            const timingResult = chaseTimingGate(room);
+            if (timingResult.ok === false) {
+                return timingResult;
+            }
+            // ticket 156: chaseTimingGate only blocks use *after* an answer
+            // lands (chaseAnswers non-empty) — it does not stop a second
+            // activation on the same still-unanswered question. Without this,
+            // a Chaser with multiple charges could narrow a question all the
+            // way down to a single, obviously-correct option before anyone
+            // answers. `chaseTimingGate` having returned ok guarantees
+            // `room.currentChaseQuestion` is non-null here.
+            if (room.currentChaseQuestion.fiftyFiftyUsedThisQuestion) {
+                return { ok: false, reason: "50/50 has already been used on this chase question" };
+            }
+            return { ok: true };
         }
         case "reRack": {
             if (room.state.reRackUsedThisTableRound) {
@@ -145,6 +159,12 @@ export function applyChaserAbilityEffect(room: any, abilityId: string): void {
             // views to make this Chaser-only; that's out of scope here.
             const question = room.currentChaseQuestion;
             if (question) {
+                // ticket 156: mark this question as spent for 50/50 the
+                // instant it fires (regardless of whether the defensive
+                // no-op below finds anything left to narrow) so
+                // `canUseAbility` rejects a second activation before the
+                // question resolves.
+                question.fiftyFiftyUsedThisQuestion = true;
                 const wrongIndexes: number[] = [];
                 for (let index = 0; index < question.options.length; index += 1) {
                     if (index !== question.correctIndex) {

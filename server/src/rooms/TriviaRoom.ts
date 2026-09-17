@@ -79,12 +79,19 @@ interface OfferAmounts {
  * `prompt`/`options` are kept here (not just the id) so 50/50 can narrow
  * `options` in place and re-broadcast, and Jumble can re-send the same
  * prompt/options to the contestant with an added display-order hint (ticket
- * 141) — both without a second question draw. */
+ * 141) — both without a second question draw. `fiftyFiftyUsedThisQuestion`
+ * (ticket 156) guards against 50/50 being activated a second time on the same
+ * still-unanswered question — ticket 140's `chaseAnswers`-empty gate only
+ * blocked use *after* an answer lands, not a second activation before one
+ * does. Set the first time 50/50 fires on this question; reset for free every
+ * time a fresh question object replaces this one (`startNextChaseQuestion`,
+ * including Re-rack's redraw). */
 interface ActiveChaseQuestion {
   id: string;
   prompt: string;
   options: string[];
   correctIndex: number;
+  fiftyFiftyUsedThisQuestion: boolean;
 }
 
 type ChaseRole = "contestant" | "chaser";
@@ -530,7 +537,13 @@ export class TriviaRoom extends Room {
     }
 
     const { options, correctIndex } = pickChaseOptions(question, CHASE_QUESTION.optionCount);
-    this.currentChaseQuestion = { id: question.id, prompt: question.question, options, correctIndex };
+    this.currentChaseQuestion = {
+      id: question.id,
+      prompt: question.question,
+      options,
+      correctIndex,
+      fiftyFiftyUsedThisQuestion: false
+    };
 
     this.broadcastQuestion(
       this.state.activeRound,
