@@ -682,6 +682,84 @@ describe("board-chase ability effects (ticket 141)", () => {
         assert.strictEqual(result.chaserCorrect, true);
     });
 
+    it("jumble then fiftyFifty on the same still-unanswered question: the contestant's shuffle persists through the narrowing instead of silently reverting to natural order (ticket 157)", async () => {
+        const { contestantClient, chaserClient, bystanderClient, room, firstQuestion } =
+            await reachChaseAsChaserWithBystander(colyseus, "maggie", "middle");
+        assert.strictEqual(firstQuestion.options.length, CHASE_QUESTION.optionCount);
+
+        // Collect every "question" message the contestant's client receives
+        // from here on — the fix sends *two* messages back-to-back when
+        // fiftyFifty narrows a jumbled question (the plain broadcast to
+        // everyone, immediately followed by the targeted re-jumble just for
+        // the contestant), so a one-shot waitForMessage would race which of
+        // the two it catches.
+        const contestantQuestions: any[] = [];
+        contestantClient.onMessage("question", (message: any) => contestantQuestions.push(message));
+        const bystanderExtra: any[] = [];
+        bystanderClient.onMessage("question", (message: any) => bystanderExtra.push(message));
+        // Let the initial broadcastQuestion's copies finish dispatching to
+        // every socket first, so they don't get mistaken for messages
+        // triggered by the abilities below.
+        await sleep(80);
+        contestantQuestions.length = 0;
+        bystanderExtra.length = 0;
+
+        // Jumble first.
+        const chaserAbilityUsed1 = chaserClient.waitForMessage("chaserAbilityUsed");
+        chaserClient.send("useChaserAbility", { ability: "jumble" });
+        await chaserAbilityUsed1;
+        await sleep(50);
+
+        assert.strictEqual(contestantQuestions.length, 1, "jumble sends exactly one targeted re-send to the contestant");
+        const jumbled = contestantQuestions[0];
+        assert.ok(Array.isArray(jumbled.displayOrder), "jumble must carry a displayOrder");
+        assert.strictEqual(jumbled.displayOrder.length, firstQuestion.options.length);
+
+        // Then fiftyFifty on the same still-unanswered question — today's bug
+        // (pre-fix) is that the plain broadcastQuestion re-send silently
+        // drops displayOrder, reverting the contestant to natural order with
+        // no explanation.
+        const chaserAbilityUsed2 = chaserClient.waitForMessage("chaserAbilityUsed");
+        chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
+        await chaserAbilityUsed2;
+        await sleep(50);
+
+        assert.strictEqual(
+            contestantQuestions.length,
+            3,
+            "fiftyFifty must send the plain narrowed broadcast plus a targeted re-jumble to the still-jumbled contestant"
+        );
+        const [, narrowedBroadcast, reJumbled] = contestantQuestions;
+        assert.strictEqual(narrowedBroadcast.options.length, 2, "50/50 drops exactly one wrong option");
+        assert.ok(!("displayOrder" in narrowedBroadcast), "the plain broadcast leg still carries no displayOrder");
+
+        assert.strictEqual(reJumbled.options.length, 2, "the re-jumbled options must match the narrowed set");
+        assert.ok(Array.isArray(reJumbled.displayOrder), "the contestant must get a fresh displayOrder — no silent revert");
+        assert.strictEqual(reJumbled.displayOrder.length, 2, "the re-derived displayOrder must match the narrowed option count");
+        assert.deepStrictEqual(
+            [...reJumbled.displayOrder].sort((a: number, b: number) => a - b),
+            reJumbled.options.map((_option: string, index: number) => index),
+            "the re-derived displayOrder must be a valid permutation of the narrowed option indices"
+        );
+
+        // Everyone else (Chaser, spectator) never gets a targeted re-jumble —
+        // only the plain narrowed broadcast, same as before this fix.
+        assert.strictEqual(bystanderExtra.length, 1, "the spectator only gets the one plain narrowed broadcast");
+        assert.ok(!("displayOrder" in bystanderExtra[0]));
+
+        assert.strictEqual(room.currentChaseQuestion.options.length, 2, "the live question stays narrowed to 2 options");
+
+        // Scoring still resolves against the real correctIndex regardless of
+        // displayOrder.
+        const correctIndex = reJumbled.options.indexOf("Correct Answer");
+        const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
+        contestantClient.send("submitChaseAnswer", { questionId: reJumbled.questionId, answerIndex: correctIndex });
+        chaserClient.send("submitChaseAnswer", { questionId: reJumbled.questionId, answerIndex: correctIndex });
+        const result = await resultPromise;
+        assert.strictEqual(result.contestantCorrect, true);
+        assert.strictEqual(result.chaserCorrect, true);
+    });
+
     describe("doubleTime board math", () => {
         it("correct + armed + off-board skips a space (chaserFirstCorrectSpace - 1)", async () => {
             const { room, contestantClient, chaserClient, chaserSeatId, firstQuestion } =

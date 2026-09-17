@@ -85,13 +85,18 @@ interface OfferAmounts {
  * blocked use *after* an answer lands, not a second activation before one
  * does. Set the first time 50/50 fires on this question; reset for free every
  * time a fresh question object replaces this one (`startNextChaseQuestion`,
- * including Re-rack's redraw). */
+ * including Re-rack's redraw). `jumbleActive` (ticket 157) tracks whether the
+ * active contestant currently has a Jumble-shuffled `displayOrder` in effect
+ * for this question — set when Jumble fires, read by 50/50 so a narrowing
+ * that comes *after* a Jumble can re-derive and re-send a fresh permutation
+ * instead of silently dropping it via the plain `broadcastQuestion` re-send. */
 interface ActiveChaseQuestion {
   id: string;
   prompt: string;
   options: string[];
   correctIndex: number;
   fiftyFiftyUsedThisQuestion: boolean;
+  jumbleActive: boolean;
 }
 
 type ChaseRole = "contestant" | "chaser";
@@ -251,7 +256,10 @@ export class TriviaRoom extends Room {
    * get nothing further here. Scoring never reads `displayOrder`:
    * `resolveChaseQuestion` always checks the real submitted index against
    * `correctIndex`; this is purely a display-order hint for the contestant's
-   * own client to consume (ticket 146). */
+   * own client to consume (ticket 146). Also reused by `fiftyFifty` (ticket
+   * 157) to re-target the contestant with a fresh permutation right after a
+   * narrowing broadcast, so a Jumble already in effect survives 50/50
+   * shrinking the option set instead of silently reverting to natural order. */
   private sendJumbledQuestionToContestant(displayOrder: number[]) {
     const question = this.currentChaseQuestion;
     if (!question) {
@@ -542,7 +550,8 @@ export class TriviaRoom extends Room {
       prompt: question.question,
       options,
       correctIndex,
-      fiftyFiftyUsedThisQuestion: false
+      fiftyFiftyUsedThisQuestion: false,
+      jumbleActive: false
     };
 
     this.broadcastQuestion(

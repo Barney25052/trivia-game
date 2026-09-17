@@ -187,6 +187,21 @@ export function applyChaserAbilityEffect(room: any, abilityId: string): void {
                         question.prompt,
                         question.options
                     );
+                    // ticket 157: the plain broadcast above carries no
+                    // displayOrder, so a contestant already Jumbled on this
+                    // question would otherwise have their shuffle silently
+                    // overwritten with natural order the instant App.vue
+                    // applies it. If Jumble is in effect, immediately follow
+                    // up with a fresh permutation of the now-narrowed option
+                    // indices via the same targeted send Jumble itself uses —
+                    // the contestant's client processes this second, so their
+                    // shuffle persists through the narrowing instead of
+                    // reverting.
+                    if (question.jumbleActive) {
+                        const displayOrder = question.options.map((_: string, index: number) => index);
+                        shuffle(displayOrder);
+                        room.sendJumbledQuestionToContestant(displayOrder);
+                    }
                 }
             }
             break;
@@ -209,6 +224,11 @@ export function applyChaserAbilityEffect(room: any, abilityId: string): void {
                 // extra displayOrder hint. correctIndex/resolution never
                 // reads it — see sendJumbledQuestionToContestant.
                 room.sendJumbledQuestionToContestant(displayOrder);
+                // ticket 157: remember a Jumble is now in effect for this
+                // question so a later fiftyFifty narrowing can re-derive and
+                // re-send a fresh displayOrder instead of silently dropping
+                // it via its plain broadcastQuestion re-send.
+                question.jumbleActive = true;
             }
             break;
         }
