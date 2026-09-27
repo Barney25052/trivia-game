@@ -164,3 +164,10 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: the test passes reliably regardless of incidental system timing, the same class of fix ticket 114 already applied to a similar wall-clock flake in `chaseFlow.test.ts`.
 - Repro steps: `cd server && npm test`, repeatedly (not always reproducible on a single run — needs a few attempts).
 - Status: triaged — ticket 158
+
+## `bug-023` — Players can join a room after the game has started
+- Found: 2026-09-27 · UI polish pass (join-error copy in `client/src/App.vue`) · `server/src/rooms/TriviaRoom.ts` (`onJoin`)
+- What you saw: `onJoin` only validates the player name; it never checks `currentPhase`, and the room is never locked when the game starts. Anyone with the 4-letter code can join mid-game: they get a random character and are pushed onto `contestantsOrder`, so they're treated as a contestant who never had a Cash Builder, and they land on whatever phase screen is live with no role.
+- Expected: once the game leaves the Lobby, new joins are refused (e.g. `this.lock()` on game start, or a phase check in `onJoin` that throws), and the client shows a clear "That game has already started." message (`describeJoinError` in `App.vue` would need a matching case).
+- Repro steps: 1. Host creates a room and starts a game with 2+ players. 2. From another browser, join with the same room code during the Cash Builder. 3. The join succeeds and the new seat is appended to the running order.
+- Status: open
