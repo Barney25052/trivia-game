@@ -99,7 +99,6 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           room.broadcast("chaserCharacterReveal", {
             chaserCharacterId: chaserCharId,
             chaserCharacterName: chaserChar?.name ?? "",
-            chaserCharacterTagline: chaserChar?.tagline ?? "",
             chaserCharacterPassive: chaserChar?.passive ?? [],
             chaserCharacterActive: chaserChar?.active ?? []
           });
@@ -167,7 +166,6 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
             middleVoided,
             chaserCharacterId: chaserCharId,
             chaserCharacterName: chaserChar?.name ?? "",
-            chaserCharacterTagline: chaserChar?.tagline ?? "",
             chaserCharacterPassive: chaserChar?.passive ?? [],
             chaserCharacterActive: chaserChar?.active ?? [],
             quip: pickOfferQuip("start")
@@ -191,7 +189,6 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
             middleVoided: room.currentOffer.middleVoided,
             chaserCharacterId: chaserCharId,
             chaserCharacterName: chaserChar?.name ?? "",
-            chaserCharacterTagline: chaserChar?.tagline ?? "",
             chaserCharacterPassive: chaserChar?.passive ?? [],
             chaserCharacterActive: chaserChar?.active ?? [],
             quip: pickOfferQuip("high")
@@ -244,6 +241,7 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           const player = room.state.players.get(effect.seatId);
           if (player) {
             player.madeItBack = true;
+            player.bankedAmount = effect.amount;
           }
           room.state.teamPot += effect.amount;
           room.state.chaserPot += CHASER_POT.perRound;

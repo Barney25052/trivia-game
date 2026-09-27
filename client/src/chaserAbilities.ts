@@ -2,8 +2,8 @@ import { ChaserCharacter } from "./TriviaTypes.ts";
 
 // Chaser ability display copy for the "Choose your Chaser" roster picker
 // (ticket 150) — pulled out the same way chaserPortraits.ts already pulls
-// out names/images, so RolesRevealScreen.vue can render a tagline + ability
-// chips per character without reaching into server code.
+// out names/images, so RolesRevealScreen.vue can render ability chips per
+// character without reaching into server code.
 //
 // This is a deliberate client-side duplicate of server/src/gameConfig.ts's
 // CHASER_CHARACTERS/SHARED_CHASER_ABILITIES content (ticket 139) — same
@@ -21,24 +21,22 @@ export interface ChaserAbilityCopy {
 }
 
 export interface ChaserCharacterCopy {
-    tagline: string;
     passive: ChaserAbilityCopy[];
     active: ChaserAbilityCopy[];
 }
 
 export const CHASER_ABILITY_COPY: Record<string, ChaserCharacterCopy> = {
     [ChaserCharacter.Bezos]: {
-        tagline: "Pays his way around the rules.",
         passive: [
             {
                 id: "noMiddle",
                 name: "No Middle",
-                description: "Every offer he sets skips the middle tier — only low or high."
+                description: "Every offer he makes skips the middle tier. Low or high only."
             },
             {
                 id: "pushbackImmunity",
                 name: "Pushback Immunity",
-                description: "A successful team steal doesn't push him back — 3 times a game."
+                description: "A successful team steal doesn't push him back. Works 3 times a game."
             }
         ],
         // Bezos intentionally has 0 active abilities — both his traits are
@@ -47,24 +45,22 @@ export const CHASER_ABILITY_COPY: Record<string, ChaserCharacterCopy> = {
         active: []
     },
     [ChaserCharacter.BigStan]: {
-        tagline: "An aggressive gambler.",
         passive: [
             {
                 id: "timeBonus",
                 name: "Time Bonus",
-                description: "+0.5s on his final-round clock for every correct answer."
+                description: "+2s on his final-round clock for every correct answer."
             }
         ],
         active: [
             {
                 id: "doubleTime",
                 name: "Double Time",
-                description: "His next correct chase answer moves him 2 spaces instead of 1 — a miss while it's armed costs him a space back. Once per contestant's chase."
+                description: "His next correct chase answer moves him 2 spaces instead of 1, but a miss while it's armed costs him a space. Once per contestant's chase."
             }
         ]
     },
     [ChaserCharacter.Nami]: {
-        tagline: "Just wants to go home.",
         passive: [
             {
                 id: "shortFuse",
@@ -81,7 +77,6 @@ export const CHASER_ABILITY_COPY: Record<string, ChaserCharacterCopy> = {
         ]
     },
     [ChaserCharacter.Maggie]: {
-        tagline: "A career politician.",
         passive: [
             {
                 id: "silence",
@@ -109,11 +104,11 @@ export const SHARED_CHASER_ABILITY_COPY: ChaserAbilityCopy[] = [
     {
         id: "fiftyFifty",
         name: "50/50",
-        description: "Removes one wrong option from the current board-chase question — 4 uses a game."
+        description: "Removes one wrong option from the current board-chase question on the Chaser's screen only. 4 uses a game."
     },
     {
         id: "skip",
         name: "Skip",
-        description: "Discards the Chaser's current final-round question with no penalty — 2 uses a game."
+        description: "Swaps the Chaser's current final-round question for a new one, no penalty. 2 uses a game."
     }
 ];

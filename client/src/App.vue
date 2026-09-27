@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Client } from "@colyseus/sdk";
 import { GamePhase } from "./TriviaTypes.ts";
-import { preloadImages } from "./assetPreload.js";
+import { preloadFonts, preloadImages } from "./assetPreload.js";
 import { CHASER_ABILITY_COPY, SHARED_CHASER_ABILITY_COPY } from "./chaserAbilities.ts";
 import { CHASER_NAMES } from "./chaserPortraits.ts";
 import HomeScreen from "./screens/HomeScreen.vue"
@@ -24,11 +24,21 @@ import ResultsScreen from "./screens/ResultsScreen.vue";
 const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? "ws://localhost:2567";
 
 preloadImages();
+preloadFonts();
 
 const room = ref(null);
 // Local-only screen (ticket 092): no Colyseus room involved, so it's routed
 // the same way as "home" — a flag the currentScreen computed checks below.
 const addQuestionMode = ref(false);
+// Home-screen feedback: a join/create in flight, why the last one failed,
+// and why the player was sent back home if it wasn't their own choice.
+const joining = ref(false);
+const joinError = ref("");
+const homeNotice = ref("");
+// TriviaRoom.onLeave's disconnect(4001) when the host leaves; 4000 is the
+// SDK's own consented close (the player left on purpose).
+const HOST_LEFT_CLOSE_CODE = 4001;
+const CONSENTED_CLOSE_CODE = 4000;
 const playersMap = ref(null);
 const players = ref([]);
 const currentPhase = ref(null);
@@ -71,6 +81,10 @@ const finalBuzzSeatId = ref("");
 const finalChaserQuestion = ref(null);
 const finalSteal = ref(null);
 const finalStealAnswer = ref(null);
+// The latest answer given in either final (ticket 160): side "team" (a
+// buzzed-in contestant) or "chaser". Broadcast to the whole room, so every
+// screen can pop the answerer's bubble, not just the answerer's own.
+const finalAnswer = ref(null);
 const finalStealResolved = ref(null);
 const revealChaserCharacterId = ref("");
 const revealChaserCharacterName = ref("");
@@ -258,6 +272,9 @@ function applyPhase(phase) {
   if (phase !== GamePhase.Chase) {
     chaseLockout.value = null;
   }
+  if (phase !== GamePhase.TeamFinal && phase !== GamePhase.ChaserFinal) {
+    finalAnswer.value = null;
+  }
   if (phase !== GamePhase.TeamFinal) {
     finalTeamQuestion.value = null;
     finalBuzzSeatId.value = "";
@@ -322,7 +339,23 @@ function hideAddQuestion() {
   addQuestionMode.value = false;
 }
 
+// Turns a matchmaking failure into something a player can act on. The
+// server's own messages are for logs (e.g. `room "ABCD" not found`), not
+// for the Home screen.
+function describeJoinError(error) {
+  const message = String(error?.message ?? "");
+  if (/not found/i.test(message)) return "No room with that code. Check it and try again.";
+  if (/locked/i.test(message)) return "That room is full.";
+  if (/capacity/i.test(message)) return "The server is busy right now. Try again in a minute.";
+  if (/playerName/i.test(message)) return "Names need to be 1 to 24 characters.";
+  return "Couldn't reach the game server. Check your connection and try again.";
+}
+
 async function joinLobby(playerName, roomCode) {
+  if (joining.value) return;
+  joining.value = true;
+  joinError.value = "";
+  homeNotice.value = "";
   const client = new Client(SERVER_URL);
 
   try {
@@ -332,8 +365,13 @@ async function joinLobby(playerName, roomCode) {
     } else {
       room.value = await client.joinById(roomCode, {playerName : playerName});
     }
-    
-    room.value.onLeave(() => {
+
+    room.value.onLeave((code) => {
+      if (code === HOST_LEFT_CLOSE_CODE) {
+        homeNotice.value = "The host left, so the game ended.";
+      } else if (code !== CONSENTED_CLOSE_CODE) {
+        homeNotice.value = "Lost connection to the game.";
+      }
       handleLeave();
     })
 
@@ -505,7 +543,6 @@ async function joinLobby(playerName, roomCode) {
         middleVoided: message.middleVoided,
         chaserCharacterId: message.chaserCharacterId,
         chaserCharacterName: message.chaserCharacterName,
-        chaserCharacterTagline: message.chaserCharacterTagline,
         chaserCharacterPassive: message.chaserCharacterPassive,
         chaserCharacterActive: message.chaserCharacterActive
       };
@@ -530,7 +567,6 @@ async function joinLobby(playerName, roomCode) {
         middleVoided: message.middleVoided,
         chaserCharacterId: message.chaserCharacterId,
         chaserCharacterName: message.chaserCharacterName,
-        chaserCharacterTagline: message.chaserCharacterTagline,
         chaserCharacterPassive: message.chaserCharacterPassive,
         chaserCharacterActive: message.chaserCharacterActive
       };
@@ -555,6 +591,10 @@ async function joinLobby(playerName, roomCode) {
 
     room.value.onMessage("finalBuzz", (message) => {
       finalBuzzSeatId.value = message.seatId;
+    });
+
+    room.value.onMessage("finalAnswer", (message) => {
+      finalAnswer.value = message;
     });
 
     // Whole-room broadcasts (ticket 095) — finalSteal now reaches the Chaser
@@ -611,12 +651,11 @@ async function joinLobby(playerName, roomCode) {
 
     room.value.send("whoami", {});
 
-    room.value.onLeave(() => {
-      room.value = null;
-    });
-
   } catch (e) {
     console.error("Failed to join:", e);
+    joinError.value = describeJoinError(e);
+  } finally {
+    joining.value = false;
   }
 }
 
@@ -815,7 +854,15 @@ onUnmounted(() => {
 
 <template>
   <div class="app">
-    <HomeScreen v-if="currentScreen=='home'" @join="handleJoin" @create="handleJoin" @add-questions="showAddQuestion"/>
+    <HomeScreen
+      v-if="currentScreen=='home'"
+      :joining="joining"
+      :error="joinError"
+      :notice="homeNotice"
+      @join="handleJoin"
+      @create="handleJoin"
+      @add-questions="showAddQuestion"
+    />
     <AddQuestionScreen v-if="currentScreen=='addQuestion'" @back="hideAddQuestion"/>
     <LobbyScreen
       v-if="currentScreen=='lobby'"
@@ -932,6 +979,7 @@ onUnmounted(() => {
       :chaserSeatId="chaserSeatId"
       :finalQuestion="finalTeamQuestion"
       :finalBuzzSeatId="finalBuzzSeatId"
+      :finalAnswer="finalAnswer"
       :answerResult="answerResult"
       :reactions="reactionsBySeat"
       :silencedMessage="silencedMessage"
@@ -953,6 +1001,7 @@ onUnmounted(() => {
       :finalSteal="finalSteal"
       :finalStealAnswer="finalStealAnswer"
       :finalStealResolved="finalStealResolved"
+      :finalAnswer="finalAnswer"
       :answerResult="answerResult"
       :reactions="reactionsBySeat"
       :chaserFinalClockRunning="chaserFinalClockRunning"

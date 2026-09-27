@@ -2,22 +2,27 @@
 import { computed, ref, watch } from "vue";
 import { decodeCharacter } from "../character.ts";
 import { characterColourVar } from "../characterColours.ts";
-import face1 from "../assets/images/face-1.png";
-import face2 from "../assets/images/face-2.png";
-import face3 from "../assets/images/face-3.png";
-import hair1 from "../assets/images/hair-1.png";
-import hair2 from "../assets/images/hair-2.png";
-import hair3 from "../assets/images/hair-3.png";
-import hair4 from "../assets/images/hair-4.png";
-import hair5 from "../assets/images/hair-5.png";
-import eyesNeutral1 from "../assets/images/eyes-1.png";
-import eyesNeutral2 from "../assets/images/eyes-2.png";
-import mouthNeutral from "../assets/images/mouth.png";
-import eyesHappy from "../assets/images/eyes-happy.png";
-import eyesSad from "../assets/images/eyes-sad.png";
-import mouthHappy from "../assets/images/mouth-happy.png";
-import mouthSad from "../assets/images/mouth-sad.png";
-import mouthSmirk from "../assets/images/mouth-smirk.png";
+// `?inline` makes every layer a data URL in dev as well as in the build (the
+// build already inlined them, being under Vite's 4KB limit). The dev server
+// serves plain image URLs with `Cache-Control: no-cache`, so every freshly
+// mounted face re-requested its CSS background/mask layers and painted in
+// piecemeal — the "images sometimes take a while to load" report.
+import face1 from "../assets/images/face-1.png?inline";
+import face2 from "../assets/images/face-2.png?inline";
+import face3 from "../assets/images/face-3.png?inline";
+import hair1 from "../assets/images/hair-1.png?inline";
+import hair2 from "../assets/images/hair-2.png?inline";
+import hair3 from "../assets/images/hair-3.png?inline";
+import hair4 from "../assets/images/hair-4.png?inline";
+import hair5 from "../assets/images/hair-5.png?inline";
+import eyesNeutral1 from "../assets/images/eyes-1.png?inline";
+import eyesNeutral2 from "../assets/images/eyes-2.png?inline";
+import mouthNeutral from "../assets/images/mouth.png?inline";
+import eyesHappy from "../assets/images/eyes-happy.png?inline";
+import eyesSad from "../assets/images/eyes-sad.png?inline";
+import mouthHappy from "../assets/images/mouth-happy.png?inline";
+import mouthSad from "../assets/images/mouth-sad.png?inline";
+import mouthSmirk from "../assets/images/mouth-smirk.png?inline";
 
 // Shared presentational avatar (ticket 102): decodes a `character` code
 // (see ../character.ts) and layers shoulders -> face -> hair -> eyes -> mouth,
@@ -134,6 +139,7 @@ const shirtColour = computed(() => characterColourVar(decoded.value.shirtColour)
                 class="offerFaceLayer eyes"
                 :class="{ offerFaceLayerHidden: eyesLoadFailed }"
                 alt=""
+                decoding="sync"
                 @error="eyesLoadFailed = true"
             />
             <img
@@ -141,6 +147,7 @@ const shirtColour = computed(() => characterColourVar(decoded.value.shirtColour)
                 class="offerFaceLayer"
                 :class="{ offerFaceLayerHidden: mouthLoadFailed }"
                 alt=""
+                decoding="sync"
                 @error="mouthLoadFailed = true"
             />
         </div>

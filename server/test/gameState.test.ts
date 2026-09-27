@@ -47,6 +47,8 @@ describe("GameState", () => {
     assert.strictEqual(player.isHost, true);
     assert.strictEqual(player.isEliminated, false);
     assert.strictEqual(player.madeItBack, false);
+    assert.strictEqual(player.bankedAmount, 0);
+    assert.strictEqual(player.finalCorrectAnswers, 0);
     assert.strictEqual(player.cashBuilderMoney, 0);
     assert.strictEqual(player.boardPos, 0);
     assert.strictEqual(player.chaserVote, "");

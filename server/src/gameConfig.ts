@@ -87,35 +87,34 @@ export const SHARED_CHASER_ABILITIES = [
     {
         id: "fiftyFifty",
         name: "50/50",
-        description: "Removes one wrong option from the current board-chase question — 4 uses a game."
+        description: "Removes one wrong option from the current board-chase question on the Chaser's screen only. 4 uses a game."
     },
     {
         id: "skip",
         name: "Skip",
-        description: "Discards the Chaser's current final-round question with no penalty — 2 uses a game."
+        description: "Swaps the Chaser's current final-round question for a new one, no penalty. 2 uses a game."
     }
 ] as const;
 
-/** Chaser character roster (ticket 139): a tagline plus passive abilities
- * (always on, nothing to trigger) and active abilities (the Chaser must
- * deliberately activate them — ticket 140's useChaserAbility handler).
+/** Chaser character roster (ticket 139): passive abilities (always on,
+ * nothing to trigger) and active abilities (the Chaser must deliberately
+ * activate them — ticket 140's useChaserAbility handler).
  * Bezos intentionally has 0 active abilities — both his traits are
  * automatic; this is a design decision (GOAL.md), not an oversight. */
 export const CHASER_CHARACTERS = [
     {
         id: "bezos",
         name: "Bezos",
-        tagline: "Pays his way around the rules.",
         passive: [
             {
                 id: "noMiddle",
                 name: "No Middle",
-                description: "Every offer he sets skips the middle tier — only low or high."
+                description: "Every offer he makes skips the middle tier. Low or high only."
             },
             {
                 id: "pushbackImmunity",
                 name: "Pushback Immunity",
-                description: "A successful team steal doesn't push him back — 3 times a game."
+                description: "A successful team steal doesn't push him back. Works 3 times a game."
             }
         ],
         active: []
@@ -123,26 +122,24 @@ export const CHASER_CHARACTERS = [
     {
         id: "big stan",
         name: "Big Stan",
-        tagline: "An aggressive gambler.",
         passive: [
             {
                 id: "timeBonus",
                 name: "Time Bonus",
-                description: "+0.5s on his final-round clock for every correct answer."
+                description: "+2s on his final-round clock for every correct answer."
             }
         ],
         active: [
             {
                 id: "doubleTime",
                 name: "Double Time",
-                description: "His next correct chase answer moves him 2 spaces instead of 1 — a miss while it's armed costs him a space back. Once per contestant's chase."
+                description: "His next correct chase answer moves him 2 spaces instead of 1, but a miss while it's armed costs him a space. Once per contestant's chase."
             }
         ]
     },
     {
         id: "nami",
         name: "Nami",
-        tagline: "Just wants to go home.",
         passive: [
             {
                 id: "shortFuse",
@@ -161,7 +158,6 @@ export const CHASER_CHARACTERS = [
     {
         id: "maggie",
         name: "Maggie",
-        tagline: "A career politician.",
         passive: [
             {
                 id: "silence",
@@ -194,7 +190,8 @@ export const CHASER_ABILITIES = {
     doubleTime: { usesPerTableRound: 1 },
     reRack: { usesPerTableRound: 1 },
     jumble: { usesPerTableRound: 1 },
-    timeBonusMs: 500,
+    // Ticket 160: was 500ms, which a whole-second clock barely showed.
+    timeBonusMs: 2000,
     shortFuseStealWindowMs: 10_000
 } as const;
 
@@ -260,6 +257,17 @@ export const MC_SOURCE = {
     retryDelayMs: 200,
     minRetryDelayMs: 0,
     maxRetryDelayMs: 5_000
+} as const;
+
+/** Room codes — the id players type (or read out) to join a friend's room.
+ * Short, uppercase letters only, and no I or O (they read as 1 and 0). The
+ * client uppercases what's typed, so joining is case-insensitive. */
+export const ROOM_CODE = {
+    length: 4,
+    alphabet: "ABCDEFGHJKLMNPQRSTUVWXYZ",
+    /** Collisions allowed at one length before a code grows a letter, so
+     * creating a room can never spin forever. */
+    maxAttemptsPerLength: 20
 } as const;
 
 export const ROOM_SETTINGS = {

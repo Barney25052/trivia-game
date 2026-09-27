@@ -16,6 +16,7 @@ import { createOpenTdbQuestionSource, McQuestion, McQuestionSource } from "../qu
 import { createMcBackupQuestionSource } from "../questions/mcBackup.js";
 import { pickChaseOptions } from "../questions/chaseOptions.js";
 import { randomCharacter } from "../character.js";
+import { generateRoomCode } from "../roomCode.js";
 import { nextExpression, Expression } from "../reactions.js";
 import {
   BOARD,
@@ -63,6 +64,10 @@ const OFFER_TIERS: OfferTier[] = ["low", "middle", "high"];
  * is a correct server-wide cap — no cross-process coordination to build. */
 let liveRoomCount = 0;
 
+/** Room codes currently in use in this process, so a new room never reuses
+ * a live one's code — same single-process reasoning as liveRoomCount. */
+const liveRoomCodes = new Set<string>();
+
 interface OfferAmounts {
   low: number | null;
   middle: number;
@@ -76,27 +81,23 @@ interface OfferAmounts {
 
 /** The chase question currently in play, held server-side only. `correctIndex`
  * indexes into `options` and is never broadcast until the question resolves.
- * `prompt`/`options` are kept here (not just the id) so 50/50 can narrow
- * `options` in place and re-broadcast, and Jumble can re-send the same
- * prompt/options to the contestant with an added display-order hint (ticket
- * 141) — both without a second question draw. `fiftyFiftyUsedThisQuestion`
- * (ticket 156) guards against 50/50 being activated a second time on the same
- * still-unanswered question — ticket 140's `chaseAnswers`-empty gate only
- * blocked use *after* an answer lands, not a second activation before one
- * does. Set the first time 50/50 fires on this question; reset for free every
- * time a fresh question object replaces this one (`startNextChaseQuestion`,
- * including Re-rack's redraw). `jumbleActive` (ticket 157) tracks whether the
- * active contestant currently has a Jumble-shuffled `displayOrder` in effect
- * for this question — set when Jumble fires, read by 50/50 so a narrowing
- * that comes *after* a Jumble can re-derive and re-send a fresh permutation
- * instead of silently dropping it via the plain `broadcastQuestion` re-send. */
+ * `prompt`/`options` are kept here (not just the id) so 50/50 and Jumble can
+ * re-send the same question to one player with a per-player view on top — a
+ * hidden wrong option for the Chaser, a shuffled order for the contestant
+ * (tickets 141, 160) — without a second question draw or touching the shared
+ * `options`/`correctIndex`. `fiftyFiftyUsedThisQuestion` (ticket 156) guards
+ * against 50/50 being activated a second time on the same still-unanswered
+ * question — ticket 140's `chaseAnswers`-empty gate only blocked use *after*
+ * an answer lands, not a second activation before one does. Set the first
+ * time 50/50 fires on this question; reset for free every time a fresh
+ * question object replaces this one (`startNextChaseQuestion`, including
+ * Re-rack's redraw). */
 interface ActiveChaseQuestion {
   id: string;
   prompt: string;
   options: string[];
   correctIndex: number;
   fiftyFiftyUsedThisQuestion: boolean;
-  jumbleActive: boolean;
 }
 
 type ChaseRole = "contestant" | "chaser";
@@ -187,6 +188,11 @@ export class TriviaRoom extends Room {
     }
     liveRoomCount += 1;
 
+    // A short, shareable code instead of Colyseus's default 9-character
+    // mixed-case id (Colyseus allows replacing roomId during onCreate).
+    this.roomId = generateRoomCode((code) => liveRoomCodes.has(code));
+    liveRoomCodes.add(this.roomId);
+
     clampRoomOptions(this, options);
     // Mirror the real (possibly clamped/overridden) cash-builder duration into
     // synced state (ticket 112, fixing bug-015) so CashBuilderScreen.vue can
@@ -249,37 +255,43 @@ export class TriviaRoom extends Room {
     this.broadcast("question", payload);
   }
 
-  /** Jumble (ticket 141): re-sends the current chase question to just the
-   * active contestant's own client with an added `displayOrder` permutation
-   * — the Chaser and any spectators already have the question from the
-   * original `broadcastQuestion` call (no `displayOrder`, natural order) and
-   * get nothing further here. Scoring never reads `displayOrder`:
-   * `resolveChaseQuestion` always checks the real submitted index against
-   * `correctIndex`; this is purely a display-order hint for the contestant's
-   * own client to consume (ticket 146). Also reused by `fiftyFifty` (ticket
-   * 157) to re-target the contestant with a fresh permutation right after a
-   * narrowing broadcast, so a Jumble already in effect survives 50/50
-   * shrinking the option set instead of silently reverting to natural order. */
-  private sendJumbledQuestionToContestant(displayOrder: number[]) {
+  /** Re-sends the current chase question to one player's own client with a
+   * per-player view layered on top (tickets 141, 160); everyone else keeps
+   * the plain `broadcastQuestion` copy they already have. Scoring never reads
+   * a view: `resolveChaseQuestion` always checks the real submitted index
+   * against `correctIndex`. Jumble sends the contestant a `displayOrder`
+   * (`displayOrder[visualSlot]` is the real option index shown there); 50/50
+   * sends the Chaser `hiddenOptions` (real indices left off their screen). */
+  private sendChaseQuestionView(seatId: string, view: { displayOrder?: number[]; hiddenOptions?: number[] }) {
     const question = this.currentChaseQuestion;
     if (!question) {
       return;
     }
-    const contestantSeatId = this.state.activeContestantSeatId;
     for (const client of this.clients) {
-      if (this.seatIdForClient(client) === contestantSeatId) {
+      if (this.seatIdForClient(client) === seatId) {
         client.send("question", {
           round: this.state.activeRound,
-          targetSeatId: contestantSeatId,
+          targetSeatId: this.state.activeContestantSeatId,
           kind: "mc",
           prompt: question.prompt,
           options: question.options,
           questionId: question.id,
-          displayOrder,
+          ...view,
         });
         return;
       }
     }
+  }
+
+  /** Jumble (ticket 146): the active contestant's own buttons, shuffled. */
+  private sendJumbledQuestionToContestant(displayOrder: number[]) {
+    this.sendChaseQuestionView(this.state.activeContestantSeatId, { displayOrder });
+  }
+
+  /** 50/50 (ticket 160): the Chaser's lifeline alone — only their own screen
+   * loses the dropped option; the contestant keeps every option. */
+  private sendFiftyFiftyToChaser(hiddenOptions: number[]) {
+    this.sendChaseQuestionView(this.state.chaserSeatId, { hiddenOptions });
   }
 
   /** Broadcasts the public `reaction` cue for a seat's answer outcome (ticket
@@ -550,8 +562,7 @@ export class TriviaRoom extends Room {
       prompt: question.question,
       options,
       correctIndex,
-      fiftyFiftyUsedThisQuestion: false,
-      jumbleActive: false
+      fiftyFiftyUsedThisQuestion: false
     };
 
     this.broadcastQuestion(
@@ -894,6 +905,7 @@ export class TriviaRoom extends Room {
 
   onDispose() {
     liveRoomCount -= 1;
+    liveRoomCodes.delete(this.roomId);
     console.log("room", this.roomId, "disposing...");
   }
 }

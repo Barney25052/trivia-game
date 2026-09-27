@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed } from "vue";
-import { CHASER_PORTRAITS, CHASER_NAMES } from "../chaserPortraits.ts";
+import { chaserPortrait, CHASER_NAMES } from "../chaserPortraits.ts";
 import { CHASER_ABILITY_COPY, SHARED_CHASER_ABILITY_COPY } from "../chaserAbilities.ts";
+import ChaserSilhouette from "./ChaserSilhouette.vue";
 
 // Mirrors server/src/gameConfig.ts CHASER_QUIP.maxLength — duplicated
 // client-side the same way GamePhase is (see AGENTS.md gotchas).
@@ -19,33 +20,25 @@ const props = defineProps({
     answerText: { type: String, default: "" },
     answerKey: { type: Number, default: 0 },
     isChaser: { type: Boolean, default: false },
-    // Hides the composable "Say something..." input row (ticket 097) — the
+    // Hides the composable taunt input row (ticket 097) — the
     // Chaser Final passes false so the Chaser only tabs into the answer
     // input. The bubble and broadcast quips still render either way.
     quipInput: { type: Boolean, default: true },
-    // Ticket 116: opts into the frame-free circle-portrait treatment (115's
-    // .board-portrait-wrap/.board-portrait-circle/.chaser-wrap) instead of
-    // this panel's original rounded-square .chaserPanelMask box. Defaults to
-    // false so Offer/Chaser Final (which still use the box) are unaffected —
-    // only the Chase board opts in today. Whichever ticket redesigns Offer or
-    // the Chaser Final next can flip this on there too instead of forking a
-    // second component.
-    circlePortrait: { type: Boolean, default: false },
+    // Chase-board mode (ticket 116): the countdown badge, the Double Time
+    // "Armed" badge and the Chaser's ability buttons all sit on the portrait's
+    // rim, with no tray/quip input below — the board row can't grow taller
+    // than the board beside it. Offer uses the default (tray below).
+    rimControls: { type: Boolean, default: false },
     // Small VT323 countdown badge overlapping the circle's edge (ticket 116)
-    // — only meaningful alongside circlePortrait. null hides the badge
+    // — only meaningful alongside rimControls. null hides the badge
     // entirely; a number shows it. See ChaseScreen.vue's lockoutBadgeSide for
     // how the caller decides whether this side gets the badge.
     countdownSeconds: { type: Number, default: null },
     countdownUrgent: { type: Boolean, default: false },
-    // Ticket 117: opts into the "imposing stage" treatment for the Chaser
-    // Final's own-turn banner — a bare, frame-free cutout portrait (no box,
-    // no circle) with a big drop-shadow and a VT323 name underneath, mirroring
-    // ChaseScreen.vue's Caught/Escaped cutscene portrait (.chaseCutsceneChaser)
-    // rather than either of the other two modes below. Takes priority over
-    // circlePortrait if both were ever set (they never are — only
-    // ChaserFinalScreen's own-turn banner sets this, and only the Chase
-    // board sets circlePortrait). Defaults to false so every other caller
-    // (Offer, the Chase board) is unaffected.
+    // Ticket 117: the Chaser Final's own-turn banner — a bare, frame-free
+    // cutout portrait (no circle) with a big drop-shadow and a VT323 name
+    // underneath, mirroring ChaseScreen.vue's cutscene portrait
+    // (.chaseCutsceneChaser). Every other caller gets the circle portrait.
     bannerPortrait: { type: Boolean, default: false },
     // Ticket 145: ability tray plumbing. `phase` tells the tray which
     // manually-activated abilities are even relevant to show as buttons on
@@ -78,7 +71,7 @@ const props = defineProps({
 });
 const emit = defineEmits(["send-quip", "use-ability"]);
 
-const portrait = computed(() => CHASER_PORTRAITS[props.characterId] ?? null);
+const portrait = computed(() => chaserPortrait(props.characterId));
 const displayName = computed(() => CHASER_NAMES[props.characterId] ?? "");
 
 // Ticket 145: which manually-activated ability ids are relevant to show per
@@ -140,13 +133,13 @@ function chargesLabel(id) {
 // extend the hover tooltip so a dimmed button still explains itself.
 function disabledReason(id) {
     if (chargesRemaining(id) <= 0) {
-        return ABILITY_TABLE_ROUND_FLAG[id] ? "Already used this table round" : "No uses remaining";
+        return ABILITY_TABLE_ROUND_FLAG[id] ? "Already used this chase" : "No uses left";
     }
     if (id === "doubleTime" && props.abilityCounters.doubleTimeArmed) {
-        return "Already armed — resolves on the next chase question";
+        return "Already armed for the next chase question";
     }
     if (!props.abilityWindowOpen) {
-        return "Not usable right now";
+        return "Can't use it right now";
     }
     return "";
 }
@@ -168,6 +161,29 @@ function passiveTip(passive) {
         return `${passive.description} (${props.abilityCounters.pushbackImmunityUsesRemaining}/3 left)`;
     }
     return passive.description;
+}
+
+// Ticket (Chase board layout redesign): in rimControls mode the abilities
+// render as tiny circular buttons on the portrait rim instead of the full
+// below-portrait tray (which was pushing the Chase table's layout out of
+// alignment with the board/contestant panel — neither of which grow in
+// height, so the tray's extra rows offset the whole row). Short 2-letter
+// labels since there's no room for the full name; the tooltip carries the
+// full name + charges + description instead.
+const ABILITY_SHORT_LABEL = {
+    fiftyFifty: "50",
+    doubleTime: "2X",
+    reRack: "RR",
+    jumble: "JM",
+    skip: "SK"
+};
+function abilityShortLabel(id) {
+    return ABILITY_SHORT_LABEL[id] ?? id.slice(0, 2).toUpperCase();
+}
+function miniAbilityTip(ability) {
+    const base = `${ability.name} (${chargesLabel(ability.id)} left). ${ability.description}`;
+    const reason = disabledReason(ability.id);
+    return reason ? `${base} ${reason}.` : base;
 }
 
 const quipDraft = ref("");
@@ -193,7 +209,7 @@ function submitQuip() {
 </script>
 
 <template>
-    <div class="chaserPanel">
+    <div class="chaserPanel" :class="{ 'chaserPanel-banner': bannerPortrait }">
         <div v-if="bannerPortrait" class="chaserStageBanner">
             <img
                 v-if="portrait"
@@ -201,8 +217,9 @@ function submitQuip() {
                 :alt="displayName"
                 class="chaserStageBannerImg"
             />
+            <ChaserSilhouette v-else class="chaserStageBannerImg" />
         </div>
-        <div v-else-if="circlePortrait" class="board-portrait-wrap chaser-wrap">
+        <div v-else class="board-portrait-wrap chaser-wrap">
             <div class="board-portrait-circle">
                 <img
                     v-if="portrait"
@@ -210,28 +227,41 @@ function submitQuip() {
                     :alt="displayName"
                     class="board-portrait-img"
                 />
+                <ChaserSilhouette v-else />
             </div>
-            <div
-                v-if="countdownSeconds !== null"
-                class="countdown-chip small chaseCountdownBadge"
-                :class="{ urgent: countdownUrgent }"
-            >
-                <span class="countdown-num">{{ countdownSeconds }}</span>
-            </div>
-            <!-- Ticket 146: armed for exactly one chase question (see
-                 TriviaRoom.startNextChaseQuestion/resolveChaseQuestion) — public
-                 GameState, so this reads the same abilityCounters prop every
-                 caller already threads through for the ability tray's own
-                 disabled-state check, rather than a new prop. -->
-            <span v-if="abilityCounters.doubleTimeArmed" class="doubleTimeArmedBadge">ARMED</span>
-        </div>
-        <div v-else class="chaserPanelMask">
-            <img
-                v-if="portrait"
-                :src="portrait"
-                :alt="displayName"
-                class="chaserPanelPortrait"
-            />
+            <template v-if="rimControls">
+                <div
+                    v-if="countdownSeconds !== null"
+                    class="countdown-chip chaseCountdownBadge"
+                    :class="{ urgent: countdownUrgent }"
+                >
+                    <span class="countdown-num">{{ countdownSeconds }}</span>
+                </div>
+                <!-- Ticket 146: armed for exactly one chase question — public
+                     GameState, read off the same abilityCounters prop the
+                     ability buttons use for their own disabled state. -->
+                <span v-if="abilityCounters.doubleTimeArmed" class="chip chip-gold doubleTimeArmedBadge">Armed</span>
+
+                <!-- The Chaser's active abilities as small discs on the
+                     portrait rim (see miniAbilityTip's comment) — no passives
+                     here, every character's passives are Offer/Final-only. -->
+                <div v-if="isChaser && visibleActiveAbilities.length > 0" class="chaserAbilityMiniRow">
+                    <span
+                        v-for="ability in visibleActiveAbilities"
+                        :key="ability.id"
+                        class="chaserAbilityMiniWrap"
+                        :data-tip="miniAbilityTip(ability)"
+                    >
+                        <button
+                            type="button"
+                            class="chaserAbilityMiniBtn"
+                            :disabled="!isAbilityUsable(ability.id)"
+                            :aria-label="ability.name"
+                            @click="emit('use-ability', ability.id)"
+                        >{{ abilityShortLabel(ability.id) }}</button>
+                    </span>
+                </div>
+            </template>
         </div>
         <Transition name="chaser-bubble-pop">
             <div v-if="quipText" :key="quipKey" class="chaserPanelBubble">{{ quipText }}</div>
@@ -240,58 +270,64 @@ function submitQuip() {
             <div v-if="answerText" :key="answerKey" class="chaserPanelBubble chaserPanelAnswerBubble">{{ answerText }}</div>
         </Transition>
         <Transition name="ability-cue-pop">
-            <div v-if="abilityCueText" :key="abilityCueKey" class="chaserAbilityCue">{{ abilityCueText }}</div>
+            <div v-if="abilityCueText" :key="abilityCueKey" class="chip chip-gold chaserAbilityCue">{{ abilityCueText }}</div>
         </Transition>
-        <p
-            v-if="displayName"
-            class="playerName chaserPanelName"
-            :class="{ 'chaserPanelName-banner': bannerPortrait }"
-        >{{ displayName }}</p>
+        <!-- Name, abilities and taunt input. In the Offer/Chase modes these
+             just continue the panel's column (display: contents); the
+             Chaser Final banner lays them out beside the portrait. -->
+        <div class="chaserPanelInfo">
+            <span v-if="bannerPortrait" class="chaserPanelEyebrow">The Chaser</span>
+            <p
+                v-if="displayName"
+                class="playerName chaserPanelName"
+                :class="{ 'chaserPanelName-banner': bannerPortrait }"
+            >{{ displayName }}</p>
 
-        <div
-            v-if="isChaser && (visiblePassives.length > 0 || visibleActiveAbilities.length > 0)"
-            class="chaserAbilityTray"
-        >
-            <div v-if="visiblePassives.length > 0" class="chaserAbilityPassiveRow">
-                <span
-                    v-for="passive in visiblePassives"
-                    :key="passive.id"
-                    class="p5-ability-chip p5-ability-chip-passive"
-                    :data-tip="passiveTip(passive)"
-                >{{ passive.name }}</span>
-            </div>
-            <div v-if="visibleActiveAbilities.length > 0" class="chaserAbilityActiveRow">
-                <span
-                    v-for="ability in visibleActiveAbilities"
-                    :key="ability.id"
-                    class="chaserAbilityBtnWrap"
-                    :data-tip="abilityTip(ability)"
-                >
-                    <button
-                        type="button"
-                        class="chaserAbilityBtn"
-                        :disabled="!isAbilityUsable(ability.id)"
-                        @click="emit('use-ability', ability.id)"
+            <div
+                v-if="!rimControls && isChaser && (visiblePassives.length > 0 || visibleActiveAbilities.length > 0)"
+                class="chaserAbilityTray"
+            >
+                <div v-if="visiblePassives.length > 0" class="chaserAbilityPassiveRow">
+                    <span
+                        v-for="passive in visiblePassives"
+                        :key="passive.id"
+                        class="p5-ability-chip p5-ability-chip-passive"
+                        :data-tip="passiveTip(passive)"
+                    >{{ passive.name }}</span>
+                </div>
+                <div v-if="visibleActiveAbilities.length > 0" class="chaserAbilityActiveRow">
+                    <span
+                        v-for="ability in visibleActiveAbilities"
+                        :key="ability.id"
+                        class="chaserAbilityBtnWrap"
+                        :data-tip="abilityTip(ability)"
                     >
-                        <span class="chaserAbilityBtnName">{{ ability.name }}</span>
-                        <span class="chaserAbilityBtnCharges">{{ chargesLabel(ability.id) }}</span>
-                    </button>
-                </span>
+                        <button
+                            type="button"
+                            class="chaserAbilityBtn"
+                            :disabled="!isAbilityUsable(ability.id)"
+                            @click="emit('use-ability', ability.id)"
+                        >
+                            <span class="chaserAbilityBtnName">{{ ability.name }}</span>
+                            <span class="chaserAbilityBtnCharges">{{ chargesLabel(ability.id) }}</span>
+                        </button>
+                    </span>
+                </div>
             </div>
-        </div>
 
-        <div v-if="isChaser && quipInput" class="chaserPanelInputRow">
-            <input
-                v-model="quipDraft"
-                type="text"
-                class="chaserPanelInput"
-                placeholder="Say something..."
-                :maxlength="MAX_QUIP_LENGTH"
-                @keyup.enter="submitQuip"
-            />
-            <button class="btn btn-primary chaserPanelSend" :disabled="sendDisabled" @click="submitQuip">
-                Send
-            </button>
+            <div v-if="!rimControls && isChaser && quipInput" class="chaserPanelInputRow">
+                <input
+                    v-model="quipDraft"
+                    type="text"
+                    class="field chaserPanelInput"
+                    placeholder="Taunt them…"
+                    :maxlength="MAX_QUIP_LENGTH"
+                    @keyup.enter="submitQuip"
+                />
+                <button class="btn btn-primary btn-small" :disabled="sendDisabled" @click="submitQuip">
+                    Send
+                </button>
+            </div>
         </div>
     </div>
 </template>

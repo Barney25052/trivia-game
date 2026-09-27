@@ -60,6 +60,27 @@ const showLowAmount = computed(() => hasLow.value && props.offer?.middle !== 0);
 
 const isChaser = computed(() => props.mySeatId !== "" && props.mySeatId === props.chaserSeatId);
 const isPickingContestant = computed(() => props.offer && props.mySeatId === props.offer.seatId);
+// Once both offers are in, the picking contestant chooses by clicking the
+// tier plaques themselves (no separate row of buttons repeating the same
+// three amounts).
+const canPick = computed(() => isPickingContestant.value && hasLow.value && hasHigh.value);
+
+function canPickTier(tier) {
+    if (!canPick.value) return false;
+    if (tier === "low") return showLowAmount.value;
+    if (tier === "middle") return !isMiddleVoided.value;
+    return true;
+}
+
+function pickTier(tier) {
+    if (canPickTier(tier)) emit("choose", tier);
+}
+
+// Screen-reader name for a tier plaque (its visible text is split across a
+// label span and an amount span).
+function tierLabel(tier, amount) {
+    return amount === null ? `${tier} offer: not set yet` : `${tier} offer: ${formatAmount(amount)}`;
+}
 
 const contestantName = computed(() => {
     const player = props.players.find((p) => p.seatId === props.offer?.seatId);
@@ -126,13 +147,13 @@ function submitHigh() {
 </script>
 
 <template>
-    <div class="lobby offerScreen">
+    <div class="offerScreen">
         <h2 class="lobbyTitle">The Offer</h2>
 
-        <div v-if="!offer" class="playerName">Setting up the offer…</div>
+        <p v-if="!offer" class="status-text">Setting up the offer…</p>
 
         <template v-else>
-            <p class="playerName">{{ contestantName }} faces the Chaser</p>
+            <p class="status-text offerSubtitle"><strong>{{ contestantName }}</strong> faces the Chaser</p>
 
             <div class="offerLayout">
                 <ChaserPanel
@@ -148,117 +169,118 @@ function submitHigh() {
                     @use-ability="emit('use-ability', $event)"
                 />
 
-                <div class="offerTierPlaques">
-                    <div class="moneyPlaque offerTierPlaque">
+                <div class="offerTierPlaques" :class="{ 'offerTierPlaques-picking': canPick }">
+                    <button
+                        type="button"
+                        class="moneyPlaque offerTierPlaque"
+                        :disabled="!canPickTier('low')"
+                        :aria-label="offer.middle === 0 ? 'Low offer: none' : tierLabel('Low', showLowAmount ? offer.low : null)"
+                        @click="pickTier('low')"
+                    >
                         <span class="who">Low</span>
                         <Transition name="offer-pop">
                             <span
                                 v-if="showLowAmount"
                                 key="low-amount"
                                 class="amount"
-                                :class="{ 'offer-amount-negative': offer.low <= 0 }"
+                                :class="{ 'offer-amount-negative': offer.low < 0 }"
                             >{{ formatAmount(offer.low) }}</span>
-                            <span v-else key="low-pending" class="amount offerAmountPending">—</span>
+                            <span v-else-if="offer.middle === 0" key="low-none" class="amount offerAmountPending">NONE</span>
+                            <span v-else key="low-pending" class="amount offerAmountPending">?</span>
                         </Transition>
-                    </div>
-                    <div class="moneyPlaque offerTierPlaque" :class="{ offerTierPlaqueVoided: isMiddleVoided }">
+                    </button>
+                    <button
+                        type="button"
+                        class="moneyPlaque offerTierPlaque"
+                        :class="{ offerTierPlaqueVoided: isMiddleVoided }"
+                        :disabled="!canPickTier('middle')"
+                        :aria-label="isMiddleVoided ? 'Middle offer: voided' : tierLabel('Middle', hasMiddle ? offer.middle : null)"
+                        @click="pickTier('middle')"
+                    >
                         <span class="who">Middle</span>
-                        <template v-if="isMiddleVoided">
-                            <span class="amount offerVoidAmount" key="middle-void">VOID</span>
-                            <span class="offerVoidRibbon">No Middle</span>
-                        </template>
+                        <span v-if="isMiddleVoided" class="amount offerVoidStamp">No middle</span>
                         <Transition v-else name="offer-pop">
                             <span
                                 v-if="hasMiddle"
                                 key="middle-amount"
                                 class="amount"
-                                :class="{ 'offer-amount-negative': offer.middle <= 0 }"
+                                :class="{ 'offer-amount-negative': offer.middle < 0 }"
                             >{{ formatAmount(offer.middle) }}</span>
-                            <span v-else key="middle-pending" class="amount offerAmountPending">—</span>
+                            <span v-else key="middle-pending" class="amount offerAmountPending">?</span>
                         </Transition>
-                    </div>
-                    <div class="moneyPlaque offerTierPlaque">
+                    </button>
+                    <button
+                        type="button"
+                        class="moneyPlaque offerTierPlaque"
+                        :disabled="!canPickTier('high')"
+                        :aria-label="tierLabel('High', hasHigh ? offer.high : null)"
+                        @click="pickTier('high')"
+                    >
                         <span class="who">High</span>
                         <Transition name="offer-pop">
                             <span
                                 v-if="hasHigh"
                                 key="high-amount"
                                 class="amount"
-                                :class="{ 'offer-amount-negative': offer.high <= 0 }"
+                                :class="{ 'offer-amount-negative': offer.high < 0 }"
                             >{{ formatAmount(offer.high) }}</span>
-                            <span v-else key="high-pending" class="amount offerAmountPending">—</span>
+                            <span v-else key="high-pending" class="amount offerAmountPending">?</span>
                         </Transition>
-                    </div>
+                    </button>
                 </div>
 
-                <div class="offerContestantBox">
-                    <div class="offerContestantMaskBox">
+                <div class="offerContestant">
+                    <div class="board-portrait-circle offerContestantAvatar">
                         <CharacterFace :character="contestantCharacter" :reaction="reactions[offer.seatId] ?? 'neutral'" />
                     </div>
-                    <p class="playerName offerChaserName">{{ contestantName }}</p>
+                    <p class="playerName chaserPanelName">{{ contestantName }}</p>
                 </div>
             </div>
 
             <div class="offerControls">
                 <template v-if="isChaser">
-                    <p class="playerName offerPot">Your pot: {{ formatAmount(chaserPot) }}</p>
-                    <div v-if="!hasLow" class="offerInputRow">
-                        <input
-                            v-model="lowInput"
-                            type="number"
-                            class="offerInput"
-                            :class="{ 'input-error': lowError }"
-                            placeholder="Low offer"
-                            @keyup.enter="submitLow"
-                        />
-                        <button class="btn btn-primary" @click="submitLow">Set low offer</button>
-                        <p v-if="lowError" class="playerName offerErrorText">{{ lowError }}</p>
-                    </div>
-                    <div v-else-if="!hasHigh" class="offerInputRow">
-                        <input
-                            v-model="highInput"
-                            type="number"
-                            class="offerInput"
-                            :class="{ 'input-error': highError }"
-                            placeholder="High offer"
-                            @keyup.enter="submitHigh"
-                        />
-                        <button class="btn btn-primary" @click="submitHigh">Set high offer</button>
-                        <p v-if="highError" class="playerName offerErrorText">{{ highError }}</p>
-                    </div>
-                    <p v-else class="playerName">Offers sent — waiting for {{ contestantName }} to pick…</p>
+                    <template v-if="!hasLow || !hasHigh">
+                        <p class="offerPot">Your pot <b>{{ formatAmount(chaserPot) }}</b></p>
+                        <div class="offerInputRow">
+                            <input
+                                v-if="!hasLow"
+                                v-model="lowInput"
+                                type="number"
+                                class="field offerInput"
+                                :class="{ 'input-error': lowError }"
+                                placeholder="Low offer"
+                                :step="LOW_STEP"
+                                @keyup.enter="submitLow"
+                            />
+                            <input
+                                v-else
+                                v-model="highInput"
+                                type="number"
+                                class="field offerInput"
+                                :class="{ 'input-error': highError }"
+                                placeholder="High offer"
+                                :step="HIGH_STEP"
+                                @keyup.enter="submitHigh"
+                            />
+                            <button v-if="!hasLow" class="btn btn-primary" @click="submitLow">Set low offer</button>
+                            <button v-else class="btn btn-primary" @click="submitHigh">Set high offer</button>
+                        </div>
+                        <p class="offerErrorText">{{ !hasLow ? lowError : highError }}</p>
+                    </template>
+                    <p v-else class="status-text">Offers sent. Waiting for {{ contestantName }} to pick…</p>
                 </template>
 
                 <template v-else-if="isPickingContestant">
-                    <template v-if="hasLow && hasHigh">
-                        <div class="offerTierRow">
-                            <button
-                                v-if="offer.middle !== 0"
-                                class="btn btn-primary offerTierButton"
-                                @click="emit('choose', 'low')"
-                            >
-                                <span :class="{ 'offer-amount-negative': offer.low <= 0 }">Low — {{ formatAmount(offer.low) }}</span>
-                            </button>
-                            <button
-                                v-if="!isMiddleVoided"
-                                class="btn btn-primary offerTierButton"
-                                @click="emit('choose', 'middle')"
-                            >
-                                Middle — {{ formatAmount(offer.middle) }}
-                            </button>
-                            <button class="btn btn-primary offerTierButton" @click="emit('choose', 'high')">
-                                High — {{ formatAmount(offer.high) }}
-                            </button>
-                        </div>
-                        <p class="playerName">Pick the offer you want to play for.</p>
-                    </template>
-                    <p v-else class="playerName">Waiting for the Chaser to set your offers…</p>
+                    <p v-if="canPick" class="status-text">Pick an offer to play for. Higher offers start you closer to the Chaser.</p>
+                    <p v-else class="status-text">The Chaser is setting your offers…</p>
                 </template>
 
                 <template v-else>
-                    <p v-if="!hasLow" class="playerName">The Chaser is setting the offers for {{ contestantName }}…</p>
-                    <p v-else-if="!hasHigh" class="playerName">The low offer is in — the Chaser is deciding the high…</p>
-                    <p v-else class="playerName">Waiting for {{ contestantName }} to pick…</p>
+                    <p v-if="!hasLow" class="status-text">The Chaser is setting the offers for {{ contestantName }}…</p>
+                    <p v-else-if="!hasHigh" class="status-text">
+                        {{ offer.middle === 0 ? "No low offer this time. The Chaser is setting the high one…" : "The low offer is in. Now the high one…" }}
+                    </p>
+                    <p v-else class="status-text">Waiting for {{ contestantName }} to pick…</p>
                 </template>
             </div>
         </template>

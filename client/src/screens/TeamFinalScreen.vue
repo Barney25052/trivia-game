@@ -11,6 +11,9 @@ const props = defineProps({
     finalQuestion: { type: Object, default: null },
     finalBuzzSeatId: { type: String, default: "" },
     answerResult: { type: Object, default: null },
+    // Ticket 160: the latest final-round answer, broadcast to the whole room
+    // (App.vue's finalAnswer) — this screen uses side "team" ones.
+    finalAnswer: { type: Object, default: null },
     // Per-seat face reaction store (ticket 103): seatId -> expression, see
     // App.vue's reactionsBySeat.
     reactions: { type: Object, default: () => ({}) },
@@ -68,16 +71,15 @@ const inputBox = ref(null);
 const revealedCorrectAnswer = ref("");
 // Full-viewport correct/wrong flash (ticket 100) — same shared
 // .finalScreenFlash pattern/timing as CashBuilderScreen's screenFlash (see
-// style.css). `answerResult` is sent to the buzz winner's own client only
-// (server/src/rooms/handlers/messageHandlers.ts submitFinalAnswer uses
-// `client.send`, never a broadcast), so a "flash every team client" version
-// would need a new server broadcast — out of this ticket's scope — hence
-// this flashes only the answering player's own screen.
+// style.css). It stays on the answering player's own screen (driven by their
+// own `answerResult`); everyone else gets the answer bubble and, when it's
+// wrong, the reveal from the finalAnswer broadcast instead (ticket 160).
 const screenFlash = ref("");
 let screenFlashTimeout = null;
-// Only the buzz winner's own client ever learns the typed text (the server
-// sends `submitFinalAnswer` results to the submitter only, same as the cash
-// builder) — so the bubble only ever pops up over your own seat.
+// Ticket 160: the typed answer reaches every client (the finalAnswer
+// broadcast), so the bubble pops over whichever seat answered, on every
+// screen — including the answerer's own, the same way the Cash Builder's
+// cashBuilderAnswer bubble works (ticket 128).
 //
 // Ticket 099: on a correct answer the server's advanceFinalTeamQuestion()
 // fires immediately, so the next `finalQuestion` can arrive within the same
@@ -87,6 +89,7 @@ let screenFlashTimeout = null;
 // chaserAnswerBubbleText/answerBubbleTimeout pattern from ticket 098.
 const ANSWER_BUBBLE_HOLD_MS = 3000;
 const bubbleText = ref("");
+const bubbleSeatId = ref("");
 const bubbleKey = ref(0);
 let bubbleTimeout = null;
 
@@ -130,13 +133,6 @@ function submit() {
     const trimmed = answerInput.value.trim();
     if (!trimmed) return;
     emit("submit-final-answer", { answer: trimmed, questionId: props.finalQuestion.questionId });
-    bubbleText.value = trimmed;
-    bubbleKey.value += 1;
-    // Restart the min-life timer on every submission so a same-seat resubmit
-    // (e.g. a rapid double-submit) re-keys and holds cleanly instead of
-    // accumulating overlapping timeouts.
-    if (bubbleTimeout) clearTimeout(bubbleTimeout);
-    bubbleTimeout = setTimeout(clearBubble, ANSWER_BUBBLE_HOLD_MS);
     answerInput.value = "";
 }
 
@@ -182,6 +178,20 @@ watch(() => props.answerResult, (result) => {
     }
 });
 
+watch(() => props.finalAnswer, (answer) => {
+    if (!answer || answer.side !== "team") return;
+    bubbleSeatId.value = answer.seatId;
+    bubbleText.value = answer.answer;
+    bubbleKey.value += 1;
+    // Restart the min-life timer on every answer so a quick next one re-keys
+    // and holds cleanly instead of accumulating overlapping timeouts.
+    if (bubbleTimeout) clearTimeout(bubbleTimeout);
+    bubbleTimeout = setTimeout(clearBubble, ANSWER_BUBBLE_HOLD_MS);
+    // A wrong answer shows the real one to the whole room, not just the
+    // answerer (whose own answerResult does the same, plus the flash).
+    if (!answer.correct) revealedCorrectAnswer.value = answer.correctAnswer;
+});
+
 watch(isBuzzWinner, (winner) => {
     if (winner) nextTick(() => inputBox.value?.focus());
 });
@@ -197,53 +207,71 @@ watch(isBuzzWinner, (winner) => {
     <h2 class="lobbyTitle">The Team Final</h2>
 
     <div class="cf-hud">
-      <span>TIME LEFT <b>{{ secondsLeft }}s</b></span>
+      <span>TIME LEFT <b :class="{ 'cf-hud-urgent': secondsLeft > 0 && secondsLeft <= 10 }">{{ secondsLeft }}s</b></span>
       <span>TEAM SCORE <b>{{ teamScore }}</b></span>
     </div>
 
-    <div v-if="isChaser" class="teamFinalQuestionBlock">
-      <p class="playerName">Chaser, your round is next — you're up after the team.</p>
-    </div>
-
-    <template v-else>
+    <!-- Fixed-height stage for the question, whichever state it's in, so the
+         table below never jumps. -->
+    <div class="teamFinalStage">
       <div v-if="revealedCorrectAnswer" class="wrong-panel">
-        <span class="wrong-label">✗ WRONG!</span>
+        <span class="wrong-label">Wrong!</span>
         <p class="wrong-answer">The answer was <strong>{{ revealedCorrectAnswer }}</strong></p>
       </div>
-      <template v-else-if="finalQuestion">
-        <div v-if="isBuzzWinner" class="open-question-box accent-blue">
-          <span class="oq-eyebrow">Your answer</span>
+      <!-- The Chaser just watches: the live question and who's on it, no
+           buzzer. -->
+      <template v-else-if="isChaser">
+        <div v-if="finalQuestion" class="open-question-box">
+          <span class="oq-eyebrow">{{ finalBuzzSeatId === "" ? "Waiting for a buzz" : `${buzzWinnerName} is answering` }}</span>
           <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
-          <div class="oq-row">
-            <input
-                v-model="answerInput"
-                class="oq-input"
-                placeholder="Type your answer..."
-                ref="inputBox"
-                @keyup.enter="submit"
-            />
-            <button class="oq-submit" @click="submit">Submit</button>
-          </div>
+          <p v-if="finalBuzzSeatId !== ''" class="oq-thinking">Thinking<span class="oq-dots"><i></i><i></i><i></i></span></p>
+          <p v-else class="oq-thinking">Your round is next.</p>
         </div>
-        <div v-else-if="finalBuzzSeatId === ''" class="teamFinalQuestionBlock">
-          <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
-          <button
-              class="buzzer-btn"
-              :class="{ 'buzzer-btn-silenced': silencedActive }"
-              @click="buzz"
-          >BUZZ IN</button>
-          <Transition name="chaser-bubble-pop">
-            <p v-if="silencedActive" class="buzzer-silenced-msg">{{ silencedMessage }}</p>
-          </Transition>
-        </div>
-        <div v-else class="open-question-box">
-          <span class="oq-eyebrow accent-neutral">{{ buzzWinnerName }} is answering</span>
-          <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
-          <p class="oq-thinking">Waiting<span class="oq-dots"><i></i><i></i><i></i></span></p>
-        </div>
+        <p v-else class="status-text">The team is answering. Your round is next.</p>
       </template>
-      <p v-else class="playerName">Waiting for the first question…</p>
-    </template>
+
+      <template v-else>
+        <template v-if="finalQuestion">
+          <div v-if="isBuzzWinner" class="open-question-box accent-blue">
+            <span class="oq-eyebrow">Your answer</span>
+            <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
+            <div class="oq-row">
+              <input
+                  v-model="answerInput"
+                  class="field"
+                  placeholder="Type your answer"
+                  ref="inputBox"
+                  @keyup.enter="submit"
+              />
+              <button class="btn btn-primary" @click="submit">Submit</button>
+            </div>
+          </div>
+          <template v-else-if="finalBuzzSeatId === ''">
+            <div class="open-question-box">
+              <span class="oq-eyebrow">Buzz in to answer</span>
+              <p class="oq-prompt teamFinalPrompt">{{ finalQuestion.prompt }}</p>
+            </div>
+            <div class="teamFinalBuzzer">
+              <button
+                  class="buzzer-btn"
+                  :class="{ 'buzzer-btn-silenced': silencedActive }"
+                  @click="buzz"
+              >BUZZ!</button>
+              <span class="teamFinalBuzzHint">or press Space</span>
+              <Transition name="chaser-bubble-pop">
+                <p v-if="silencedActive" class="buzzer-silenced-msg">{{ silencedMessage }}</p>
+              </Transition>
+            </div>
+          </template>
+          <div v-else class="open-question-box">
+            <span class="oq-eyebrow">{{ buzzWinnerName }} is answering</span>
+            <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
+            <p class="oq-thinking">Thinking<span class="oq-dots"><i></i><i></i><i></i></span></p>
+          </div>
+        </template>
+        <p v-else class="status-text">The first question is on its way…</p>
+      </template>
+    </div>
 
     <div class="teamFinalTable">
       <div class="teamFinalSeatsRow">
@@ -251,22 +279,35 @@ watch(isBuzzWinner, (winner) => {
             v-for="p in teamPlayers"
             :key="p.seatId"
             class="teamFinalPlayer"
-            :class="{ 'teamFinalPlayer-eliminated': p.isEliminated, buzzing: p.seatId === finalBuzzSeatId }"
+            :class="{ buzzing: p.seatId === finalBuzzSeatId }"
         >
           <Transition name="chaser-bubble-pop">
             <div
-                v-if="p.seatId === mySeatId && bubbleText"
+                v-if="p.seatId === bubbleSeatId && bubbleText"
                 :key="bubbleKey"
                 class="chaserPanelBubble teamFinalBubble"
             >{{ bubbleText }}</div>
           </Transition>
-          <p class="playerName teamFinalPlayerName">{{ p.name }}</p>
           <div class="teamFinalAvatarWrap">
             <CharacterFace :character="p.character" :reaction="reactions[p.seatId] ?? 'neutral'" />
           </div>
         </div>
       </div>
+      <!-- The table: the team stands behind it, each with a name plate on
+           its front edge (a row matching the seats row's widths/gaps), and
+           the pot on the front panel. -->
       <div class="teamFinalTableSlab" :class="{ 'teamFinalTableSlab-lit': finalBuzzSeatId !== '' }">
+        <div class="teamFinalNameRow">
+          <span
+              v-for="p in teamPlayers"
+              :key="p.seatId"
+              class="teamFinalNamePlate"
+              :class="{
+                'teamFinalNamePlate-you': p.seatId === mySeatId,
+                'teamFinalNamePlate-buzzing': p.seatId === finalBuzzSeatId
+              }"
+          >{{ p.name }}</span>
+        </div>
         <span class="teamFinalTableAmount">{{ potText }}</span>
       </div>
     </div>

@@ -61,7 +61,6 @@ describe("gameConfig", () => {
     for (const character of CHASER_CHARACTERS) {
       assert.ok(enumIds.includes(character.id as ChaserCharacter), `${character.id} is a ChaserCharacter enum value`);
       assert.ok(character.name.length > 0, `${character.id} has a name`);
-      assert.ok(character.tagline.length > 0, `${character.id} has a tagline`);
       for (const ability of [...character.passive, ...character.active]) {
         assert.ok(ability.id.length > 0, `${character.id} ability has an id`);
         assert.ok(ability.name.length > 0, `${character.id} ability has a name`);
@@ -91,7 +90,7 @@ describe("gameConfig", () => {
     assert.strictEqual(CHASER_ABILITIES.doubleTime.usesPerTableRound, 1);
     assert.strictEqual(CHASER_ABILITIES.reRack.usesPerTableRound, 1);
     assert.strictEqual(CHASER_ABILITIES.jumble.usesPerTableRound, 1);
-    assert.strictEqual(CHASER_ABILITIES.timeBonusMs, 500);
+    assert.strictEqual(CHASER_ABILITIES.timeBonusMs, 2000);
     assert.strictEqual(CHASER_ABILITIES.shortFuseStealWindowMs, 10_000);
   });
 });

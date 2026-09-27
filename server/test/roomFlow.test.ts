@@ -235,10 +235,6 @@ describe("roomFlow", () => {
       typeof offer.chaserCharacterName === "string" && offer.chaserCharacterName.length > 0,
       "offer message should carry the chaser character name"
     );
-    assert.ok(
-      typeof offer.chaserCharacterTagline === "string" && offer.chaserCharacterTagline.length > 0,
-      "offer message should carry the chaser character tagline"
-    );
     assert.ok(Array.isArray(offer.chaserCharacterPassive), "offer message should carry the passive ability list");
     assert.ok(Array.isArray(offer.chaserCharacterActive), "offer message should carry the active ability list");
     await waitForPhaseBroadcast(phases, GamePhase.RolesReveal, "rolesReveal phase broadcast to reach alice");
@@ -492,6 +488,11 @@ alice.send("startGame");
     assert.ok(second && second !== first, "second contestant is not the chaser");
     assert.strictEqual(room.state.activeRound, 2);
     assert.strictEqual(room.state.players.get(seatIdOf(room, first)).madeItBack, true);
+    assert.strictEqual(
+      room.state.players.get(seatIdOf(room, first)).bankedAmount,
+      2000,
+      "the escaped contestant's banked amount is the high offer they played for"
+    );
 
     // Second contestant: cashBuilder -> offer -> chase (gets caught)
     room.state.players.get(room.state.activeContestantSeatId).cashBuilderMoney = 1000;

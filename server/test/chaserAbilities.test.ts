@@ -344,28 +344,27 @@ describe("chaser ability activation handler (ticket 140)", () => {
         const { room, contestantClient, chaserClient, firstQuestion } = await reachChaseAsChaser(colyseus, "bezos");
         assert.strictEqual(firstQuestion.options.length, CHASE_QUESTION.optionCount);
         // Let the Chaser's own socket finish dispatching its copy of the
-        // original broadcast too, so the second-activation waiter below can't
-        // race it (mirrors the same sleep used by the ticket-141 narrowing test).
+        // original broadcast too, so the waiters below can't race it.
         await sleep(50);
 
-        const narrowedPromise = contestantClient.waitForMessage("question");
+        const firstViewPromise = chaserClient.waitForMessage("question");
         chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
-        const narrowed = await narrowedPromise;
-        assert.strictEqual(narrowed.options.length, 2, "the first activation narrows 3 options to 2");
+        const firstView = await firstViewPromise;
+        assert.strictEqual(firstView.hiddenOptions.length, 1, "the first activation hides one option on the Chaser's screen");
         const afterFirstUse = room.state.fiftyFiftyUsesRemaining;
 
         // Nobody has answered yet — the old chaseAnswers-non-empty gate alone
         // would let this second activation through. It must now be rejected:
-        // no re-narrowed broadcast, and the charge must not be spent.
-        const NOTHING = Symbol("no second question broadcast");
+        // no second view sent, and the charge must not be spent.
+        const NOTHING = Symbol("no second question view");
         const outcome = Promise.race([
-            contestantClient.waitForMessage("question"),
+            chaserClient.waitForMessage("question"),
             sleep(150).then(() => NOTHING)
         ]);
         chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
-        assert.strictEqual(await outcome, NOTHING, "a second 50/50 activation on the same question must not re-narrow it");
+        assert.strictEqual(await outcome, NOTHING, "a second 50/50 activation on the same question must not hide another option");
         assert.strictEqual(room.state.fiftyFiftyUsesRemaining, afterFirstUse, "the second activation must not spend another charge");
-        assert.strictEqual(room.currentChaseQuestion.options.length, 2, "the question must stay at 2 options, not be narrowed to 1");
+        assert.strictEqual(room.currentChaseQuestion.options.length, CHASE_QUESTION.optionCount, "the shared question keeps every option");
     });
 
     it("reRack is rejected once chaseAnswers is non-empty", async () => {
@@ -574,33 +573,38 @@ describe("board-chase ability effects (ticket 141)", () => {
         await cleanup();
     });
 
-    it("fiftyFifty narrows a 3-option question to 2 (both sides get the same narrowed question) and the remaining correct index still resolves correctly", async () => {
-        const { room, contestantClient, chaserClient, firstQuestion } = await reachChaseAsChaser(colyseus, "bezos");
+    it("fiftyFifty hides one wrong option on the Chaser's own screen only: the contestant and spectators keep every option, and answers still score by real index (ticket 160)", async () => {
+        const { room, contestantClient, chaserClient, bystanderClient, firstQuestion } =
+            await reachChaseAsChaserWithBystander(colyseus, "nami", "middle");
         assert.strictEqual(firstQuestion.options.length, CHASE_QUESTION.optionCount);
-        // reachChaseAsChaser only awaits the contestant's copy of the first
-        // "question" broadcast — let the Chaser's own socket finish
-        // dispatching its copy too, so the waiter below can't race it and
-        // catch that stale original instead of the narrowed re-broadcast.
+        // reachChaseAsChaserWithBystander only awaits the contestant's copy
+        // of the first "question" broadcast — let the other sockets finish
+        // dispatching theirs, so the waiters below can't catch that stale
+        // original instead of anything 50/50 triggers.
         await sleep(50);
 
-        const contestantNarrowed = contestantClient.waitForMessage("question");
-        const chaserNarrowed = chaserClient.waitForMessage("question");
+        const NOTHING = Symbol("no extra question message");
+        const chaserView = chaserClient.waitForMessage("question");
+        const contestantExtra = Promise.race([contestantClient.waitForMessage("question"), sleep(200).then(() => NOTHING)]);
+        const bystanderExtra = Promise.race([bystanderClient.waitForMessage("question"), sleep(200).then(() => NOTHING)]);
         chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
-        const narrowed = await contestantNarrowed;
-        const chaserSideNarrowed = await chaserNarrowed;
 
-        assert.strictEqual(narrowed.questionId, firstQuestion.questionId);
-        assert.strictEqual(narrowed.options.length, 2, "50/50 drops exactly one wrong option");
-        assert.ok(narrowed.options.includes("Correct Answer"), "the correct option must survive the narrowing");
-        assert.ok(!("correctIndex" in narrowed), "the re-broadcast must never leak correctIndex before resolution");
-        // Mutual-benefit/double-edged by design (ticket 141): both sides get
-        // the identical narrowed options, not a Chaser-only view.
-        assert.deepStrictEqual(chaserSideNarrowed.options, narrowed.options);
+        const view = await chaserView;
+        const correctIndex = firstQuestion.options.indexOf("Correct Answer");
+        assert.strictEqual(view.questionId, firstQuestion.questionId);
+        assert.deepStrictEqual(view.options, firstQuestion.options, "the Chaser's copy still lists every option; hiddenOptions does the hiding");
+        assert.ok(!("correctIndex" in view), "the Chaser's view must never leak correctIndex");
+        assert.ok(Array.isArray(view.hiddenOptions) && view.hiddenOptions.length === 1, "50/50 hides exactly one option");
+        assert.notStrictEqual(view.hiddenOptions[0], correctIndex, "the hidden option is never the correct one");
+        assert.ok(view.hiddenOptions[0] >= 0 && view.hiddenOptions[0] < firstQuestion.options.length, "the hidden index is a real option index");
 
-        const correctIndex = narrowed.options.indexOf("Correct Answer");
+        assert.strictEqual(await contestantExtra, NOTHING, "the contestant's options must not change");
+        assert.strictEqual(await bystanderExtra, NOTHING, "a spectator's options must not change");
+        assert.strictEqual(room.currentChaseQuestion.options.length, CHASE_QUESTION.optionCount, "the shared question keeps every option");
+
         const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
-        contestantClient.send("submitChaseAnswer", { questionId: narrowed.questionId, answerIndex: correctIndex });
-        chaserClient.send("submitChaseAnswer", { questionId: narrowed.questionId, answerIndex: correctIndex });
+        contestantClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+        chaserClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
         const result = await resultPromise;
 
         assert.strictEqual(result.correctIndex, correctIndex);
@@ -682,79 +686,50 @@ describe("board-chase ability effects (ticket 141)", () => {
         assert.strictEqual(result.chaserCorrect, true);
     });
 
-    it("jumble then fiftyFifty on the same still-unanswered question: the contestant's shuffle persists through the narrowing instead of silently reverting to natural order (ticket 157)", async () => {
+    it("jumble then fiftyFifty on the same question: each only changes its own player's screen, so the contestant's shuffle is never disturbed (tickets 157, 160)", async () => {
         const { contestantClient, chaserClient, bystanderClient, room, firstQuestion } =
             await reachChaseAsChaserWithBystander(colyseus, "maggie", "middle");
         assert.strictEqual(firstQuestion.options.length, CHASE_QUESTION.optionCount);
 
-        // Collect every "question" message the contestant's client receives
-        // from here on — the fix sends *two* messages back-to-back when
-        // fiftyFifty narrows a jumbled question (the plain broadcast to
-        // everyone, immediately followed by the targeted re-jumble just for
-        // the contestant), so a one-shot waitForMessage would race which of
-        // the two it catches.
         const contestantQuestions: any[] = [];
         contestantClient.onMessage("question", (message: any) => contestantQuestions.push(message));
-        const bystanderExtra: any[] = [];
-        bystanderClient.onMessage("question", (message: any) => bystanderExtra.push(message));
+        const chaserQuestions: any[] = [];
+        chaserClient.onMessage("question", (message: any) => chaserQuestions.push(message));
+        const bystanderQuestions: any[] = [];
+        bystanderClient.onMessage("question", (message: any) => bystanderQuestions.push(message));
         // Let the initial broadcastQuestion's copies finish dispatching to
         // every socket first, so they don't get mistaken for messages
         // triggered by the abilities below.
         await sleep(80);
         contestantQuestions.length = 0;
-        bystanderExtra.length = 0;
+        chaserQuestions.length = 0;
+        bystanderQuestions.length = 0;
 
-        // Jumble first.
-        const chaserAbilityUsed1 = chaserClient.waitForMessage("chaserAbilityUsed");
+        const jumbleUsed = chaserClient.waitForMessage("chaserAbilityUsed");
         chaserClient.send("useChaserAbility", { ability: "jumble" });
-        await chaserAbilityUsed1;
+        await jumbleUsed;
+        const fiftyFiftyUsed = chaserClient.waitForMessage("chaserAbilityUsed");
+        chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
+        await fiftyFiftyUsed;
         await sleep(50);
 
-        assert.strictEqual(contestantQuestions.length, 1, "jumble sends exactly one targeted re-send to the contestant");
+        assert.strictEqual(contestantQuestions.length, 1, "the contestant only ever gets Jumble's shuffle, nothing from 50/50");
         const jumbled = contestantQuestions[0];
         assert.ok(Array.isArray(jumbled.displayOrder), "jumble must carry a displayOrder");
-        assert.strictEqual(jumbled.displayOrder.length, firstQuestion.options.length);
+        assert.strictEqual(jumbled.options.length, CHASE_QUESTION.optionCount, "the contestant keeps every option");
+        assert.ok(!("hiddenOptions" in jumbled));
 
-        // Then fiftyFifty on the same still-unanswered question — today's bug
-        // (pre-fix) is that the plain broadcastQuestion re-send silently
-        // drops displayOrder, reverting the contestant to natural order with
-        // no explanation.
-        const chaserAbilityUsed2 = chaserClient.waitForMessage("chaserAbilityUsed");
-        chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
-        await chaserAbilityUsed2;
-        await sleep(50);
+        assert.strictEqual(chaserQuestions.length, 1, "the Chaser only gets their own 50/50 view");
+        assert.ok(Array.isArray(chaserQuestions[0].hiddenOptions) && chaserQuestions[0].hiddenOptions.length === 1);
+        assert.ok(!("displayOrder" in chaserQuestions[0]), "the Chaser's view is never shuffled");
 
-        assert.strictEqual(
-            contestantQuestions.length,
-            3,
-            "fiftyFifty must send the plain narrowed broadcast plus a targeted re-jumble to the still-jumbled contestant"
-        );
-        const [, narrowedBroadcast, reJumbled] = contestantQuestions;
-        assert.strictEqual(narrowedBroadcast.options.length, 2, "50/50 drops exactly one wrong option");
-        assert.ok(!("displayOrder" in narrowedBroadcast), "the plain broadcast leg still carries no displayOrder");
+        assert.strictEqual(bystanderQuestions.length, 0, "a spectator gets neither view");
+        assert.strictEqual(room.currentChaseQuestion.options.length, CHASE_QUESTION.optionCount);
 
-        assert.strictEqual(reJumbled.options.length, 2, "the re-jumbled options must match the narrowed set");
-        assert.ok(Array.isArray(reJumbled.displayOrder), "the contestant must get a fresh displayOrder — no silent revert");
-        assert.strictEqual(reJumbled.displayOrder.length, 2, "the re-derived displayOrder must match the narrowed option count");
-        assert.deepStrictEqual(
-            [...reJumbled.displayOrder].sort((a: number, b: number) => a - b),
-            reJumbled.options.map((_option: string, index: number) => index),
-            "the re-derived displayOrder must be a valid permutation of the narrowed option indices"
-        );
-
-        // Everyone else (Chaser, spectator) never gets a targeted re-jumble —
-        // only the plain narrowed broadcast, same as before this fix.
-        assert.strictEqual(bystanderExtra.length, 1, "the spectator only gets the one plain narrowed broadcast");
-        assert.ok(!("displayOrder" in bystanderExtra[0]));
-
-        assert.strictEqual(room.currentChaseQuestion.options.length, 2, "the live question stays narrowed to 2 options");
-
-        // Scoring still resolves against the real correctIndex regardless of
-        // displayOrder.
-        const correctIndex = reJumbled.options.indexOf("Correct Answer");
+        const correctIndex = firstQuestion.options.indexOf("Correct Answer");
         const resultPromise = contestantClient.waitForMessage("chaseQuestionResult");
-        contestantClient.send("submitChaseAnswer", { questionId: reJumbled.questionId, answerIndex: correctIndex });
-        chaserClient.send("submitChaseAnswer", { questionId: reJumbled.questionId, answerIndex: correctIndex });
+        contestantClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
+        chaserClient.send("submitChaseAnswer", { questionId: firstQuestion.questionId, answerIndex: correctIndex });
         const result = await resultPromise;
         assert.strictEqual(result.contestantCorrect, true);
         assert.strictEqual(result.chaserCorrect, true);
@@ -880,10 +855,14 @@ describe("board-chase ability effects (ticket 141)", () => {
             const { room, contestantClient, chaserClient, contestantSeatId } =
                 await reachChaseAsChaser(colyseus, "big stan", { offer: "low" });
 
-            const narrowedPromise = contestantClient.waitForMessage("question");
+            // The helper only awaited the contestant's copy of the first
+            // question; let the Chaser's copy land before waiting on their
+            // socket for the 50/50 view.
+            await sleep(50);
+            const chaserViewPromise = chaserClient.waitForMessage("question");
             chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
-            const narrowed = await narrowedPromise;
-            assert.strictEqual(narrowed.options.length, 2);
+            const chaserView = await chaserViewPromise;
+            assert.strictEqual(chaserView.hiddenOptions.length, 1);
 
             const armedBroadcast = chaserClient.waitForMessage("chaserAbilityUsed");
             chaserClient.send("useChaserAbility", { ability: "doubleTime" });
@@ -891,7 +870,7 @@ describe("board-chase ability effects (ticket 141)", () => {
 
             // Contestant always wrong, Chaser always correct — catches
             // quickly from a "low" start.
-            let question = narrowed;
+            let question = chaserView;
             for (let round = 0; round < 6 && room.state.currentPhase === GamePhase.Chase; round += 1) {
                 const correctIndex = question.options.indexOf("Correct Answer");
                 const wrongIndex = (correctIndex + 1) % question.options.length;
@@ -923,14 +902,18 @@ describe("board-chase ability effects (ticket 141)", () => {
             const fresh = await freshPromise;
             assert.notStrictEqual(fresh.questionId, firstQuestion.questionId);
 
-            const narrowedPromise = contestantClient.waitForMessage("question");
+            // Let the Chaser's copy of the redrawn question land before
+            // waiting on their socket for the 50/50 view.
+            await sleep(50);
+            const chaserViewPromise = chaserClient.waitForMessage("question");
             chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
-            const narrowed = await narrowedPromise;
-            assert.strictEqual(narrowed.options.length, 2);
+            const chaserView = await chaserViewPromise;
+            assert.strictEqual(chaserView.questionId, fresh.questionId);
+            assert.strictEqual(chaserView.hiddenOptions.length, 1);
 
             // Contestant always correct, Chaser always wrong — escapes
             // quickly from a "low" start (BOARD.startLow rounds to reach 0).
-            let question = narrowed;
+            let question = fresh;
             for (let round = 0; round < BOARD.startLow + 2 && room.state.currentPhase === GamePhase.Chase; round += 1) {
                 const correctIndex = question.options.indexOf("Correct Answer");
                 const wrongIndex = (correctIndex + 1) % question.options.length;
@@ -957,16 +940,18 @@ describe("board-chase ability effects (ticket 141)", () => {
             const { room, contestantClient, chaserClient, contestantSeatId } =
                 await reachChaseAsChaser(colyseus, "maggie", { offer: "low" });
 
-            const narrowedPromise = contestantClient.waitForMessage("question");
+            await sleep(50);
+            const chaserViewPromise = chaserClient.waitForMessage("question");
             chaserClient.send("useChaserAbility", { ability: "fiftyFifty" });
-            const narrowed = await narrowedPromise;
-            assert.strictEqual(narrowed.options.length, 2);
+            const chaserView = await chaserViewPromise;
+            assert.strictEqual(chaserView.hiddenOptions.length, 1);
 
             const jumbledPromise = contestantClient.waitForMessage("question");
             chaserClient.send("useChaserAbility", { ability: "jumble" });
             const jumbled = await jumbledPromise;
             assert.ok(Array.isArray(jumbled.displayOrder));
-            assert.strictEqual(jumbled.questionId, narrowed.questionId);
+            assert.strictEqual(jumbled.questionId, chaserView.questionId);
+            assert.strictEqual(jumbled.options.length, CHASE_QUESTION.optionCount, "50/50 left the contestant's options alone");
 
             // The contestant answers using the real (un-jumbled) option index
             // — displayOrder never changes what index scores correctly.
@@ -1147,7 +1132,7 @@ describe("final-round ability effects (ticket 142)", () => {
     });
 
     describe("Time Bonus (Big Stan)", () => {
-        it("a correct chaser-final answer extends chaserFinalRemainingMs by ~500ms, synced immediately", async () => {
+        it("a correct chaser-final answer extends chaserFinalRemainingMs by ~timeBonusMs, synced immediately", async () => {
             const { room, chaserClient, chaserMessage } = await reachChaserFinal(colyseus, "big stan");
             // Headroom so this single correct answer doesn't also win the game
             // (chaserScore reaching teamScore) before the extension can be read.
@@ -1165,11 +1150,11 @@ describe("final-round ability effects (ticket 142)", () => {
             // Not exact-to-the-millisecond: extendChaserFinalClock also
             // subtracts the real wall-clock time elapsed since the clock
             // started (same bookkeeping pauseChaserFinalClock uses), so the
-            // net increase is ~500ms minus a few ms of real test/processing
+            // net increase is the bonus minus a few ms of real test/processing
             // time — never more than the flat bonus itself.
             const delta = room.state.chaserFinalRemainingMs - remainingBefore;
             assert.ok(
-                delta > 400 && delta <= CHASER_ABILITIES.timeBonusMs,
+                delta > CHASER_ABILITIES.timeBonusMs - 100 && delta <= CHASER_ABILITIES.timeBonusMs,
                 `expected the clock to extend by ~${CHASER_ABILITIES.timeBonusMs}ms net of negligible real processing time, got ${delta}ms`
             );
         });
@@ -1197,7 +1182,7 @@ describe("final-round ability effects (ticket 142)", () => {
 
             const totalDelta = room.state.chaserFinalRemainingMs - remainingAtStart;
             assert.ok(
-                totalDelta > 700 && totalDelta <= 2 * CHASER_ABILITIES.timeBonusMs,
+                totalDelta > 2 * CHASER_ABILITIES.timeBonusMs - 300 && totalDelta <= 2 * CHASER_ABILITIES.timeBonusMs,
                 `two correct answers should extend the clock by ~${2 * CHASER_ABILITIES.timeBonusMs}ms total, got ${totalDelta}ms`
             );
         });

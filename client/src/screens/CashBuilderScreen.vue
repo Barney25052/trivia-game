@@ -55,7 +55,7 @@ function clearBubble() {
 
 watch(() => props.cashBuilderAnswer, (message) => {
     if (!message) return;
-    bubbleText.value = message.answer || "(passed)";
+    bubbleText.value = message.answer || "Pass!";
     bubbleKey.value += 1;
     if (bubbleTimeout) clearTimeout(bubbleTimeout);
     bubbleTimeout = setTimeout(clearBubble, ANSWER_BUBBLE_HOLD_MS);
@@ -109,9 +109,10 @@ const roundFinished = computed(() => {
     return seenQuestion.value || secondsLeft.value === 0;
 });
 const potText = computed(() => "$" + displayedPot.value.toLocaleString("en-US"));
-const questionsLabel = computed(() =>
-    `${props.cashBuilderCorrectAnswers} correct answer${props.cashBuilderCorrectAnswers === 1 ? "" : "s"}`
-);
+const potLabel = computed(() => {
+    if (props.isActiveContestant) return "Your pot";
+    return props.activeContestantName ? `${props.activeContestantName}'s pot` : "Pot";
+});
 const inputDisabled = computed(() =>
     cooldownActive.value || !props.currentQuestion || roundFinished.value || awaitingNext.value
 );
@@ -325,97 +326,87 @@ onUnmounted(() => {
 <template>
   <div class="cashBuilderRoot">
     <div class="cashBuilderScreenFlash" :class="screenFlash"></div>
-    <div class="lobby cashBuilder">
+    <div class="cashBuilder">
         <h2 class="lobbyTitle">Cash Builder</h2>
 
-        <div v-if="cooldownActive" class="cashBuilderCountdown">
-            <p class="playerName">Get ready…</p>
-            <div class="countdown-chip" :class="{ urgent: cooldownUrgent }">
-                <span class="countdown-num">{{ cooldownLeft }}</span>
+        <!-- One fixed-height slot for both the pre-round countdown and the
+             running clock, so the switch between them never shifts the
+             content below. -->
+        <div class="cashBuilderHud">
+            <template v-if="cooldownActive">
+                <span class="cashBuilderGetReady">Get ready</span>
+                <div class="countdown-chip" :class="{ urgent: cooldownUrgent }">
+                    <span class="countdown-num">{{ cooldownLeft }}</span>
+                </div>
+            </template>
+            <div v-else class="cf-hud">
+                <span>TIME LEFT <b :class="{ 'cf-hud-urgent': secondsLeft > 0 && secondsLeft <= 10 }">{{ secondsLeft }}s</b></span>
+                <span>CORRECT <b>{{ cashBuilderCorrectAnswers }}</b></span>
             </div>
-        </div>
-        <div v-else class="cf-hud">
-            <span>TIME LEFT <b>{{ secondsLeft }}s</b></span>
         </div>
 
         <div class="cashBuilderBody">
           <div class="cashBuilderMain">
-            <template v-if="isActiveContestant">
-                <div
-                    class="moneyPlaque cashBuilderPot"
-                    :class="{ wiping: potWiping }"
-                    ref="potPlaqueEl"
-                >
-                    <span class="who">Cash Builder pot</span>
-                    <span class="amount">{{ potText }}</span>
-                    <div class="plaque-wipe"></div>
-                </div>
-                <p class="playerName cashBuilderMeta">{{ questionsLabel }}</p>
+            <div
+                class="moneyPlaque cashBuilderPot"
+                :class="{ wiping: potWiping }"
+                ref="potPlaqueEl"
+            >
+                <span class="who">{{ potLabel }}</span>
+                <span class="amount">{{ potText }}</span>
+                <div class="plaque-wipe"></div>
+            </div>
 
-                <div class="open-question-box" :class="questionBoxAccent">
-                    <template v-if="revealedCorrectAnswer">
-                        <span class="wrong-label">✗ WRONG!</span>
-                        <p class="wrong-answer">The answer was <strong>{{ revealedCorrectAnswer }}</strong></p>
-                    </template>
-                    <template v-else-if="correctAnswerText">
-                        <span class="steal-success-label">✓ Correct!</span>
-                        <p class="steal-success-text"><strong>{{ correctAnswerText }}</strong></p>
-                    </template>
-                    <template v-else-if="currentQuestion">
-                        <span class="oq-eyebrow">Your answer</span>
-                        <p class="oq-prompt">{{ currentQuestion.prompt }}</p>
-                    </template>
-                    <p v-else class="oq-thinking">Waiting for the first question…</p>
+            <div v-if="isActiveContestant" class="open-question-box" :class="questionBoxAccent">
+                <template v-if="revealedCorrectAnswer">
+                    <span class="wrong-label">Wrong!</span>
+                    <p class="wrong-answer">The answer was <strong>{{ revealedCorrectAnswer }}</strong></p>
+                </template>
+                <template v-else-if="correctAnswerText">
+                    <span class="steal-success-label">Correct!</span>
+                    <p class="steal-success-text"><strong>{{ correctAnswerText }}</strong></p>
+                </template>
+                <template v-else-if="currentQuestion">
+                    <span class="oq-eyebrow">Question</span>
+                    <p class="oq-prompt">{{ currentQuestion.prompt }}</p>
+                </template>
+                <p v-else class="oq-thinking">The first question is on its way…</p>
 
-                    <div class="oq-row cashBuilderAnswerRow">
-                        <input
-                            v-model="answerInput"
-                            class="cashBuilderInput"
-                            :class="{ 'cashBuilderInput-wrong': revealedCorrectAnswer }"
-                            placeholder="Type your answer..."
-                            :disabled="inputDisabled"
-                            @keyup.enter="submit"
-                            ref="inputBox"
-                            @blur="inputBox?.focus()"
-                        />
-                        <button class="oq-submit" :disabled="inputDisabled" @click="submit">Submit</button>
-                    </div>
+                <div class="oq-row cashBuilderAnswerRow">
+                    <input
+                        v-model="answerInput"
+                        class="field"
+                        :class="{ 'field-wrong': revealedCorrectAnswer }"
+                        placeholder="Type your answer"
+                        :disabled="inputDisabled"
+                        @keyup.enter="submit"
+                        ref="inputBox"
+                        @blur="inputBox?.focus()"
+                    />
+                    <button class="btn btn-primary" :disabled="inputDisabled" @click="submit">Submit</button>
                 </div>
+            </div>
 
-                <div class="cashBuilderStatusSlot">
-                    <p v-if="roundFinished" class="playerName cashBuilderStatus">Time's up!</p>
-                    <p v-else-if="awaitingNext && !revealedCorrectAnswer" class="playerName cashBuilderStatus">Next question…</p>
-                </div>
-            </template>
+            <div v-else class="open-question-box">
+                <span class="oq-eyebrow">Watching</span>
+                <p class="oq-prompt">{{ activeContestantName || "A contestant" }} is building their pot.</p>
+                <p class="oq-thinking">Answering<span class="oq-dots"><i></i><i></i><i></i></span></p>
+            </div>
 
-            <template v-else>
-                <div class="cashBuilderSpectator">
-                    <p class="playerName">{{ activeContestantName || "A contestant" }} is playing…</p>
-                    <div
-                        class="moneyPlaque cashBuilderPot"
-                        :class="{ wiping: potWiping }"
-                        ref="potPlaqueEl"
-                    >
-                        <span class="who">Cash Builder pot</span>
-                        <span class="amount">{{ potText }}</span>
-                        <div class="plaque-wipe"></div>
-                    </div>
-                    <p class="playerName cashBuilderMeta">{{ questionsLabel }}</p>
-                </div>
-                <div class="cashBuilderStatusSlot">
-                    <p v-if="roundFinished" class="playerName cashBuilderStatus">Time's up!</p>
-                </div>
-            </template>
+            <div class="cashBuilderStatusSlot">
+                <p v-if="roundFinished" class="status-text cashBuilderStatus">Time's up!</p>
+                <p v-else-if="isActiveContestant && awaitingNext && !revealedCorrectAnswer" class="status-text cashBuilderStatus">Next question…</p>
+            </div>
           </div>
 
-          <div class="offerContestantBox cashBuilderProfileBox">
+          <div class="cashBuilderProfile">
             <Transition name="chaser-bubble-pop">
               <div v-if="bubbleText" :key="bubbleKey" class="chaserPanelBubble cashBuilderBubble">{{ bubbleText }}</div>
             </Transition>
-            <div class="offerContestantMaskBox">
+            <div class="board-portrait-circle cashBuilderAvatar">
               <CharacterFace :character="activeContestantCharacter" :reaction="reactions[activeContestantSeatId] ?? 'neutral'" />
             </div>
-            <p class="playerName offerChaserName">{{ activeContestantName || "A contestant" }}</p>
+            <p class="playerName chaserPanelName">{{ activeContestantName || "A contestant" }}</p>
           </div>
         </div>
     </div>

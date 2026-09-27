@@ -2,7 +2,8 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import ChaserPanel from "../components/ChaserPanel.vue";
 import CharacterFace from "../components/CharacterFace.vue";
-import { CHASER_PORTRAITS, CHASER_NAMES } from "../chaserPortraits.ts";
+import ChaserSilhouette from "../components/ChaserSilhouette.vue";
+import { chaserPortrait, CHASER_NAMES } from "../chaserPortraits.ts";
 
 const props = defineProps({
     players: { type: Array, default: () => [] },
@@ -79,24 +80,37 @@ const activeContestantCharacter = computed(
 // Ticket 116: the Caught/Escaped cutscene's Chaser image is a bare <img> of
 // the same portrait ChaserPanel renders — resolved from the shared lookup
 // (chaserPortraits.ts) instead of duplicating ChaserPanel's own table.
-const chaserPortraitSrc = computed(() => CHASER_PORTRAITS[props.chaserCharacterId] ?? null);
+const chaserPortraitSrc = computed(() => chaserPortrait(props.chaserCharacterId));
 const chaserDisplayName = computed(() => CHASER_NAMES[props.chaserCharacterId] ?? "");
 
+// The server's "phase" message mounts this screen a beat before the state
+// patch carrying the new chase's starting positions, so for that first
+// moment the Chaser still sits wherever the previous chase left them — the
+// board flashed that stale trail, then faded it out over the space colour
+// transition. Keep the board neutral until the first patch after mount lands
+// (a fresh players array), with a short fallback in case none does.
+const boardSettled = ref(false);
+const stopBoardSettleWatch = watch(() => props.players, () => {
+    boardSettled.value = true;
+    stopBoardSettleWatch();
+});
+const boardSettleTimeout = setTimeout(() => { boardSettled.value = true; }, 250);
+
 function isPlayerSpace(space) {
-    return contestantPos.value === space;
+    return boardSettled.value && contestantPos.value === space;
 }
 
 // The exact space a token currently sits on gets a glowing outline on top of
 // the flat tint — the Chaser's trail stays flat so the head of the trail
 // (their actual position) always pops out at a glance.
 function isCurrentSpace(space) {
-    return isPlayerSpace(space) || (chaserIsOnBoard.value && chaserPos.value === space);
+    return isPlayerSpace(space) || (boardSettled.value && chaserIsOnBoard.value && chaserPos.value === space);
 }
 
 // The Chaser's current space, and every space behind them (closer to their
 // start), stays red so the board reads as a trail closing in on the contestant.
 function isChaserSpace(space) {
-    return chaserIsOnBoard.value && space >= chaserPos.value;
+    return boardSettled.value && chaserIsOnBoard.value && space >= chaserPos.value;
 }
 
 function formatAmount(amount) {
@@ -139,9 +153,17 @@ const doubleTimeResultText = computed(() => {
     if (!result || !result.doubleTimeArmed) return "";
     if (result.chaserCorrect) return "Double Time! The Chaser jumps two spaces.";
     if (result.chaserBoardPos !== null && result.chaserBoardPos !== CHASER_OFFBOARD) {
-        return "Double Time backfires — the Chaser is knocked back a space.";
+        return "Double Time backfires. The Chaser drops back a space.";
     }
-    return "Double Time fizzles — the Chaser missed and stays off the board.";
+    return "Double Time fizzles. The Chaser missed and stays off the board.";
+});
+
+// The one status line at the foot of the question box (always rendered, so
+// the box never changes height as it switches between these).
+const questionStatus = computed(() => {
+    if (revealed.value) return doubleTimeResultText.value;
+    if (isParticipant.value) return hasAnswered.value ? "Locked in. Waiting on the other answer…" : "";
+    return `${activeContestantName.value} and the Chaser are answering…`;
 });
 
 // The 5s lockout pulse + countdown (ticket 072) are not self-reported: they're
@@ -231,28 +253,27 @@ const optionFontClass = computed(() => {
     return "";
 });
 
-// Ticket 146 (Jumble): displayOrder only ever arrives on the active
-// contestant's own client (TriviaRoom.sendJumbledQuestionToContestant) — the
-// Chaser and spectators keep getting the plain "question" broadcast with no
-// displayOrder, so this falls back to natural order for them automatically.
-// Convention: displayOrder[visualPosition] is the REAL option index shown at
-// that visual slot — renderedOptions bakes that mapping in once here so
-// every template comparison (picked/correct/wrong/dimmed) and the click
-// handler below can keep comparing against realIndex exactly like the old
-// plain `index` did, with no separate "un-shuffle" step anywhere else.
-// Guarded on matching lengths so a stale displayOrder (e.g. a 50/50 narrowing
-// this same question right after a Jumble, which re-broadcasts "question"
-// with a shorter options array and no displayOrder of its own — see
-// chaserAbilities.ts's fiftyFifty case) can never index out of range; it just
-// falls back to natural order, which is still correct, only no longer
-// visually shuffled.
+// Per-player views of the same question (TriviaRoom.sendChaseQuestionView);
+// everyone else gets the plain "question" broadcast with neither field.
+// - Jumble (ticket 146): displayOrder arrives only on the active contestant's
+//   client; displayOrder[visualPosition] is the REAL option index shown at
+//   that slot.
+// - 50/50 (ticket 160): hiddenOptions arrives only on the Chaser's client —
+//   real indices left off their screen (the contestant keeps every option).
+// renderedOptions bakes both in once here, so every template comparison
+// (picked/correct/wrong/dimmed) and the click handler keep comparing against
+// realIndex with no separate "un-shuffle" step anywhere else. A displayOrder
+// that doesn't cover every option is ignored rather than trusted.
 const renderedOptions = computed(() => {
     const question = props.currentQuestion;
     if (!question) return [];
     const order = Array.isArray(question.displayOrder) && question.displayOrder.length === question.options.length
         ? question.displayOrder
         : question.options.map((_, i) => i);
-    return order.map((realIndex) => ({ text: question.options[realIndex], realIndex }));
+    const hidden = Array.isArray(question.hiddenOptions) ? question.hiddenOptions : [];
+    return order
+        .filter((realIndex) => !hidden.includes(realIndex))
+        .map((realIndex) => ({ text: question.options[realIndex], realIndex }));
 });
 
 // Contestant-only "Shuffled!" tag (ticket 146) — the Chaser/spectators never
@@ -286,18 +307,29 @@ function stopEntranceTimer() {
     }
 }
 
-watch(() => props.currentQuestion, (question) => {
+function startEntranceBeat() {
+    entranceTimeout = setTimeout(() => {
+        buttonsRevealed.value = true;
+        entranceTimeout = null;
+    }, ENTRANCE_PROMPT_HOLD_MS);
+}
+
+watch(() => props.currentQuestion, (question, previous) => {
+    // The same question re-sent with a per-player view (Jumble shuffling the
+    // contestant's keys, 50/50 hiding one of the Chaser's) keeps its answers
+    // on screen; only a new question replays the entrance.
+    if (question && previous && question.questionId === previous.questionId) return;
     myAnswerIndex.value = null;
     stopLockoutTicker();
     stopEntranceTimer();
     buttonsRevealed.value = false;
-    if (question) {
-        entranceTimeout = setTimeout(() => {
-            buttonsRevealed.value = true;
-            entranceTimeout = null;
-        }, ENTRANCE_PROMPT_HOLD_MS);
-    }
+    if (question) startEntranceBeat();
 });
+
+// Normally the screen mounts first and the question arrives after (the
+// watch above), but if a question is already live at mount the watch never
+// fires — without this the answers would stay hidden for the whole question.
+if (props.currentQuestion) startEntranceBeat();
 
 // Ticket 116: Caught/Escaped cutscene — a short impact/dash beat plays first
 // (pure CSS, autoplaying the moment the cutscene markup mounts), then the
@@ -366,20 +398,19 @@ onUnmounted(() => {
     stopLockoutTicker();
     stopEntranceTimer();
     stopOutcomeBannerTimer();
+    clearTimeout(boardSettleTimeout);
 });
 </script>
 
 <template>
   <div class="chaseTable">
-    <h2 class="lobbyTitle chaseTableTitle">The Chase</h2>
-
     <div class="chaseGround">
       <template v-if="!chaseOutcome">
         <div v-if="currentQuestion" class="chaseWipeBar" :key="'wipe-' + currentQuestion.questionId"></div>
 
         <div class="chaseTableRow">
           <ChaserPanel
-              circle-portrait
+              rim-controls
               :character-id="chaserCharacterId"
               :quip-text="chaserQuipText"
               :quip-key="chaserQuipKey"
@@ -410,20 +441,20 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="board-portrait-wrap">
-            <Transition name="chaser-bubble-pop">
-              <div v-if="isContestant && myAnswerText" :key="myAnswerBubbleKey" class="chaserPanelBubble">{{ myAnswerText }}</div>
-            </Transition>
-            <div class="board-portrait-circle">
-              <CharacterFace :character="activeContestantCharacter" :reaction="reactions[activeContestantSeatId] ?? 'neutral'" />
+          <div class="chaseContestantSide">
+            <div class="board-portrait-wrap">
+              <div class="board-portrait-circle">
+                <CharacterFace :character="activeContestantCharacter" :reaction="reactions[activeContestantSeatId] ?? 'neutral'" />
+              </div>
+              <div
+                v-if="contestantCountdownSeconds !== null"
+                class="countdown-chip chaseCountdownBadge"
+                :class="{ urgent: lockoutUrgent }"
+              >
+                <span class="countdown-num">{{ contestantCountdownSeconds }}</span>
+              </div>
             </div>
-            <div
-              v-if="contestantCountdownSeconds !== null"
-              class="countdown-chip small chaseCountdownBadge"
-              :class="{ urgent: lockoutUrgent }"
-            >
-              <span class="countdown-num">{{ contestantCountdownSeconds }}</span>
-            </div>
+            <p class="playerName chaserPanelName">{{ activeContestantName }}</p>
           </div>
         </div>
 
@@ -434,7 +465,7 @@ onUnmounted(() => {
               :key="currentQuestion.questionId"
               :class="{ 'chaseQuestionBox-buttons-hidden': !buttonsRevealed }"
             >
-              <span v-if="isContestant && isJumbled" class="chaseJumbleBadge">Shuffled!</span>
+              <span v-if="isContestant && isJumbled" class="chip chip-gold chaseJumbleBadge">Shuffled!</span>
               <p class="chaseQuestion">{{ currentQuestion.prompt }}</p>
               <TransitionGroup tag="div" name="chase-option-fade" class="chaseOptions chaseOptions-row">
                 <button
@@ -455,13 +486,12 @@ onUnmounted(() => {
                   @click="selectOption(entry.realIndex)"
                 >{{ entry.text }}</button>
               </TransitionGroup>
+              <p class="chaseWaitingStatus" :class="{ chaseDoubleTimeResult: revealed && doubleTimeResultText }">{{ questionStatus }}</p>
             </div>
-
-            <p v-if="isParticipant && hasAnswered && !revealed" class="playerName chaseWaitingStatus">Locked in…</p>
-            <p v-else-if="!isParticipant && !revealed" class="playerName chaseWaitingStatus">{{ activeContestantName }} and the Chaser are answering…</p>
-            <p v-else-if="revealed && doubleTimeResultText" class="playerName chaseWaitingStatus chaseDoubleTimeResult">{{ doubleTimeResultText }}</p>
           </template>
-          <p v-else class="playerName">Waiting for the next question…</p>
+          <div v-else class="chaseQuestionBox chaseQuestionBox-idle">
+            <p class="chaseWaitingStatus">Next question coming up…</p>
+          </div>
         </div>
       </template>
 
@@ -474,6 +504,11 @@ onUnmounted(() => {
           v-if="chaserPortraitSrc"
           :src="chaserPortraitSrc"
           :alt="chaserDisplayName"
+          class="chaseCutsceneChaser"
+          :class="chaseOutcome === 'caught' ? 'chaseCutsceneChaser-caught' : 'chaseCutsceneChaser-escaped'"
+        />
+        <ChaserSilhouette
+          v-else
           class="chaseCutsceneChaser"
           :class="chaseOutcome === 'caught' ? 'chaseCutsceneChaser-caught' : 'chaseCutsceneChaser-escaped'"
         />

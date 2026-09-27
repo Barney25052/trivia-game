@@ -2,10 +2,9 @@
 import { computed, ref } from "vue";
 import { PlayerRole, ChaserCharacter } from "../TriviaTypes.ts";
 import { CHASER_ABILITY_COPY } from "../chaserAbilities.ts";
+import { chaserPortrait, CHASER_NAMES } from "../chaserPortraits.ts";
 import CharacterFace from "../components/CharacterFace.vue";
-import bezosIcon from "../assets/images/chasers/bezos-icon.png";
-import bigStanIcon from "../assets/images/chasers/bigstan-icon.png";
-import namiIcon from "../assets/images/chasers/nami-icon.png";
+import ChaserSilhouette from "../components/ChaserSilhouette.vue";
 
 const selectedCharacterId = ref(null);
 
@@ -21,20 +20,28 @@ const allReady = computed(
     () => props.players.length > 0 && props.players.every((p) => p.revealReady === true)
 );
 
-// Maggie has no portrait art yet (ticket 139's maggie-icon.png row is still
-// `todo` in HUMAN_TASKS.md) — her `img` stays unset so the template renders
-// the .p5-card-silhouette SVG bust in its place, permanently, not as a
-// loading placeholder for art that's expected to land soon.
-const availableCharacters = computed(() => [
-    { id: ChaserCharacter.Bezos, name: "Bezos", img: bezosIcon, ...CHASER_ABILITY_COPY[ChaserCharacter.Bezos] },
-    { id: ChaserCharacter.BigStan, name: "Big Stan", img: bigStanIcon, ...CHASER_ABILITY_COPY[ChaserCharacter.BigStan] },
-    { id: ChaserCharacter.Nami, name: "Nami", img: namiIcon, ...CHASER_ABILITY_COPY[ChaserCharacter.Nami] },
-    { id: ChaserCharacter.Maggie, name: "Maggie", img: null, ...CHASER_ABILITY_COPY[ChaserCharacter.Maggie] }
-]);
+// A character with no finished art (chaserPortrait returns null — Maggie,
+// today) renders the ChaserSilhouette bust in place of an image, using the
+// same base/cover layering so her card's hover reveal behaves the same.
+const ROSTER = [ChaserCharacter.Bezos, ChaserCharacter.BigStan, ChaserCharacter.Nami, ChaserCharacter.Maggie];
+const availableCharacters = computed(() =>
+    ROSTER.map((id) => ({ id, name: CHASER_NAMES[id], img: chaserPortrait(id), ...CHASER_ABILITY_COPY[id] }))
+);
 
 const selectedCharacterName = computed(
     () => availableCharacters.value.find((c) => c.id === selectedCharacterId.value)?.name ?? ""
 );
+
+// Once the Chaser has locked in, their own frame shows who they picked;
+// everyone else keeps the silhouette until the character reveal.
+const isMeChaser = computed(() => chaser.value?.seatId === props.mySeatId);
+const myPickPortrait = computed(() =>
+    isMeChaser.value && selectedCharacterId.value !== null ? chaserPortrait(selectedCharacterId.value) : null
+);
+const chaserStatus = computed(() => {
+    if (isMeChaser.value && selectedCharacterName.value) return `You're chasing as ${selectedCharacterName.value}`;
+    return chaser.value?.revealReady ? "Ready to chase" : "Choosing a character…";
+});
 
 function handleCharacterSelect(characterId) {
     if (selectedCharacterId.value !== null) return;
@@ -65,10 +72,7 @@ function handleCharacterSelect(characterId) {
                                 <span class="p5-card-portrait-wrap">
                                     <span class="p5-card-portrait-base">
                                         <img v-if="character.img" class="p5-card-portrait" :src="character.img" alt="">
-                                        <svg v-else class="p5-card-silhouette p5-card-silhouette-base" viewBox="0 0 120 170" aria-hidden="true">
-                                            <circle class="sil" cx="60" cy="50" r="35" />
-                                            <path class="sil" d="M60 95 C 25 95, 8 120, 8 170 L 112 170 C 112 120, 95 95, 60 95 z" />
-                                        </svg>
+                                        <ChaserSilhouette v-else class="p5-card-silhouette p5-card-silhouette-base" />
                                     </span>
                                     <span class="p5-card-portrait-cover">
                                         <img
@@ -77,14 +81,10 @@ function handleCharacterSelect(characterId) {
                                             :src="character.img"
                                             alt=""
                                         >
-                                        <svg v-else class="p5-card-silhouette p5-card-silhouette-cover" viewBox="0 0 120 170" aria-hidden="true">
-                                            <circle class="sil" cx="60" cy="50" r="35" />
-                                            <path class="sil" d="M60 95 C 25 95, 8 120, 8 170 L 112 170 C 112 120, 95 95, 60 95 z" />
-                                        </svg>
+                                        <ChaserSilhouette v-else class="p5-card-silhouette p5-card-silhouette-cover" />
                                     </span>
                                 </span>
                                 <h2 class="p5-card-name">{{ character.name }}</h2>
-                                <p class="p5-card-tagline">{{ character.tagline }}</p>
                                 <span class="p5-card-abilities">
                                     <span
                                         v-for="ability in character.passive"
@@ -106,43 +106,44 @@ function handleCharacterSelect(characterId) {
                 <p v-if="selectedCharacterId !== null" class="p5-confirm-banner">Locked in: {{ selectedCharacterName }}</p>
             </div>
             <div v-else class="p5-mystery-frame">
-                <h2 class="revealLabel">The Chaser</h2>
-                <svg class="chaserSilhouette" viewBox="0 0 120 170" aria-label="chaser silhouette">
-                    <circle class="sil" cx="60" cy="50" r="35" />
-                    <path class="sil" d="M60 95 C 25 95, 8 120, 8 170 L 112 170 C 112 120, 95 95, 60 95 z" />
-                </svg>
+                <h2 class="revealLabel">The Chaser is…</h2>
+                <img v-if="myPickPortrait" class="revealPickPortrait" :src="myPickPortrait" :alt="selectedCharacterName">
+                <ChaserSilhouette v-else class="revealSilhouette" />
                 <span class="revealChaserRow">
                     <h1 class="revealChaserName">{{ chaser?.name }}</h1>
                     <span
-                        class="revealReadyTick"
-                        :class="{ 'revealReadyTick-empty': !chaser?.revealReady }"
-                    >✓</span>
+                        class="ready-tick"
+                        :class="{ 'ready-tick-empty': !chaser?.revealReady }"
+                        :aria-label="chaser?.revealReady ? 'Ready' : 'Not ready'"
+                    ><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5 L6.5 11.5 L12.5 4.5" /></svg></span>
                 </span>
+                <p class="revealChaserStatus">{{ chaserStatus }}</p>
             </div>
         </div>
         <div class="revealBottom">
             <h3 class="revealContestantsTitle">The Contestants</h3>
             <ul class="revealContestants">
                 <li v-for="player in contestants" :key="player.seatId" class="contestantCard">
-                    <div class="contestantAvatar">
+                    <div class="board-portrait-circle contestantAvatar">
                         <CharacterFace :character="player.character" reaction="neutral" />
                     </div>
                     <span class="contestantName">{{ player.name }}</span>
                     <span class="contestantReadyRow">
                         <span
-                            class="revealReadyTick"
-                            :class="{ 'revealReadyTick-empty': !player.revealReady }"
-                        >✓</span>
-                        <span v-if="player.seatId === mySeatId" class="contestantYou">(you)</span>
+                            class="ready-tick"
+                            :class="{ 'ready-tick-empty': !player.revealReady }"
+                            :aria-label="player.revealReady ? 'Ready' : 'Not ready'"
+                        ><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5 L6.5 11.5 L12.5 4.5" /></svg></span>
+                        <span v-if="player.seatId === mySeatId" class="chip chip-blue">You</span>
                     </span>
                 </li>
             </ul>
-            <p class="playerName">{{ allReady ? "All ready!" : "Waiting for everyone to be ready…" }}</p>
+            <p class="status-text">{{ allReady ? "Everyone's ready!" : "Waiting for everyone to ready up…" }}</p>
             <button
                 v-if="chaser?.seatId != mySeatId && !myRevealReady"
                 class="btn btn-primary revealContinue"
                 @click="emit('ready')"
-            >Ready</button>
+            >I'm ready</button>
         </div>
     </div>
 </template>

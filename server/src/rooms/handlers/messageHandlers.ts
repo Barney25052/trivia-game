@@ -355,7 +355,7 @@ export function buzzIn(client: any, message: any, room: any) {
             console.log(seatId, "Silenced by Maggie — answered last, can not buzz in again yet");
             client.send("error", {
                 code: "SILENCED",
-                message: "You answered last — someone else has to buzz in."
+                message: "You answered the last one. Someone else has to buzz in."
             });
             return;
         }
@@ -396,6 +396,10 @@ export function submitFinalAnswer(client: any, message: any, room: any) {
     const isCorrect = checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])]);
     if (isCorrect) {
         room.state.teamScore += 1;
+        const player = room.state.players.get(seatId);
+        if (player) {
+            player.finalCorrectAnswers += 1;
+        }
         // Track the scoring seat unconditionally, regardless of chaser
         // character — cheap to always record; buzzIn is what actually gates
         // on Maggie's Silence passive (ticket 144).
@@ -404,6 +408,17 @@ export function submitFinalAnswer(client: any, message: any, room: any) {
         // already gets the full-screen red flash from ticket 100.
         room.broadcastSuccessReaction(seatId);
     }
+    // Ticket 160: the whole room sees the answer, not just the answerer — what
+    // they typed and whether it was right. The question is resolved at this
+    // point, so the real answer rides along as the reveal.
+    room.broadcast("finalAnswer", {
+        side: "team",
+        questionId: currentQuestion.id,
+        seatId,
+        answer: message.answer.trim(),
+        correct: isCorrect,
+        correctAnswer: currentQuestion.answer
+    });
     client.send("answerResult", {
         correct: isCorrect,
         correctAnswer: currentQuestion.answer,
@@ -445,6 +460,15 @@ export function submitFinalChaserAnswer(client: any, message: any, room: any) {
 
     room.finalChaserQuestionResolved = true;
     const isCorrect = checkAnswer(message.answer, [currentQuestion.answer, ...(currentQuestion.alternatives ?? [])]);
+    // Ticket 160: everyone sees what the Chaser answered. Never the real
+    // answer, though: a wrong answer opens a steal on this same question.
+    room.broadcast("finalAnswer", {
+        side: "chaser",
+        questionId: currentQuestion.id,
+        seatId,
+        answer: message.answer.trim(),
+        correct: isCorrect
+    });
     client.send("answerResult", {
         correct: isCorrect,
         correctAnswer: currentQuestion.answer,
@@ -456,7 +480,8 @@ export function submitFinalChaserAnswer(client: any, message: any, room: any) {
         console.log(`Chaser answered correctly — chaserScore ${room.state.chaserScore}/${room.state.teamScore}`);
 
         // Big Stan's Time Bonus (ticket 142, passive/unlimited/auto-consumed):
-        // +0.5s on the running Chaser-final clock for every correct answer,
+        // CHASER_ABILITIES.timeBonusMs on the running Chaser-final clock for
+        // every correct answer,
         // only while the clock is actually counting down — a paused clock
         // (e.g. resolving a steal) has nothing live to extend here.
         const chaser = room.state.players.get(room.state.chaserSeatId);
@@ -560,6 +585,12 @@ export function submitFinalStealAnswer(client: any, message: any, room: any) {
             }
         } else {
             room.state.teamScore += 1;
+        }
+        // A correct steal is a final-round answer on the leaderboard too
+        // (ticket 160), blocked push-back or not.
+        const player = room.state.players.get(seatId);
+        if (player) {
+            player.finalCorrectAnswers += 1;
         }
         // Resolved steal only reacts to success (ticket 103) — same scope as
         // the team's regular final answers.

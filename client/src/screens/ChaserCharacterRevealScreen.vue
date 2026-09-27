@@ -1,9 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from "vue";
-import { ChaserCharacter } from "../TriviaTypes.ts";
-import bezosIcon from "../assets/images/chasers/bezos-icon.png";
-import bigStanIcon from "../assets/images/chasers/bigstan-icon.png";
-import namiIcon from "../assets/images/chasers/nami-icon.png";
+import { chaserPortrait } from "../chaserPortraits.ts";
+import ChaserSilhouette from "../components/ChaserSilhouette.vue";
 
 const GROW_MS = 1400;
 const HOLD_MS = 1800;
@@ -14,13 +12,7 @@ const props = defineProps({
     chaserCharacterName: { type: String, default: "" }
 });
 
-const portraits = {
-    [ChaserCharacter.Bezos]: bezosIcon,
-    [ChaserCharacter.BigStan]: bigStanIcon,
-    [ChaserCharacter.Nami]: namiIcon
-};
-
-const portrait = computed(() => portraits[props.chaserCharacterId] ?? null);
+const portrait = computed(() => chaserPortrait(props.chaserCharacterId));
 
 const stage = ref("grow");
 let stageTimeouts = [];
@@ -48,7 +40,10 @@ onBeforeUnmount(clearStageTimeouts);
         <div class="ccrSpotlightBeam"></div>
         <div class="ccrPortraitWrap">
             <img v-if="portrait" :src="portrait" :alt="chaserCharacterName" class="ccrPortrait">
+            <ChaserSilhouette v-else class="ccrPortrait ccrSilhouette" />
         </div>
-        <h1 class="ccrName">{{ chaserCharacterName }}</h1>
+        <div class="ccrDesk">
+            <h1 class="ccrName">{{ chaserCharacterName }}</h1>
+        </div>
     </div>
 </template>

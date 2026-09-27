@@ -72,27 +72,55 @@ async function submit() {
 
 <template>
     <div class="home">
-        <h2 class="lobbyTitle">Add a Question</h2>
-        <div class="homeInputs" v-if="!addedQuestion">
-            <input v-model="question" placeholder="Question" :maxlength="MAX_QUESTION_LENGTH" />
-            <input v-model="answer" placeholder="Answer" :maxlength="MAX_ANSWER_LENGTH" />
+        <h2 class="lobbyTitle addQuestionTitle">Add a Question</h2>
+        <p class="status-text">It goes into the question bank for the Cash Builder and the finals.</p>
+
+        <div v-if="!addedQuestion" class="panel addQuestionPanel">
+            <label class="field-label" for="add-question-prompt">Question</label>
+            <input
+                id="add-question-prompt"
+                v-model="question"
+                class="field"
+                placeholder="What is the capital of Australia?"
+                :maxlength="MAX_QUESTION_LENGTH"
+            />
+            <label class="field-label" for="add-question-answer">Answer</label>
+            <input
+                id="add-question-answer"
+                v-model="answer"
+                class="field"
+                placeholder="Canberra"
+                :maxlength="MAX_ANSWER_LENGTH"
+            />
+            <label class="field-label" for="add-question-alternatives">Also accept (one per line)</label>
             <textarea
+                id="add-question-alternatives"
                 v-model="alternativesText"
-                class="addQuestionTextarea"
-                placeholder="Alternative answers (one per line)"
-                rows="4"
+                class="field addQuestionTextarea"
+                rows="3"
             ></textarea>
-            <p v-if="errorMessage" class="addQuestionError">{{ errorMessage }}</p>
+            <p class="addQuestionError">{{ errorMessage }}</p>
             <div class="homeButtonHolder">
-                <button @click="submit" class="joinButton" :disabled="submitting">Submit</button>
-                <button @click="emit('back')" class="createButton">Back</button>
+                <button @click="submit" class="btn btn-primary" :disabled="submitting">{{ submitting ? "Adding…" : "Add question" }}</button>
+                <button @click="emit('back')" class="btn btn-outline">Back</button>
             </div>
         </div>
-        <div class="homeInputs" v-else>
-            <p class="addQuestionSuccess">Added question #{{ addedQuestion.id }}.</p>
+        <div v-else class="panel addQuestionPanel">
+            <p class="addQuestionSuccess">Added to the bank!</p>
+            <!-- Echo back exactly what was saved, so a typo is caught now. -->
+            <div class="addQuestionEcho">
+                <span class="field-label">Question #{{ addedQuestion.id }}</span>
+                <p class="addQuestionEchoPrompt">{{ addedQuestion.question }}</p>
+                <p class="addQuestionEchoAnswer">
+                    Answer: <strong>{{ addedQuestion.answer }}</strong>
+                    <template v-if="addedQuestion.alternatives.length">
+                        (also {{ addedQuestion.alternatives.join(", ") }})
+                    </template>
+                </p>
+            </div>
             <div class="homeButtonHolder">
-                <button @click="addAnother" class="joinButton">Add another</button>
-                <button @click="emit('back')" class="createButton">Back</button>
+                <button @click="addAnother" class="btn btn-primary">Add another</button>
+                <button @click="emit('back')" class="btn btn-outline">Back</button>
             </div>
         </div>
     </div>

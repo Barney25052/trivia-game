@@ -6,7 +6,18 @@ import { preloadImages } from "../assetPreload.js";
 
 const props = defineProps(["players", "isHost", "room", "chaserSelectionMode", "mySeatId"]);
 const emit = defineEmits(["start", "setChaserMode", "setCharacter"]);
-const settingsOpen = ref(false);
+
+// The game needs a Chaser plus at least one contestant — the server rejects a
+// start with fewer (gameFlow.ts startGame), so the play button says so up
+// front instead of silently doing nothing.
+const MIN_PLAYERS = 2;
+const hostName = computed(() => props.players.find((p) => p.isHost)?.name ?? "");
+const lobbyTitle = computed(() => (hostName.value ? `${hostName.value}'s Lobby` : "Lobby"));
+const canStart = computed(() => props.players.length >= MIN_PLAYERS);
+const startHint = computed(() => {
+    if (!props.isHost) return `Waiting for ${hostName.value || "the host"} to start`;
+    return canStart.value ? "Press play when everyone's in" : `Need ${MIN_PLAYERS} players to start`;
+});
 
 // Ticket 109: this screen is the earliest and highest-density real usage of
 // the CharacterFace art — the live preview repaints on every swatch click,
@@ -66,13 +77,21 @@ watch(myCharacter, (character) => {
     seededFromServer = true;
 }, { immediate: true });
 
-const previewCharacter = computed(() => encodeCharacter({
-    hairStyle: pickerHairStyle.value,
-    hairColour: pickerHairColour.value,
-    faceStyle: pickerFaceStyle.value,
-    faceColour: pickerFaceColour.value,
-    shirtColour: pickerShirtColour.value
-}));
+// The picker's current look with one part swapped: the hairstyle and face
+// options each show your own character wearing that option, instead of a
+// bare number.
+function previewWith(change) {
+    return encodeCharacter({
+        hairStyle: pickerHairStyle.value,
+        hairColour: pickerHairColour.value,
+        faceStyle: pickerFaceStyle.value,
+        faceColour: pickerFaceColour.value,
+        shirtColour: pickerShirtColour.value,
+        ...change
+    });
+}
+
+const previewCharacter = computed(() => previewWith({}));
 
 const isDirty = computed(() => myCharacter.value !== previewCharacter.value);
 
@@ -127,9 +146,10 @@ async function copyRoomCode() {
 
 <template>
     <div class="lobbyRow">
-      <h1 class = "lobbyTitle">Host's Lobby</h1>
+      <h1 class="lobbyTitle">{{ lobbyTitle }}</h1>
       <div class="lobbyRoomBadgeRow">
         <div class="ticket-badge">
+          <span class="ticket-label">Room code</span>
           <span class="code">{{ room.roomId }}</span>
           <span class="divider"></span>
           <button class="roomCodeCopyButton" @click="copyRoomCode" :aria-label="copied ? 'Copied' : 'Copy room code'">
@@ -145,8 +165,8 @@ async function copyRoomCode() {
       </div>
 
       <div class="lobbyCustomiserColumn">
-        <div class="lobbyCharacterPicker">
-          <h3 class="settingsTitle">Customize your look</h3>
+        <div class="panel lobbyCharacterPicker">
+          <h3 class="panel-title">Customise your look</h3>
 
           <div class="board-portrait-circle lobbyCharacterPreview">
             <CharacterFace v-if="assetsReady" :character="previewCharacter" reaction="neutral" />
@@ -158,11 +178,16 @@ async function copyRoomCode() {
               v-for="n in HAIR_STYLE_COUNT"
               :key="'hairStyle' + n"
               type="button"
-              class="lobbyCharacterSwatchButton"
+              class="lobbyStyleOption"
               :class="{ selected: pickerHairStyle === n - 1 }"
               :aria-label="'Hairstyle ' + n"
+              :aria-pressed="pickerHairStyle === n - 1"
               @click="pickerHairStyle = n - 1"
-            >{{ n }}</button>
+            >
+              <span class="board-portrait-circle lobbyStyleOptionFace">
+                <CharacterFace v-if="assetsReady" :character="previewWith({ hairStyle: n - 1 })" reaction="neutral" />
+              </span>
+            </button>
           </div>
 
           <p class="lobbyCharacterLabel">Face</p>
@@ -171,11 +196,16 @@ async function copyRoomCode() {
               v-for="n in FACE_STYLE_COUNT"
               :key="'faceStyle' + n"
               type="button"
-              class="lobbyCharacterSwatchButton"
+              class="lobbyStyleOption"
               :class="{ selected: pickerFaceStyle === n - 1 }"
               :aria-label="'Face ' + n"
+              :aria-pressed="pickerFaceStyle === n - 1"
               @click="pickerFaceStyle = n - 1"
-            >{{ n }}</button>
+            >
+              <span class="board-portrait-circle lobbyStyleOptionFace">
+                <CharacterFace v-if="assetsReady" :character="previewWith({ faceStyle: n - 1 })" reaction="neutral" />
+              </span>
+            </button>
           </div>
 
           <p class="lobbyCharacterLabel">Hair colour</p>
@@ -225,16 +255,17 @@ async function copyRoomCode() {
             class="btn btn-primary lobbyCharacterSaveButton"
             :disabled="!isDirty"
             @click="saveCharacter"
-          >{{ isDirty ? "Save" : "Saved" }}</button>
+          >{{ isDirty ? "Save look" : "Saved" }}</button>
         </div>
       </div>
 
-      <div class="lobby">
+      <div class="lobbyTableColumn">
         <div class="lobbyCircle">
           <button
             v-if="isHost"
             class="lobby-start-btn"
             aria-label="Start game"
+            :disabled="!canStart"
             @click="emit('start')"
           ><span class="lobby-play-triangle"></span></button>
           <div
@@ -263,30 +294,33 @@ async function copyRoomCode() {
       </div>
 
       <div class="lobbySettingsColumn">
-        <template v-if="isHost">
-          <button @click="settingsOpen = !settingsOpen" class="settingsButton" aria-haspopup="true" :aria-expanded="settingsOpen">
-            {{ settingsOpen ? "Close Settings" : "Settings" }}
-          </button>
-          <aside v-if="settingsOpen" class = "settingsDropdown">
-            <h3 class = "settingsTitle">How do we pick the Chaser?</h3>
-            <div class = "modeRow">
-              <button
-                class="modeButton"
-                :class = "{ selected: chaserSelectionMode === 'random' }"
-                @click="emit('setChaserMode', { mode: 'random' })"
-              >
-                Random
-              </button>
-              <button
-                class="modeButton"
-                :class = "{ selected: chaserSelectionMode === 'vote' }"
-                @click="emit('setChaserMode', { mode: 'vote' })"
-              >
-                Team Vote
-              </button>
-            </div>
-          </aside>
-        </template>
+        <div class="panel lobbySidePanel">
+          <h3 class="panel-title">{{ isHost ? "Game settings" : "Get ready" }}</h3>
+
+          <p class="lobbyCharacterLabel">Players</p>
+          <p class="lobbyPlayerCount"><b>{{ players.length }}</b> / {{ MAX_SEATS }}</p>
+
+          <p class="lobbyCharacterLabel">Picking the Chaser</p>
+          <div v-if="isHost" class="segmented" role="group" aria-label="How the Chaser is picked">
+            <button
+              type="button"
+              class="segmented-option"
+              :class="{ selected: chaserSelectionMode === 'random' }"
+              :aria-pressed="chaserSelectionMode === 'random'"
+              @click="emit('setChaserMode', { mode: 'random' })"
+            >Random</button>
+            <button
+              type="button"
+              class="segmented-option"
+              :class="{ selected: chaserSelectionMode === 'vote' }"
+              :aria-pressed="chaserSelectionMode === 'vote'"
+              @click="emit('setChaserMode', { mode: 'vote' })"
+            >Team vote</button>
+          </div>
+          <p v-else class="lobbyModeText">{{ chaserSelectionMode === "vote" ? "Team vote" : "Random" }}</p>
+
+          <p class="lobbyStartHint">{{ startHint }}</p>
+        </div>
       </div>
     </div>
 </template>

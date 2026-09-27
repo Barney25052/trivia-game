@@ -950,6 +950,119 @@ describe("Phase 5 integration — full final round end-to-end (ticket 082)", () 
     });
 });
 
+describe("final round — answers are shown to the whole room, and count on the leaderboard (ticket 160)", () => {
+    let colyseus: ColyseusTestServer<typeof appConfig>;
+
+    beforeEach(async () => {
+        colyseus = await getTestServer();
+        await cleanup();
+    });
+
+    const roomOptions = {
+        cashBuilderDurationMs: 80,
+        chaserSelectionDurationMs: 80,
+        chaserRevealDurationMs: 80,
+        chaserCharacterRevealDurationMs: 80,
+        revealReadyCooldownMs: 80,
+        lineupDurationMs: 80,
+        teamFinalIntroDurationMs: 80,
+        teamFinalDurationMs: 10000,
+        chaserFinalDurationMs: 10000,
+        finalWrongAnswerRevealMs: 100,
+        stealWindowMs: 150,
+        stealResolveHoldMs: 80
+    };
+
+    async function freshRoom(overrides: Record<string, number> = {}) {
+        const room = await colyseus.createRoom<GameState>("trivia", { ...roomOptions, ...overrides });
+        room.mcQuestionSource = stubChaseSource();
+        room.questionBank = bankFixture(20);
+        return room;
+    }
+
+    it("a correct Team Final answer reaches every client (the Chaser too) with the typed text, and counts for the answerer", async () => {
+        const room = await freshRoom();
+        const { contestantClient, contestantSeatId, chaserClient, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        const teamMessage = await teamFinalQuestion;
+        contestantClient.send("buzzIn", { questionId: teamMessage.questionId });
+        await sleep(50);
+
+        const seenByChaser = chaserClient.waitForMessage("finalAnswer");
+        const seenByAnswerer = contestantClient.waitForMessage("finalAnswer");
+        contestantClient.send("submitFinalAnswer", { questionId: teamMessage.questionId, answer: `  Answer ${teamMessage.questionId}  ` });
+
+        const expected = {
+            side: "team",
+            questionId: teamMessage.questionId,
+            seatId: contestantSeatId,
+            answer: `Answer ${teamMessage.questionId}`,
+            correct: true,
+            correctAnswer: `Answer ${teamMessage.questionId}`
+        };
+        assert.deepStrictEqual(await seenByChaser, expected);
+        assert.deepStrictEqual(await seenByAnswerer, expected);
+        assert.strictEqual(room.state.players.get(contestantSeatId).finalCorrectAnswers, 1);
+    });
+
+    it("a wrong Team Final answer reaches everyone too, with the real answer as the reveal, and doesn't count", async () => {
+        const room = await freshRoom();
+        const { contestantClient, contestantSeatId, chaserClient, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        const teamMessage = await teamFinalQuestion;
+        contestantClient.send("buzzIn", { questionId: teamMessage.questionId });
+        await sleep(50);
+
+        const seenByChaser = chaserClient.waitForMessage("finalAnswer");
+        contestantClient.send("submitFinalAnswer", { questionId: teamMessage.questionId, answer: "definitely wrong" });
+        const answer = await seenByChaser;
+        assert.strictEqual(answer.answer, "definitely wrong");
+        assert.strictEqual(answer.correct, false);
+        assert.strictEqual(answer.correctAnswer, `Answer ${teamMessage.questionId}`);
+        assert.strictEqual(room.state.players.get(contestantSeatId).finalCorrectAnswers, 0);
+    });
+
+    it("a Chaser Final answer reaches every client with the typed text, but never the real answer (a miss opens a steal on it)", async () => {
+        const room = await freshRoom({ teamFinalDurationMs: 80 });
+        const driven = await driveToChaseEscape(colyseus, room);
+        await driven.teamFinalQuestion;
+        await waitForPhase(room, GamePhase.ChaserFinal);
+        const chaserMessage = await driven.chaserFinalQuestion;
+        const { contestantClient, chaserClient, chaserSeatId } = driven;
+
+        const seenByTeam = contestantClient.waitForMessage("finalAnswer");
+        const seenByChaser = chaserClient.waitForMessage("finalAnswer");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+
+        const expected = {
+            side: "chaser",
+            questionId: chaserMessage.questionId,
+            seatId: chaserSeatId,
+            answer: "not it at all",
+            correct: false
+        };
+        assert.deepStrictEqual(await seenByTeam, expected, "no correctAnswer: the team is about to steal this question");
+        assert.deepStrictEqual(await seenByChaser, expected);
+    });
+
+    it("a correct steal counts for the stealer", async () => {
+        const room = await freshRoom({ teamFinalDurationMs: 80 });
+        const driven = await driveToChaseEscape(colyseus, room);
+        await driven.teamFinalQuestion;
+        await waitForPhase(room, GamePhase.ChaserFinal);
+        const chaserMessage = await driven.chaserFinalQuestion;
+        const { contestantClient, contestantSeatId, chaserClient } = driven;
+        room.state.chaserScore = 2;
+        const before = room.state.players.get(contestantSeatId).finalCorrectAnswers;
+
+        const steal = contestantClient.waitForMessage("finalSteal");
+        chaserClient.send("submitFinalChaserAnswer", { questionId: chaserMessage.questionId, answer: "not it at all" });
+        await steal;
+        const resolved = contestantClient.waitForMessage("finalStealResolved");
+        contestantClient.send("submitFinalStealAnswer", { questionId: chaserMessage.questionId, answer: `Answer ${chaserMessage.questionId}` });
+        assert.strictEqual((await resolved).correct, true);
+        assert.strictEqual(room.state.players.get(contestantSeatId).finalCorrectAnswers, before + 1);
+    });
+});
+
 describe("final round — Chaser clock pause/resume (ticket 094)", () => {
     let colyseus: ColyseusTestServer<typeof appConfig>;
 

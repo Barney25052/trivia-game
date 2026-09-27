@@ -146,24 +146,18 @@ export function applyChaserAbilityEffect(room: any, abilityId: string): void {
     switch (abilityId) {
         case "fiftyFifty": {
             room.state.fiftyFiftyUsesRemaining -= 1;
-            // Design choice (ticket 141): the contestant and the Chaser see
-            // and answer the same shared chase question — there is no
-            // per-recipient option split anywhere in
-            // TriviaRoom.startNextChaseQuestion/submitChaseAnswer today — so
-            // narrowing the options here is deliberately mutual-benefit and
-            // double-edged: it makes the question easier for whichever side
-            // needed the help *and* for the other side at the same instant.
-            // That's one valid reading of "the Chaser plays a 50/50" (raise
-            // their own odds at the cost of also helping the contestant
-            // catch up). A future ticket could split per-recipient question
-            // views to make this Chaser-only; that's out of scope here.
+            // Ticket 160: 50/50 is the Chaser's lifeline alone. The shared
+            // question (options, correctIndex) is left untouched, so the
+            // contestant and any spectators keep every option; only the
+            // Chaser's own screen is re-sent the same question with one wrong
+            // option hidden. Both sides still answer with real indices into
+            // the full option list, so scoring needs nothing special.
             const question = room.currentChaseQuestion;
             if (question) {
                 // ticket 156: mark this question as spent for 50/50 the
                 // instant it fires (regardless of whether the defensive
-                // no-op below finds anything left to narrow) so
-                // `canUseAbility` rejects a second activation before the
-                // question resolves.
+                // no-op below finds anything to hide) so `canUseAbility`
+                // rejects a second activation before the question resolves.
                 question.fiftyFiftyUsedThisQuestion = true;
                 const wrongIndexes: number[] = [];
                 for (let index = 0; index < question.options.length; index += 1) {
@@ -171,37 +165,9 @@ export function applyChaserAbilityEffect(room: any, abilityId: string): void {
                         wrongIndexes.push(index);
                     }
                 }
-                // Nothing left to drop if a question is already down to just
-                // the correct option (e.g. only 2 options to begin with).
+                // Nothing to hide if the question has no wrong option at all.
                 if (wrongIndexes.length > 0) {
-                    const dropIndex = wrongIndexes[randomInt(wrongIndexes.length)];
-                    question.options = question.options.filter((_: string, index: number) => index !== dropIndex);
-                    question.correctIndex = question.correctIndex > dropIndex
-                        ? question.correctIndex - 1
-                        : question.correctIndex;
-                    room.broadcastQuestion(
-                        room.state.activeRound,
-                        room.state.activeContestantSeatId,
-                        "mc",
-                        question.id,
-                        question.prompt,
-                        question.options
-                    );
-                    // ticket 157: the plain broadcast above carries no
-                    // displayOrder, so a contestant already Jumbled on this
-                    // question would otherwise have their shuffle silently
-                    // overwritten with natural order the instant App.vue
-                    // applies it. If Jumble is in effect, immediately follow
-                    // up with a fresh permutation of the now-narrowed option
-                    // indices via the same targeted send Jumble itself uses —
-                    // the contestant's client processes this second, so their
-                    // shuffle persists through the narrowing instead of
-                    // reverting.
-                    if (question.jumbleActive) {
-                        const displayOrder = question.options.map((_: string, index: number) => index);
-                        shuffle(displayOrder);
-                        room.sendJumbledQuestionToContestant(displayOrder);
-                    }
+                    room.sendFiftyFiftyToChaser([wrongIndexes[randomInt(wrongIndexes.length)]]);
                 }
             }
             break;
@@ -222,13 +188,9 @@ export function applyChaserAbilityEffect(room: any, abilityId: string): void {
                 shuffle(displayOrder);
                 // Targeted: only the active contestant's own client gets this
                 // extra displayOrder hint. correctIndex/resolution never
-                // reads it — see sendJumbledQuestionToContestant.
+                // reads it — see sendChaseQuestionView. 50/50 never touches
+                // the contestant's view (ticket 160), so the shuffle holds.
                 room.sendJumbledQuestionToContestant(displayOrder);
-                // ticket 157: remember a Jumble is now in effect for this
-                // question so a later fiftyFifty narrowing can re-derive and
-                // re-send a fresh displayOrder instead of silently dropping
-                // it via its plain broadcastQuestion re-send.
-                question.jumbleActive = true;
             }
             break;
         }

@@ -8,9 +8,17 @@ export class GamePlayer extends Schema {
     @type("string") role: PlayerRole = PlayerRole.Contestant;
     @type("number") cashBuilderMoney: number = 0;
     @type("uint16") cashBuilderCorrectAnswers: number = 0;
+    /** Correct answers this contestant gave in the final round (Team Final
+     * answers and successful steals) — the results leaderboard counts these
+     * on top of the Cash Builder's (ticket 160). */
+    @type("uint16") finalCorrectAnswers: number = 0;
     @type("number") boardPos: number = BOARD.escapeSpace;
     @type("boolean") isEliminated: boolean = false;
     @type("boolean") madeItBack: boolean = false;
+    /** The offer amount this contestant brought back to the team pot (set
+     * when they escape; can be negative for a negative low offer). The
+     * results screen shows it — cashBuilderMoney is only what they built. */
+    @type("number") bankedAmount: number = 0;
     @type("boolean") isHost: boolean = false;
     @type("string") chaserVote: string = "";
     @type("boolean") revealReady: boolean = false;

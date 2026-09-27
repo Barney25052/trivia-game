@@ -25,7 +25,8 @@ function ordinal(position) {
 
 <template>
     <div class="lineupScreen">
-        <h2 class="lineupTitle">Contestants in order</h2>
+        <h2 class="lineupTitle">Running Order</h2>
+        <p class="status-text lineupSubtitle">Each of you builds a pot, then faces the Chaser.</p>
         <div class="lineupList">
             <div
                 v-for="contestant in lineup"
@@ -33,15 +34,12 @@ function ordinal(position) {
                 class="lineupCard"
                 :class="{ 'lineupCard-first': contestant.position === 1 }"
             >
-                <div class="lineupAvatar">
+                <span class="lineupOrdinal">{{ contestant.ordinal }}</span>
+                <div class="board-portrait-circle lineupAvatar">
                     <CharacterFace :character="contestant.character" reaction="neutral" />
                 </div>
-                <span class="lineupOrdinal">{{ contestant.ordinal }}</span>
                 <span class="contestantName">{{ contestant.name }}</span>
-                <span
-                    v-if="contestant.seatId === mySeatId"
-                    class="contestantYou"
-                >(you)</span>
+                <span v-if="contestant.seatId === mySeatId" class="chip chip-blue">You</span>
             </div>
         </div>
     </div>

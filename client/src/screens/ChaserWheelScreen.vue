@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch, onBeforeUnmount } from "vue";
+import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue";
 
 const props = defineProps(["players", "chaserSeatId"]);
 
@@ -15,6 +15,10 @@ const landingAhead = 40;
 const trackEl = ref(null);
 let trackY = 0;
 let tickId = null;
+// Set once the wheel has settled on the Chaser, so the result can be
+// announced under it rather than left for players to read off the slot.
+const landed = ref(false);
+const chaserName = computed(() => props.players.find((p) => p.seatId === props.chaserSeatId)?.name ?? "");
 
 const rows = computed(() => {
     const resolved = props.players.find((p) => p.seatId === props.chaserSeatId);
@@ -33,6 +37,12 @@ const displayRows = computed(() => {
     }
     return result;
 });
+
+function prefersReducedMotion() {
+    return typeof window !== "undefined"
+        && typeof window.matchMedia === "function"
+        && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 function easeOutQuart(t) {
     return 1 - Math.pow(1 - t, 4);
@@ -53,6 +63,8 @@ function clearTick() {
 
 function runScan() {
     clearTick();
+    // Reduced motion: the window just sits still until the Chaser is known.
+    if (prefersReducedMotion()) return;
     tickId = setInterval(() => {
         trackY -= scanSpeed;
         apply();
@@ -67,6 +79,13 @@ function runLanding() {
     const targetSlot = Math.ceil((currentSlot + landingAhead - chaserInRow) / chaserSlotLen) * chaserSlotLen + chaserInRow;
     const targetIndex = Math.min(targetSlot, displayRows.value.length - 1);
     const endY = viewportCenter - (targetIndex * slotH + slotH / 2);
+    // Reduced motion: no spin, straight to the result.
+    if (prefersReducedMotion()) {
+        trackY = endY;
+        apply();
+        landed.value = true;
+        return;
+    }
     const startY = trackY;
     const start = performance.now();
     tickId = setInterval(() => {
@@ -75,6 +94,7 @@ function runLanding() {
             clearTick();
             trackY = endY;
             apply();
+            landed.value = true;
             return;
         }
         if (elapsed < spinMs) {
@@ -96,6 +116,7 @@ watch(
     () => props.chaserSeatId,
     (id) => {
         stopAll();
+        landed.value = false;
         if (id && id !== "") {
             runLanding();
         } else {
@@ -105,13 +126,16 @@ watch(
     { immediate: true }
 );
 
+// The watch above can position the track before it's mounted (the
+// reduced-motion jump straight to the result), so apply it once it is.
+onMounted(apply);
 onBeforeUnmount(stopAll);
 </script>
 
 <template>
     <div class="wheelScreen">
-        <h2 class="lobbyTitle">Picking the Chaser…</h2>
-        <div class="wheelViewport">
+        <h2 class="lobbyTitle">{{ landed ? "We have a Chaser!" : "Picking the Chaser…" }}</h2>
+        <div class="wheelViewport" :class="{ 'wheelViewport-landed': landed }">
             <div ref="trackEl" class="wheelTrack">
                 <div
                     v-for="(row, idx) in displayRows"
@@ -122,5 +146,10 @@ onBeforeUnmount(stopAll);
                 </div>
             </div>
         </div>
+        <!-- Always rendered (hidden until the wheel lands) so the line
+             appearing never moves the wheel. -->
+        <p class="status-text wheelResult" :class="{ 'wheelResult-shown': landed }">
+            <strong>{{ chaserName }}</strong> will be chasing everyone else.
+        </p>
     </div>
 </template>

@@ -18,6 +18,9 @@ const props = defineProps({
     finalStealAnswer: { type: Object, default: null },
     finalStealResolved: { type: Object, default: null },
     answerResult: { type: Object, default: null },
+    // Ticket 160: the latest final-round answer, broadcast to the whole room
+    // (App.vue's finalAnswer) — this screen uses side "chaser" ones.
+    finalAnswer: { type: Object, default: null },
     // Per-seat face reaction store (ticket 103): seatId -> expression, see
     // App.vue's reactionsBySeat.
     reactions: { type: Object, default: () => ({}) },
@@ -87,11 +90,14 @@ watch(
 );
 
 // Ticket 148 (Big Stan's Time Bonus): a brief tick/pulse on the clock number
-// itself — App.vue bumps chaserFinalTimeBonusKey once per inferred
-// extension; this just holds the pulse class on for one animation's worth of
-// time then clears it, the same one-shot-key-to-timed-flag shape as the
-// answer bubbles above.
-const TIME_BONUS_PULSE_MS = 700;
+// itself, plus a "+2s" that floats off it (ticket 160) — App.vue bumps
+// chaserFinalTimeBonusKey once per inferred extension; this just holds the
+// flag on long enough for both animations, the same one-shot-key-to-timed-flag
+// shape as the answer bubbles above.
+const TIME_BONUS_PULSE_MS = 1400;
+// Mirrors server/src/gameConfig.ts CHASER_ABILITIES.timeBonusMs (2000ms) —
+// duplicated the same way GamePhase is (AGENTS.md gotchas).
+const TIME_BONUS_SECONDS = 2;
 const timeBonusPulseActive = ref(false);
 let timeBonusPulseTimeout = null;
 watch(() => props.chaserFinalTimeBonusKey, (key) => {
@@ -176,31 +182,40 @@ const chaserInputBox = ref(null);
 // paints — this just covers the instant between the two.
 const chaserWaitingForSteal = ref(false);
 
-// Pops the Chaser's own submitted answer from their ChaserPanel bubble
-// (ticket 098) — mirrors TeamFinalScreen's bubbleText/bubbleKey pattern.
-// This is local, own-client-only state driven straight off submission (the
-// server never broadcasts it — the team must never see the Chaser's typed
-// text) and kept separate from the chaserQuipText/chaserQuipKey channel
-// (App.vue) so a future broadcast quip can never clobber, or be clobbered
-// by, this bubble. A plain local timer is enough here; ticket 099 will
-// generalize this into a shared min-lifetime pattern for the final bubbles.
+// Pops the Chaser's submitted answer from their ChaserPanel bubble (ticket
+// 098) on every screen, not just the Chaser's own: the finalAnswer broadcast
+// reaches the whole room (ticket 160). Kept separate from the
+// chaserQuipText/chaserQuipKey channel (App.vue) so a quip can never clobber,
+// or be clobbered by, this bubble. It holds for its own minimum life rather
+// than clearing when the next question arrives (which a correct answer
+// triggers in the same tick) — the same fix TeamFinalScreen got in 099.
 const ANSWER_BUBBLE_HOLD_MS = 3000;
 const chaserAnswerBubbleText = ref("");
 const chaserAnswerBubbleKey = ref(0);
 let answerBubbleTimeout = null;
-
-function clearAnswerBubble() {
-    if (answerBubbleTimeout) {
-        clearTimeout(answerBubbleTimeout);
-        answerBubbleTimeout = null;
-    }
-    chaserAnswerBubbleText.value = "";
-}
+// The Chaser's answer to the question now up for a steal, so the team can
+// see what they said (and not repeat it).
+const lastChaserAnswer = ref(null);
+const stealChaserAnswer = computed(() =>
+    props.finalSteal && lastChaserAnswer.value?.questionId === props.finalSteal.questionId
+        ? lastChaserAnswer.value.answer
+        : ""
+);
 
 watch(() => props.finalQuestion, () => {
     chaserAnswerInput.value = "";
     chaserWaitingForSteal.value = false;
-    clearAnswerBubble();
+});
+
+watch(() => props.finalAnswer, (answer) => {
+    if (!answer || answer.side !== "chaser") return;
+    lastChaserAnswer.value = { questionId: answer.questionId, answer: answer.answer };
+    chaserAnswerBubbleText.value = answer.answer;
+    chaserAnswerBubbleKey.value += 1;
+    if (answerBubbleTimeout) clearTimeout(answerBubbleTimeout);
+    answerBubbleTimeout = setTimeout(() => {
+        chaserAnswerBubbleText.value = "";
+    }, ANSWER_BUBBLE_HOLD_MS);
 });
 
 watch(() => props.answerResult, (result) => {
@@ -213,12 +228,6 @@ function submitChaserAnswer() {
     const trimmed = chaserAnswerInput.value.trim();
     if (!trimmed) return;
     emit("submit-final-chaser-answer", { answer: trimmed, questionId: props.finalQuestion.questionId });
-    chaserAnswerBubbleText.value = trimmed;
-    chaserAnswerBubbleKey.value += 1;
-    if (answerBubbleTimeout) clearTimeout(answerBubbleTimeout);
-    answerBubbleTimeout = setTimeout(() => {
-        chaserAnswerBubbleText.value = "";
-    }, ANSWER_BUBBLE_HOLD_MS);
 }
 
 // The steal window countdown is driven by the server's windowMs off the
@@ -403,15 +412,15 @@ watch(() => props.finalStealResolved, (result) => {
         // didn't budge" instead of mistaking the frozen target for a miss.
         if (result.pushbackBlocked) {
             stealOutcomeLabel.value = "Blocked!";
-            stealOutcomeBody.value = `Correct — but ${chaserDisplayName.value} doesn't budge.`;
+            stealOutcomeBody.value = `Right answer, but ${chaserDisplayName.value} doesn't budge.`;
         } else {
             stealOutcomeLabel.value = result.pushedBack ? "Stolen!" : "Correct!";
             stealOutcomeBody.value = result.pushedBack
-                ? "The Chaser is pushed back."
-                : "The Chaser was already at zero — the target goes up.";
+                ? `${chaserDisplayName.value} is pushed back a step.`
+                : `${chaserDisplayName.value} was already at zero, so the target goes up.`;
         }
     } else {
-        stealOutcomeLabel.value = "✗ WRONG!";
+        stealOutcomeLabel.value = "Wrong!";
         stealCorrectAnswer.value = result.correctAnswer;
     }
     startHoldCountdown();
@@ -449,17 +458,24 @@ const chaserFinalStageClass = computed(() => (stealActive.value ? "chaserFinalSt
 </script>
 
 <template>
-  <div class="chaserFinalRoot">
+  <div class="chaserFinalRoot" :class="chaserFinalStageClass">
     <h2 class="lobbyTitle chaserFinalTitle">The Chaser Final</h2>
 
-    <div class="chaserFinalStage" :class="chaserFinalStageClass">
+    <div class="chaserFinalStage">
       <div class="chaserFinalStageVignette"></div>
-      <div class="chaserFinalTensionFill" :style="{ width: tensionFillPercent + '%' }"></div>
+      <div
+          class="chaserFinalTensionFill"
+          :class="{ 'chaserFinalTensionFill-empty': tensionFillPercent === 0 }"
+          :style="{ width: tensionFillPercent + '%' }"
+      ></div>
 
       <div class="chaserFinalTop">
         <div v-if="stealActive" class="chaserFinalStealPromptTop">
           <span class="chaserFinalStealLabel">Steal!</span>
           <p class="oq-prompt chaserFinalStealPrompt">{{ finalSteal.prompt }}</p>
+          <p v-if="stealChaserAnswer" class="chaserFinalStealChaserAnswer">
+            {{ chaserDisplayName }} said <strong>{{ stealChaserAnswer }}</strong>
+          </p>
         </div>
         <ChaserPanel
             v-else
@@ -492,8 +508,12 @@ const chaserFinalStageClass = computed(() => (stealActive.value ? "chaserFinalSt
     </div>
 
     <div class="cf-hud">
-      <span>TIME LEFT <b :class="{ 'cf-hud-time-tick': timeBonusPulseActive }">{{ secondsLeft }}s</b></span>
-      <span>CHASER <b>{{ chaserScore }}</b> — TARGET <b>{{ teamScore }}</b></span>
+      <span class="cf-hud-clock">
+        TIME LEFT <b :class="{ 'cf-hud-time-tick': timeBonusPulseActive, 'cf-hud-urgent': secondsLeft > 0 && secondsLeft <= 10 }">{{ secondsLeft }}s</b>
+        <span v-if="timeBonusPulseActive" class="cf-hud-bonus">+{{ TIME_BONUS_SECONDS }}s</span>
+      </span>
+      <span>CHASER <b>{{ chaserScore }}</b></span>
+      <span>TARGET <b>{{ teamScore }}</b></span>
     </div>
 
     <div v-if="stealFlashClass" :class="stealFlashClass"></div>
@@ -533,25 +553,27 @@ const chaserFinalStageClass = computed(() => (stealActive.value ? "chaserFinalSt
             <span class="wrong-label">{{ stealOutcomeLabel }}</span>
             <p class="wrong-answer">The answer was <strong>{{ stealCorrectAnswer }}</strong></p>
           </div>
-          <p class="playerName chaserFinalStealCountdown">{{ holdSecondsLeft }}</p>
+          <p class="chaserFinalStealCountdown">Back to {{ chaserDisplayName }} in <b>{{ holdSecondsLeft }}</b></p>
         </template>
         <template v-else>
+          <!-- The prompt is already shown big at the top of the stage, so
+               this box only carries the clock, the rule and the input. -->
           <div v-if="!isChaser" class="open-question-box accent-gold">
-            <span class="oq-eyebrow">Steal! · {{ stealSecondsLeft }}s left — anyone can answer</span>
-            <p class="oq-prompt">{{ finalSteal.prompt }}</p>
+            <span class="oq-eyebrow">Steal · <b>{{ stealSecondsLeft }}s</b> left</span>
+            <p class="oq-thinking chaserFinalStealHint">Anyone can answer. Get it right to push the Chaser back.</p>
             <div class="oq-row">
               <input
                   v-model="stealAnswerInput"
-                  class="oq-input"
-                  placeholder="Type your answer..."
+                  class="field"
+                  placeholder="Type your answer"
                   :disabled="stealLocked"
                   ref="stealInputBox"
                   @keyup.enter="submitSteal"
               />
-              <button class="oq-submit" :disabled="stealLocked" @click="submitSteal">Submit</button>
+              <button class="btn btn-primary" :disabled="stealLocked" @click="submitSteal">Submit</button>
             </div>
           </div>
-          <p v-else class="playerName">Steal! {{ stealSecondsLeft }}s left</p>
+          <p v-else class="status-text">The team is trying to steal. <strong>{{ stealSecondsLeft }}s</strong> left</p>
         </template>
       </template>
 
@@ -567,20 +589,20 @@ const chaserFinalStageClass = computed(() => (stealActive.value ? "chaserFinalSt
             <div class="oq-row">
               <input
                   v-model="chaserAnswerInput"
-                  class="oq-input"
-                  placeholder="Type your answer..."
+                  class="field"
+                  placeholder="Type your answer"
                   ref="chaserInputBox"
                   @keyup.enter="submitChaserAnswer"
               />
-              <button class="oq-submit" @click="submitChaserAnswer">Submit</button>
+              <button class="btn btn-primary" @click="submitChaserAnswer">Submit</button>
             </div>
           </div>
           <div v-else class="wrong-panel">
-            <span class="wrong-label">✗ WRONG!</span>
-            <p class="wrong-answer">Waiting to see if the team steals…</p>
+            <span class="wrong-label">Wrong!</span>
+            <p class="wrong-answer">Now the team gets a chance to steal…</p>
           </div>
         </template>
-        <p v-else class="playerName">Waiting for the first question…</p>
+        <p v-else class="status-text">The first question is on its way…</p>
       </template>
 
       <!-- Ticket 117 "Watching" state: the prompt is safe to show (only the
@@ -593,11 +615,11 @@ const chaserFinalStageClass = computed(() => (stealActive.value ? "chaserFinalSt
             class="open-question-box"
             :class="{ 'open-question-box-skip-pulse': skipPulseActive }"
         >
-          <span class="oq-eyebrow accent-neutral">Watching</span>
+          <span class="oq-eyebrow">{{ chaserDisplayName }} is answering</span>
           <p class="oq-prompt">{{ finalQuestion.prompt }}</p>
-          <p class="oq-thinking">The Chaser is answering<span class="oq-dots"><i></i><i></i><i></i></span></p>
+          <p class="oq-thinking">Thinking<span class="oq-dots"><i></i><i></i><i></i></span></p>
         </div>
-        <p v-else class="playerName">Waiting for the first question…</p>
+        <p v-else class="status-text">The first question is on its way…</p>
       </template>
     </div>
   </div>
