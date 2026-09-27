@@ -6604,6 +6604,185 @@
         "6",
         "Six Stones"
       ]
+    },
+    {
+      "id": 816,
+      "category": "movies",
+      "question": "Which purple-skinned villain wipes out half of all life with a single snap?",
+      "answer": "Thanos",
+      "alternatives": []
+    },
+    {
+      "id": 817,
+      "category": "movies",
+      "question": "Which Australian actor plays Thor?",
+      "answer": "Chris Hemsworth",
+      "alternatives": [
+        "Hemsworth"
+      ]
+    },
+    {
+      "id": 818,
+      "category": "movies",
+      "question": "Which tree-like superhero is voiced by Vin Diesel?",
+      "answer": "Groot",
+      "alternatives": [
+        "Baby Groot"
+      ]
+    },
+    {
+      "id": 819,
+      "category": "movies",
+      "question": "What rare metal is Captain America's shield made of?",
+      "answer": "Vibranium",
+      "alternatives": []
+    },
+    {
+      "id": 820,
+      "category": "movies",
+      "question": "Which comic-book legend, who died in 2018, was famous for his cameos in superhero films?",
+      "answer": "Stan Lee",
+      "alternatives": [
+        "Lee"
+      ]
+    },
+    {
+      "id": 821,
+      "category": "movies",
+      "question": "What is the name of Iron Man's AI assistant, voiced by Paul Bettany?",
+      "answer": "JARVIS",
+      "alternatives": [
+        "J.A.R.V.I.S."
+      ]
+    },
+    {
+      "id": 822,
+      "category": "movies",
+      "question": "Which eyepatch-wearing spy chief is played by Samuel L. Jackson?",
+      "answer": "Nick Fury",
+      "alternatives": [
+        "Fury",
+        "Nicholas Fury"
+      ]
+    },
+    {
+      "id": 823,
+      "category": "movies",
+      "question": "Which bow-and-arrow Avenger is played by Jeremy Renner?",
+      "answer": "Hawkeye",
+      "alternatives": [
+        "Clint Barton",
+        "Barton"
+      ]
+    },
+    {
+      "id": 824,
+      "category": "movies",
+      "question": "Which 2019 superhero film briefly overtook Avatar as the highest-grossing film ever?",
+      "answer": "Avengers: Endgame",
+      "alternatives": [
+        "Endgame"
+      ]
+    },
+    {
+      "id": 825,
+      "category": "movies",
+      "question": "Which actress plays Natasha Romanoff, aka Black Widow?",
+      "answer": "Scarlett Johansson",
+      "alternatives": [
+        "Johansson"
+      ]
+    },
+    {
+      "id": 826,
+      "category": "movies",
+      "question": "Which actor plays Odysseus in Christopher Nolan's The Odyssey?",
+      "answer": "Matt Damon",
+      "alternatives": [
+        "Damon"
+      ]
+    },
+    {
+      "id": 827,
+      "category": "movies",
+      "question": "Which King of Pop is the subject of a 2026 biopic starring his nephew Jaafar?",
+      "answer": "Michael Jackson",
+      "alternatives": [
+        "Jackson",
+        "MJ"
+      ]
+    },
+    {
+      "id": 828,
+      "category": "movies",
+      "question": "Which fashion-magazine editor does Meryl Streep play again in The Devil Wears Prada 2?",
+      "answer": "Miranda Priestly",
+      "alternatives": [
+        "Priestly",
+        "Miranda"
+      ]
+    },
+    {
+      "id": 829,
+      "category": "movies",
+      "question": "Which Ryan Gosling film, based on an Andy Weir novel, sees a teacher wake up alone on a spaceship?",
+      "answer": "Project Hail Mary",
+      "alternatives": [
+        "Hail Mary"
+      ]
+    },
+    {
+      "id": 830,
+      "category": "movies",
+      "question": "Margot Robbie and Jacob Elordi star in a 2026 adaptation of which Brontë novel?",
+      "answer": "Wuthering Heights",
+      "alternatives": []
+    },
+    {
+      "id": 831,
+      "category": "movies",
+      "question": "Which pint-sized green sidekick shares the title of a 2026 Star Wars film with the Mandalorian?",
+      "answer": "Grogu",
+      "alternatives": [
+        "Baby Yoda",
+        "Din Grogu"
+      ]
+    },
+    {
+      "id": 832,
+      "category": "movies",
+      "question": "Which demigod does Dwayne Johnson play again in the live-action Moana?",
+      "answer": "Maui",
+      "alternatives": []
+    },
+    {
+      "id": 833,
+      "category": "movies",
+      "question": "Which actor returns to Marvel as Doctor Doom in Avengers: Doomsday?",
+      "answer": "Robert Downey Jr.",
+      "alternatives": [
+        "Downey",
+        "Robert Downey",
+        "RDJ"
+      ]
+    },
+    {
+      "id": 834,
+      "category": "movies",
+      "question": "Which director of E.T. returned to aliens with 2026's Disclosure Day?",
+      "answer": "Steven Spielberg",
+      "alternatives": [
+        "Spielberg"
+      ]
+    },
+    {
+      "id": 835,
+      "category": "movies",
+      "question": "Which superhero, Superman's cousin, is played by Milly Alcock in a 2026 film?",
+      "answer": "Supergirl",
+      "alternatives": [
+        "Kara Zor-El"
+      ]
     }
   ]
 }
