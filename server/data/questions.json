@@ -6783,6 +6783,2930 @@
       "alternatives": [
         "Kara Zor-El"
       ]
+    },
+    {
+      "id": 836,
+      "category": "music",
+      "question": "Which Puerto Rican star headlined the 2026 Super Bowl halftime show, a week after winning Album of the Year at the Grammys?",
+      "answer": "Bad Bunny",
+      "alternatives": []
+    },
+    {
+      "id": 837,
+      "category": "music",
+      "question": "Which British singer won Best New Artist at the 2026 Grammys and British Artist of the Year at the Brits?",
+      "answer": "Olivia Dean",
+      "alternatives": [
+        "Dean"
+      ]
+    },
+    {
+      "id": 838,
+      "category": "music",
+      "question": "Which Billie Eilish song, co-written with her brother Finneas, won Song of the Year at the 2026 Grammys?",
+      "answer": "Wildflower",
+      "alternatives": []
+    },
+    {
+      "id": 839,
+      "category": "music",
+      "question": "Which country won Eurovision 2026 with DARA's dance anthem Bangaranga?",
+      "answer": "Bulgaria",
+      "alternatives": []
+    },
+    {
+      "id": 840,
+      "category": "music",
+      "question": "Which song from Netflix's KPop Demon Hunters won the Oscar for Best Original Song?",
+      "answer": "Golden",
+      "alternatives": []
+    },
+    {
+      "id": 841,
+      "category": "music",
+      "question": "Which K-pop band returned in 2026 with the album Arirang, after all seven members finished military service?",
+      "answer": "BTS",
+      "alternatives": [
+        "B.T.S.",
+        "Bangtan",
+        "Bangtan Boys",
+        "Bangtan Sonyeondan"
+      ]
+    },
+    {
+      "id": 842,
+      "category": "music",
+      "question": "Which former One Direction star released the album Kiss All the Time. Disco, Occasionally. in 2026?",
+      "answer": "Harry Styles",
+      "alternatives": [
+        "Styles"
+      ]
+    },
+    {
+      "id": 843,
+      "category": "music",
+      "question": "Which Espresso singer headlined Coachella 2026 alongside Justin Bieber and Karol G?",
+      "answer": "Sabrina Carpenter",
+      "alternatives": [
+        "Carpenter"
+      ]
+    },
+    {
+      "id": 844,
+      "category": "music",
+      "question": "Which four-letter acronym did Steven Spielberg complete by winning a Grammy in 2026?",
+      "answer": "EGOT",
+      "alternatives": [
+        "E.G.O.T.",
+        "Emmy Grammy Oscar Tony"
+      ]
+    },
+    {
+      "id": 845,
+      "category": "music",
+      "question": "Which pop star joined the 2026 Super Bowl halftime show to sing Die With a Smile?",
+      "answer": "Lady Gaga",
+      "alternatives": [
+        "Gaga"
+      ]
+    },
+    {
+      "id": 846,
+      "category": "music",
+      "question": "Which South Korean rapper's Gangnam Style was the first YouTube video to reach a billion views?",
+      "answer": "Psy",
+      "alternatives": []
+    },
+    {
+      "id": 847,
+      "category": "music",
+      "question": "Which British singer's album 21 featured Rolling in the Deep and Someone Like You?",
+      "answer": "Adele",
+      "alternatives": []
+    },
+    {
+      "id": 848,
+      "category": "music",
+      "question": "Which upbeat Pharrell Williams hit was written for Despicable Me 2?",
+      "answer": "Happy",
+      "alternatives": []
+    },
+    {
+      "id": 849,
+      "category": "music",
+      "question": "Which Mark Ronson hit spent 14 weeks at number one in the US in 2015?",
+      "answer": "Uptown Funk",
+      "alternatives": []
+    },
+    {
+      "id": 850,
+      "category": "music",
+      "question": "Which Swedish DJ, who died in 2018, had a global hit with Levels?",
+      "answer": "Avicii",
+      "alternatives": []
+    },
+    {
+      "id": 851,
+      "category": "music",
+      "question": "Which Luis Fonsi and Daddy Yankee hit became a 2017 global smash with help from a Justin Bieber remix?",
+      "answer": "Despacito",
+      "alternatives": []
+    },
+    {
+      "id": 852,
+      "category": "music",
+      "question": "Which Ed Sheeran hit was the world's best-selling song of 2017?",
+      "answer": "Shape of You",
+      "alternatives": []
+    },
+    {
+      "id": 853,
+      "category": "music",
+      "question": "Which Taylor Swift album of 2014 was named after the year she was born?",
+      "answer": "1989",
+      "alternatives": []
+    },
+    {
+      "id": 854,
+      "category": "music",
+      "question": "Which rapper's Old Town Road spent a then-record 19 weeks at number one in the US in 2019?",
+      "answer": "Lil Nas X",
+      "alternatives": []
+    },
+    {
+      "id": 855,
+      "category": "music",
+      "question": "Which Toronto rapper's 2015 hit Hotline Bling became a meme thanks to his dance moves?",
+      "answer": "Drake",
+      "alternatives": []
+    },
+    {
+      "id": 856,
+      "category": "music",
+      "question": "Which Barbadian singer had a 2007 hit with Umbrella, featuring Jay-Z?",
+      "answer": "Rihanna",
+      "alternatives": []
+    },
+    {
+      "id": 857,
+      "category": "music",
+      "question": "Which Gnarls Barkley hit became the first UK number one on downloads alone in 2006?",
+      "answer": "Crazy",
+      "alternatives": []
+    },
+    {
+      "id": 858,
+      "category": "music",
+      "question": "Which Chris Martin-fronted band scored their first US number one with Viva la Vida in 2008?",
+      "answer": "Coldplay",
+      "alternatives": []
+    },
+    {
+      "id": 859,
+      "category": "music",
+      "question": "Which Detroit rapper won an Oscar for Lose Yourself from 8 Mile?",
+      "answer": "Eminem",
+      "alternatives": [
+        "Marshall Mathers",
+        "Slim Shady"
+      ]
+    },
+    {
+      "id": 860,
+      "category": "music",
+      "question": "Which Britney Spears song, with a flight-attendant video, won her only Grammy?",
+      "answer": "Toxic",
+      "alternatives": []
+    },
+    {
+      "id": 861,
+      "category": "music",
+      "question": "Which girl group, formed on TV's Popstars: The Rivals in 2002, debuted with Sound of the Underground?",
+      "answer": "Girls Aloud",
+      "alternatives": []
+    },
+    {
+      "id": 862,
+      "category": "music",
+      "question": "Which Amy Winehouse album of 2006 featured the hit Rehab?",
+      "answer": "Back to Black",
+      "alternatives": []
+    },
+    {
+      "id": 863,
+      "category": "music",
+      "question": "Which Las Vegas band's debut single was Mr. Brightside?",
+      "answer": "The Killers",
+      "alternatives": []
+    },
+    {
+      "id": 864,
+      "category": "music",
+      "question": "Which Black Eyed Peas party anthem replaced their own Boom Boom Pow at number one in the US in 2009?",
+      "answer": "I Gotta Feeling",
+      "alternatives": []
+    },
+    {
+      "id": 865,
+      "category": "music",
+      "question": "Which first American Idol winner had a 2004 hit with Since U Been Gone?",
+      "answer": "Kelly Clarkson",
+      "alternatives": [
+        "Clarkson"
+      ]
+    },
+    {
+      "id": 866,
+      "category": "music",
+      "question": "Which Seattle band, fronted by Kurt Cobain, released Nevermind in 1991?",
+      "answer": "Nirvana",
+      "alternatives": []
+    },
+    {
+      "id": 867,
+      "category": "music",
+      "question": "Which Spice Girl was known as Posh Spice?",
+      "answer": "Victoria Beckham",
+      "alternatives": [
+        "Beckham",
+        "Victoria Adams"
+      ]
+    },
+    {
+      "id": 868,
+      "category": "music",
+      "question": "Which Celine Dion ballad was the theme from Titanic?",
+      "answer": "My Heart Will Go On",
+      "alternatives": []
+    },
+    {
+      "id": 869,
+      "category": "music",
+      "question": "Which Britpop band, led by the Gallagher brothers, released Wonderwall?",
+      "answer": "Oasis",
+      "alternatives": []
+    },
+    {
+      "id": 870,
+      "category": "music",
+      "question": "Which Damon Albarn-fronted band won 1995's Battle of Britpop with Country House?",
+      "answer": "Blur",
+      "alternatives": []
+    },
+    {
+      "id": 871,
+      "category": "music",
+      "question": "Which Canadian singer's 1995 album Jagged Little Pill featured Ironic?",
+      "answer": "Alanis Morissette",
+      "alternatives": [
+        "Morissette",
+        "Alanis"
+      ]
+    },
+    {
+      "id": 872,
+      "category": "music",
+      "question": "Which boy band had a 1999 hit with I Want It That Way?",
+      "answer": "Backstreet Boys",
+      "alternatives": []
+    },
+    {
+      "id": 873,
+      "category": "music",
+      "question": "Which Los del Rio song sparked a worldwide dance craze in 1996?",
+      "answer": "Macarena",
+      "alternatives": []
+    },
+    {
+      "id": 874,
+      "category": "music",
+      "question": "Which rapper, shot dead in Las Vegas in 1996, had a hit with California Love?",
+      "answer": "Tupac Shakur",
+      "alternatives": [
+        "Tupac",
+        "2Pac",
+        "Shakur"
+      ]
+    },
+    {
+      "id": 875,
+      "category": "music",
+      "question": "Which Whitney Houston ballad from The Bodyguard spent 14 weeks at number one in the US?",
+      "answer": "I Will Always Love You",
+      "alternatives": []
+    },
+    {
+      "id": 876,
+      "category": "music",
+      "question": "Which 1982 album, featuring Billie Jean and Beat It, is the best-selling album of all time?",
+      "answer": "Thriller",
+      "alternatives": []
+    },
+    {
+      "id": 877,
+      "category": "music",
+      "question": "Which Queen frontman stole the show at Live Aid in 1985?",
+      "answer": "Freddie Mercury",
+      "alternatives": [
+        "Mercury"
+      ]
+    },
+    {
+      "id": 878,
+      "category": "music",
+      "question": "Which Bob Geldof-led supergroup recorded Do They Know It's Christmas? in 1984?",
+      "answer": "Band Aid",
+      "alternatives": []
+    },
+    {
+      "id": 879,
+      "category": "music",
+      "question": "Which singer, nicknamed the Material Girl, released Like a Virgin in 1984?",
+      "answer": "Madonna",
+      "alternatives": []
+    },
+    {
+      "id": 880,
+      "category": "music",
+      "question": "Which Norwegian band's Take On Me had a famous pencil-sketch video?",
+      "answer": "A-ha",
+      "alternatives": [
+        "Aha"
+      ]
+    },
+    {
+      "id": 881,
+      "category": "music",
+      "question": "Which 1987 Rick Astley hit later became the internet prank known as rickrolling?",
+      "answer": "Never Gonna Give You Up",
+      "alternatives": []
+    },
+    {
+      "id": 882,
+      "category": "music",
+      "question": "Which 1984 Prince album shared its title with his first starring film?",
+      "answer": "Purple Rain",
+      "alternatives": []
+    },
+    {
+      "id": 883,
+      "category": "music",
+      "question": "Which Irish band released The Joshua Tree in 1987?",
+      "answer": "U2",
+      "alternatives": []
+    },
+    {
+      "id": 884,
+      "category": "music",
+      "question": "Which 1986 Bon Jovi anthem tells the story of Tommy and Gina?",
+      "answer": "Livin' on a Prayer",
+      "alternatives": [
+        "Living on a Prayer"
+      ]
+    },
+    {
+      "id": 885,
+      "category": "music",
+      "question": "Which Wham! singer went solo with Careless Whisper in 1984?",
+      "answer": "George Michael",
+      "alternatives": [
+        "Michael"
+      ]
+    },
+    {
+      "id": 886,
+      "category": "music",
+      "question": "Which Swedish group won Eurovision in 1974 with Waterloo?",
+      "answer": "ABBA",
+      "alternatives": []
+    },
+    {
+      "id": 887,
+      "category": "music",
+      "question": "Which six-minute Queen epic from 1975 includes an operatic section?",
+      "answer": "Bohemian Rhapsody",
+      "alternatives": []
+    },
+    {
+      "id": 888,
+      "category": "music",
+      "question": "Which 1977 John Travolta film had a Bee Gees-heavy soundtrack featuring Stayin' Alive?",
+      "answer": "Saturday Night Fever",
+      "alternatives": []
+    },
+    {
+      "id": 889,
+      "category": "music",
+      "question": "Which 1977 Fleetwood Mac album featured Dreams and Go Your Own Way?",
+      "answer": "Rumours",
+      "alternatives": []
+    },
+    {
+      "id": 890,
+      "category": "music",
+      "question": "Which glam-rock alien alter ego did David Bowie introduce in 1972?",
+      "answer": "Ziggy Stardust",
+      "alternatives": [
+        "Ziggy"
+      ]
+    },
+    {
+      "id": 891,
+      "category": "music",
+      "question": "Which punk band, fronted by Johnny Rotten, released God Save the Queen in 1977?",
+      "answer": "Sex Pistols",
+      "alternatives": []
+    },
+    {
+      "id": 892,
+      "category": "music",
+      "question": "Which singer, known as the King of Rock and Roll, died at Graceland in 1977?",
+      "answer": "Elvis Presley",
+      "alternatives": [
+        "Elvis",
+        "Presley"
+      ]
+    },
+    {
+      "id": 893,
+      "category": "music",
+      "question": "Which Gloria Gaynor disco anthem of 1978 became an empowerment classic?",
+      "answer": "I Will Survive",
+      "alternatives": []
+    },
+    {
+      "id": 894,
+      "category": "music",
+      "question": "Which 1973 Pink Floyd album has a prism on its cover?",
+      "answer": "The Dark Side of the Moon",
+      "alternatives": []
+    },
+    {
+      "id": 895,
+      "category": "music",
+      "question": "Which Elton John song was reworked in 1997 as a tribute to Princess Diana?",
+      "answer": "Candle in the Wind",
+      "alternatives": []
+    },
+    {
+      "id": 896,
+      "category": "music",
+      "question": "Which singer holds the record for the most Grammy wins ever?",
+      "answer": "Beyoncé",
+      "alternatives": [
+        "Beyonce Knowles",
+        "Knowles"
+      ]
+    },
+    {
+      "id": 897,
+      "category": "music",
+      "question": "According to Guinness, which Bing Crosby song is the best-selling single of all time?",
+      "answer": "White Christmas",
+      "alternatives": []
+    },
+    {
+      "id": 898,
+      "category": "music",
+      "question": "Which Mariah Carey festive song finally hit number one in the US in 2019, 25 years after its release?",
+      "answer": "All I Want for Christmas Is You",
+      "alternatives": []
+    },
+    {
+      "id": 899,
+      "category": "music",
+      "question": "Which Paul McCartney ballad from 1965 is one of the most covered songs in history?",
+      "answer": "Yesterday",
+      "alternatives": []
+    },
+    {
+      "id": 900,
+      "category": "music",
+      "question": "Which Taylor Swift tour became the first to gross over $2 billion?",
+      "answer": "The Eras Tour",
+      "alternatives": [
+        "Eras"
+      ]
+    },
+    {
+      "id": 901,
+      "category": "music",
+      "question": "Which song by The Weeknd is the most-streamed in Spotify history?",
+      "answer": "Blinding Lights",
+      "alternatives": []
+    },
+    {
+      "id": 902,
+      "category": "music",
+      "question": "Which band is the best-selling music act of all time?",
+      "answer": "The Beatles",
+      "alternatives": []
+    },
+    {
+      "id": 903,
+      "category": "music",
+      "question": "Which heavy metal band played all seven continents in one year, including Antarctica in 2013?",
+      "answer": "Metallica",
+      "alternatives": []
+    },
+    {
+      "id": 904,
+      "category": "music",
+      "question": "Which Buggles song was the first music video ever played on MTV?",
+      "answer": "Video Killed the Radio Star",
+      "alternatives": []
+    },
+    {
+      "id": 905,
+      "category": "music",
+      "question": "Which former Take That star set a new record in 2026 for the most UK number one albums?",
+      "answer": "Robbie Williams",
+      "alternatives": [
+        "Williams",
+        "Robbie"
+      ]
+    },
+    {
+      "id": 906,
+      "category": "music",
+      "question": "Which eight-minute Led Zeppelin epic from 1971 is often called the greatest rock song ever?",
+      "answer": "Stairway to Heaven",
+      "alternatives": [
+        "Stairway"
+      ]
+    },
+    {
+      "id": 907,
+      "category": "music",
+      "question": "Which Rolling Stones frontman is famous for his strutting stage moves?",
+      "answer": "Mick Jagger",
+      "alternatives": [
+        "Jagger"
+      ]
+    },
+    {
+      "id": 908,
+      "category": "music",
+      "question": "Which top-hatted guitarist played the famous riff on Sweet Child o' Mine?",
+      "answer": "Slash",
+      "alternatives": []
+    },
+    {
+      "id": 909,
+      "category": "music",
+      "question": "Which Australian band released Highway to Hell and Back in Black?",
+      "answer": "AC/DC",
+      "alternatives": []
+    },
+    {
+      "id": 910,
+      "category": "music",
+      "question": "Which Who guitarist was famous for windmill strumming and smashing guitars?",
+      "answer": "Pete Townshend",
+      "alternatives": [
+        "Townshend"
+      ]
+    },
+    {
+      "id": 911,
+      "category": "music",
+      "question": "Which rock star founded the Foo Fighters in 1994?",
+      "answer": "Dave Grohl",
+      "alternatives": [
+        "Grohl"
+      ]
+    },
+    {
+      "id": 912,
+      "category": "music",
+      "question": "Which band released the album Hotel California in 1976?",
+      "answer": "Eagles",
+      "alternatives": []
+    },
+    {
+      "id": 913,
+      "category": "music",
+      "question": "Which band's Smoke on the Water has one of rock's most famous riffs?",
+      "answer": "Deep Purple",
+      "alternatives": []
+    },
+    {
+      "id": 914,
+      "category": "music",
+      "question": "Which left-handed guitarist set his guitar on fire at the Monterey Pop Festival in 1967?",
+      "answer": "Jimi Hendrix",
+      "alternatives": [
+        "Hendrix"
+      ]
+    },
+    {
+      "id": 915,
+      "category": "music",
+      "question": "Which 1984 Bruce Springsteen album has the US flag on its cover?",
+      "answer": "Born in the U.S.A.",
+      "alternatives": [
+        "Born in the USA"
+      ]
+    },
+    {
+      "id": 916,
+      "category": "music",
+      "question": "Which Australian pop star had a 2001 hit with Can't Get You Out of My Head?",
+      "answer": "Kylie Minogue",
+      "alternatives": [
+        "Kylie",
+        "Minogue"
+      ]
+    },
+    {
+      "id": 917,
+      "category": "music",
+      "question": "Which singer's 2008 hit I Kissed a Girl was her breakthrough?",
+      "answer": "Katy Perry",
+      "alternatives": [
+        "Perry"
+      ]
+    },
+    {
+      "id": 918,
+      "category": "music",
+      "question": "Which Canadian singer had a 2012 smash with Call Me Maybe?",
+      "answer": "Carly Rae Jepsen",
+      "alternatives": [
+        "Jepsen"
+      ]
+    },
+    {
+      "id": 919,
+      "category": "music",
+      "question": "Which 2020 Dua Lipa album featured Levitating and Don't Start Now?",
+      "answer": "Future Nostalgia",
+      "alternatives": []
+    },
+    {
+      "id": 920,
+      "category": "music",
+      "question": "Which Olivia Rodrigo debut single topped charts worldwide in January 2021?",
+      "answer": "Drivers License",
+      "alternatives": []
+    },
+    {
+      "id": 921,
+      "category": "music",
+      "question": "Which 1996 debut single made the Spice Girls famous?",
+      "answer": "Wannabe",
+      "alternatives": []
+    },
+    {
+      "id": 922,
+      "category": "music",
+      "question": "Which 1998 Cher hit popularised the use of Auto-Tune?",
+      "answer": "Believe",
+      "alternatives": []
+    },
+    {
+      "id": 923,
+      "category": "music",
+      "question": "Which Irish boy band had a 1999 number one with Flying Without Wings?",
+      "answer": "Westlife",
+      "alternatives": []
+    },
+    {
+      "id": 924,
+      "category": "music",
+      "question": "Which Hawaiian-born pop star headlined the 2014 Super Bowl halftime show?",
+      "answer": "Bruno Mars",
+      "alternatives": [
+        "Mars"
+      ]
+    },
+    {
+      "id": 925,
+      "category": "music",
+      "question": "Which boy band launched Justin Timberlake's career?",
+      "answer": "NSYNC",
+      "alternatives": []
+    },
+    {
+      "id": 926,
+      "category": "music",
+      "question": "Which country legend wrote Jolene and 9 to 5?",
+      "answer": "Dolly Parton",
+      "alternatives": [
+        "Dolly",
+        "Parton"
+      ]
+    },
+    {
+      "id": 927,
+      "category": "music",
+      "question": "Which Man in Black recorded a famous live album at Folsom Prison?",
+      "answer": "Johnny Cash",
+      "alternatives": [
+        "Cash"
+      ]
+    },
+    {
+      "id": 928,
+      "category": "music",
+      "question": "Which 1997 Shania Twain album featured Man! I Feel Like a Woman!?",
+      "answer": "Come On Over",
+      "alternatives": []
+    },
+    {
+      "id": 929,
+      "category": "music",
+      "question": "Which Tennessee city, known as Music City, is home to the Grand Ole Opry?",
+      "answer": "Nashville",
+      "alternatives": []
+    },
+    {
+      "id": 930,
+      "category": "music",
+      "question": "Which country superstar had a 1990 hit with Friends in Low Places?",
+      "answer": "Garth Brooks",
+      "alternatives": [
+        "Brooks"
+      ]
+    },
+    {
+      "id": 931,
+      "category": "music",
+      "question": "Which 1978 Kenny Rogers song tells of card-playing advice from a stranger on a train?",
+      "answer": "The Gambler",
+      "alternatives": []
+    },
+    {
+      "id": 932,
+      "category": "music",
+      "question": "Which singer's Achy Breaky Heart sparked a line-dancing craze in 1992?",
+      "answer": "Billy Ray Cyrus",
+      "alternatives": [
+        "Cyrus"
+      ]
+    },
+    {
+      "id": 933,
+      "category": "music",
+      "question": "Which country singer has been married to Faith Hill since 1996?",
+      "answer": "Tim McGraw",
+      "alternatives": [
+        "McGraw"
+      ]
+    },
+    {
+      "id": 934,
+      "category": "music",
+      "question": "Which American Idol winner followed up with the 2006 hit Before He Cheats?",
+      "answer": "Carrie Underwood",
+      "alternatives": [
+        "Underwood"
+      ]
+    },
+    {
+      "id": 935,
+      "category": "music",
+      "question": "Which red-bandana-wearing country outlaw sang On the Road Again?",
+      "answer": "Willie Nelson",
+      "alternatives": [
+        "Nelson"
+      ]
+    },
+    {
+      "id": 936,
+      "category": "movies",
+      "question": "Which 2001 film follows an ogre who rescues Princess Fiona?",
+      "answer": "Shrek",
+      "alternatives": []
+    },
+    {
+      "id": 937,
+      "category": "movies",
+      "question": "Which 2003 Pixar film follows a clownfish searching for his son?",
+      "answer": "Finding Nemo",
+      "alternatives": [
+        "Nemo"
+      ]
+    },
+    {
+      "id": 938,
+      "category": "movies",
+      "question": "Which boy wizard's first film adventure arrived in 2001?",
+      "answer": "Harry Potter",
+      "alternatives": [
+        "Potter",
+        "Harry Potter and the Philosopher's Stone",
+        "Harry Potter and the Sorcerer's Stone"
+      ]
+    },
+    {
+      "id": 939,
+      "category": "movies",
+      "question": "Which 2000 Ridley Scott epic stars Russell Crowe as the Roman general Maximus?",
+      "answer": "Gladiator",
+      "alternatives": []
+    },
+    {
+      "id": 940,
+      "category": "movies",
+      "question": "Which Johnny Depp pirate captain debuted in 2003's The Curse of the Black Pearl?",
+      "answer": "Jack Sparrow",
+      "alternatives": [
+        "Captain Jack Sparrow",
+        "Captain Jack",
+        "Sparrow"
+      ]
+    },
+    {
+      "id": 941,
+      "category": "movies",
+      "question": "Which 2008 Batman film features Heath Ledger's Oscar-winning villain?",
+      "answer": "The Dark Knight",
+      "alternatives": []
+    },
+    {
+      "id": 942,
+      "category": "movies",
+      "question": "Which 2004 teen comedy stars Lindsay Lohan up against The Plastics?",
+      "answer": "Mean Girls",
+      "alternatives": []
+    },
+    {
+      "id": 943,
+      "category": "movies",
+      "question": "Which Sacha Baron Cohen character, a Kazakh TV reporter, got his own 2006 film?",
+      "answer": "Borat",
+      "alternatives": []
+    },
+    {
+      "id": 944,
+      "category": "movies",
+      "question": "Which 2001 Peter Jackson film began The Lord of the Rings trilogy?",
+      "answer": "The Fellowship of the Ring",
+      "alternatives": [
+        "Fellowship",
+        "The Lord of the Rings: The Fellowship of the Ring"
+      ]
+    },
+    {
+      "id": 945,
+      "category": "movies",
+      "question": "Which 2000 film has a FedEx worker stranded on an island with a volleyball called Wilson?",
+      "answer": "Cast Away",
+      "alternatives": []
+    },
+    {
+      "id": 946,
+      "category": "movies",
+      "question": "Which 1993 film saw dinosaurs cloned for a theme park on Isla Nublar?",
+      "answer": "Jurassic Park",
+      "alternatives": []
+    },
+    {
+      "id": 947,
+      "category": "movies",
+      "question": "Which director made both Titanic and Avatar?",
+      "answer": "James Cameron",
+      "alternatives": [
+        "Cameron"
+      ]
+    },
+    {
+      "id": 948,
+      "category": "movies",
+      "question": "Which Star Wars villain is revealed to be Luke Skywalker's father?",
+      "answer": "Darth Vader",
+      "alternatives": [
+        "Vader",
+        "Anakin Skywalker",
+        "Anakin"
+      ]
+    },
+    {
+      "id": 949,
+      "category": "movies",
+      "question": "Which 2013 Disney animation about Elsa and Anna became the highest-grossing animated film of its time?",
+      "answer": "Frozen",
+      "alternatives": []
+    },
+    {
+      "id": 950,
+      "category": "movies",
+      "question": "Which 1997 film stars Tommy Lee Jones and Will Smith as alien-hunting agents?",
+      "answer": "Men in Black",
+      "alternatives": [
+        "MIB"
+      ]
+    },
+    {
+      "id": 951,
+      "category": "movies",
+      "question": "Which Michael Bay franchise pits the Autobots against the Decepticons?",
+      "answer": "Transformers",
+      "alternatives": []
+    },
+    {
+      "id": 952,
+      "category": "movies",
+      "question": "Which 1996 film sees the White House blown up by alien spaceships?",
+      "answer": "Independence Day",
+      "alternatives": [
+        "ID4"
+      ]
+    },
+    {
+      "id": 953,
+      "category": "movies",
+      "question": "Which 2022 Tom Cruise sequel returned him to fighter jets 36 years after the original?",
+      "answer": "Top Gun: Maverick",
+      "alternatives": [
+        "Top Gun Maverick",
+        "Maverick"
+      ]
+    },
+    {
+      "id": 954,
+      "category": "movies",
+      "question": "Which 2023 Greta Gerwig blockbuster starred Margot Robbie as a doll?",
+      "answer": "Barbie",
+      "alternatives": []
+    },
+    {
+      "id": 955,
+      "category": "movies",
+      "question": "Which 1998 film sees Bruce Willis lead a team of oil drillers to blow up an asteroid?",
+      "answer": "Armageddon",
+      "alternatives": []
+    },
+    {
+      "id": 956,
+      "category": "movies",
+      "question": "Which actor finally won his first Oscar for The Revenant in 2016?",
+      "answer": "Leonardo DiCaprio",
+      "alternatives": [
+        "DiCaprio"
+      ]
+    },
+    {
+      "id": 957,
+      "category": "movies",
+      "question": "Which South Korean film was the first non-English-language Best Picture winner?",
+      "answer": "Parasite",
+      "alternatives": []
+    },
+    {
+      "id": 958,
+      "category": "movies",
+      "question": "Which actress won a record four acting Oscars?",
+      "answer": "Katharine Hepburn",
+      "alternatives": []
+    },
+    {
+      "id": 959,
+      "category": "movies",
+      "question": "Which 2023 Christopher Nolan film about the atomic bomb won Best Picture?",
+      "answer": "Oppenheimer",
+      "alternatives": []
+    },
+    {
+      "id": 960,
+      "category": "movies",
+      "question": "Which 1994 Best Picture winner follows a kind-hearted Alabama man through decades of US history?",
+      "answer": "Forrest Gump",
+      "alternatives": [
+        "Gump"
+      ]
+    },
+    {
+      "id": 961,
+      "category": "movies",
+      "question": "Which final Lord of the Rings film won all 11 Oscars it was nominated for?",
+      "answer": "The Return of the King",
+      "alternatives": [
+        "The Lord of the Rings: The Return of the King"
+      ]
+    },
+    {
+      "id": 962,
+      "category": "movies",
+      "question": "Which DC villain won Joaquin Phoenix the Best Actor Oscar?",
+      "answer": "Joker",
+      "alternatives": []
+    },
+    {
+      "id": 963,
+      "category": "movies",
+      "question": "Which musical was wrongly announced as Best Picture in 2017 before the award went to Moonlight?",
+      "answer": "La La Land",
+      "alternatives": []
+    },
+    {
+      "id": 964,
+      "category": "movies",
+      "question": "Which Anthony Hopkins character in The Silence of the Lambs won him Best Actor?",
+      "answer": "Hannibal Lecter",
+      "alternatives": [
+        "Hannibal",
+        "Lecter"
+      ]
+    },
+    {
+      "id": 965,
+      "category": "movies",
+      "question": "Which 1939 Civil War epic, starring Vivien Leigh as Scarlett O'Hara, won Best Picture?",
+      "answer": "Gone with the Wind",
+      "alternatives": []
+    },
+    {
+      "id": 966,
+      "category": "movies",
+      "question": "Which 1985 film sends Marty McFly back to 1955 in a DeLorean?",
+      "answer": "Back to the Future",
+      "alternatives": []
+    },
+    {
+      "id": 967,
+      "category": "movies",
+      "question": "Which 1984 film has Bill Murray and Dan Aykroyd catching spirits in New York?",
+      "answer": "Ghostbusters",
+      "alternatives": []
+    },
+    {
+      "id": 968,
+      "category": "movies",
+      "question": "Which 1999 film has Keanu Reeves choosing between a red pill and a blue pill?",
+      "answer": "The Matrix",
+      "alternatives": []
+    },
+    {
+      "id": 969,
+      "category": "movies",
+      "question": "Which 1994 Disney film follows young Simba, heir to Pride Rock?",
+      "answer": "The Lion King",
+      "alternatives": []
+    },
+    {
+      "id": 970,
+      "category": "movies",
+      "question": "Which 1990 film has Macaulay Culkin defending his house from burglars at Christmas?",
+      "answer": "Home Alone",
+      "alternatives": []
+    },
+    {
+      "id": 971,
+      "category": "movies",
+      "question": "Which 1987 film follows Baby's summer romance with Patrick Swayze's Johnny Castle?",
+      "answer": "Dirty Dancing",
+      "alternatives": []
+    },
+    {
+      "id": 972,
+      "category": "movies",
+      "question": "Which 1984 film has Arnold Schwarzenegger as a cyborg assassin from the future?",
+      "answer": "The Terminator",
+      "alternatives": []
+    },
+    {
+      "id": 973,
+      "category": "movies",
+      "question": "Which 1993 film has Robin Williams disguised as a Scottish nanny?",
+      "answer": "Mrs. Doubtfire",
+      "alternatives": [
+        "Doubtfire"
+      ]
+    },
+    {
+      "id": 974,
+      "category": "movies",
+      "question": "Which 1988 film has Bruce Willis battling terrorists in Nakatomi Plaza?",
+      "answer": "Die Hard",
+      "alternatives": []
+    },
+    {
+      "id": 975,
+      "category": "movies",
+      "question": "Which 1994 Quentin Tarantino film follows hitmen Vincent and Jules?",
+      "answer": "Pulp Fiction",
+      "alternatives": []
+    },
+    {
+      "id": 976,
+      "category": "movies",
+      "question": "Which Scottish actor was the first to play James Bond on film?",
+      "answer": "Sean Connery",
+      "alternatives": [
+        "Connery"
+      ]
+    },
+    {
+      "id": 977,
+      "category": "movies",
+      "question": "Which Australian actor played Wolverine in the X-Men films?",
+      "answer": "Hugh Jackman",
+      "alternatives": [
+        "Jackman"
+      ]
+    },
+    {
+      "id": 978,
+      "category": "movies",
+      "question": "Which actor axes his way through a bathroom door in The Shining?",
+      "answer": "Jack Nicholson",
+      "alternatives": [
+        "Nicholson"
+      ]
+    },
+    {
+      "id": 979,
+      "category": "movies",
+      "question": "Which actor wrote and starred in Rocky?",
+      "answer": "Sylvester Stallone",
+      "alternatives": [
+        "Stallone"
+      ]
+    },
+    {
+      "id": 980,
+      "category": "movies",
+      "question": "Which actor played both Han Solo and Indiana Jones?",
+      "answer": "Harrison Ford",
+      "alternatives": [
+        "Ford"
+      ]
+    },
+    {
+      "id": 981,
+      "category": "movies",
+      "question": "Which British comic actor plays the bumbling Mr. Bean?",
+      "answer": "Rowan Atkinson",
+      "alternatives": [
+        "Atkinson"
+      ]
+    },
+    {
+      "id": 982,
+      "category": "movies",
+      "question": "Which actor played Gandalf in The Lord of the Rings films?",
+      "answer": "Ian McKellen",
+      "alternatives": [
+        "McKellen"
+      ]
+    },
+    {
+      "id": 983,
+      "category": "movies",
+      "question": "Which actor played Vito Corleone in The Godfather?",
+      "answer": "Marlon Brando",
+      "alternatives": [
+        "Brando"
+      ]
+    },
+    {
+      "id": 984,
+      "category": "movies",
+      "question": "Which actor voices Woody in the Toy Story films?",
+      "answer": "Tom Hanks",
+      "alternatives": [
+        "Hanks"
+      ]
+    },
+    {
+      "id": 985,
+      "category": "movies",
+      "question": "Which actor won Best Actor for playing a corrupt cop in Training Day?",
+      "answer": "Denzel Washington",
+      "alternatives": [
+        "Washington"
+      ]
+    },
+    {
+      "id": 986,
+      "category": "movies",
+      "question": "Which actress played Hermione Granger?",
+      "answer": "Emma Watson",
+      "alternatives": [
+        "Watson"
+      ]
+    },
+    {
+      "id": 987,
+      "category": "movies",
+      "question": "Which actress starred as Holly Golightly in Breakfast at Tiffany's?",
+      "answer": "Audrey Hepburn",
+      "alternatives": []
+    },
+    {
+      "id": 988,
+      "category": "movies",
+      "question": "Which actress played Katniss Everdeen in The Hunger Games?",
+      "answer": "Jennifer Lawrence",
+      "alternatives": [
+        "Lawrence",
+        "J-Law"
+      ]
+    },
+    {
+      "id": 989,
+      "category": "movies",
+      "question": "Which actress starred in Pretty Woman and won an Oscar for Erin Brockovich?",
+      "answer": "Julia Roberts",
+      "alternatives": [
+        "Roberts"
+      ]
+    },
+    {
+      "id": 990,
+      "category": "movies",
+      "question": "Which English actress played Rose in Titanic?",
+      "answer": "Kate Winslet",
+      "alternatives": [
+        "Winslet"
+      ]
+    },
+    {
+      "id": 991,
+      "category": "movies",
+      "question": "Which screen icon's white dress billowed over a subway grate in The Seven Year Itch?",
+      "answer": "Marilyn Monroe",
+      "alternatives": [
+        "Monroe"
+      ]
+    },
+    {
+      "id": 992,
+      "category": "movies",
+      "question": "Which actress battled the xenomorph as Ripley in Alien?",
+      "answer": "Sigourney Weaver",
+      "alternatives": [
+        "Weaver"
+      ]
+    },
+    {
+      "id": 993,
+      "category": "movies",
+      "question": "Which actress played Elle Woods in Legally Blonde?",
+      "answer": "Reese Witherspoon",
+      "alternatives": [
+        "Witherspoon"
+      ]
+    },
+    {
+      "id": 994,
+      "category": "movies",
+      "question": "Which Australian actress won an Oscar for playing Virginia Woolf in The Hours?",
+      "answer": "Nicole Kidman",
+      "alternatives": [
+        "Kidman"
+      ]
+    },
+    {
+      "id": 995,
+      "category": "movies",
+      "question": "Which actress played Lara Croft in the 2001 film Tomb Raider?",
+      "answer": "Angelina Jolie",
+      "alternatives": [
+        "Jolie"
+      ]
+    },
+    {
+      "id": 996,
+      "category": "movies",
+      "question": "Which 2011 comedy stars Kristen Wiig as a maid of honour whose plans go wrong?",
+      "answer": "Bridesmaids",
+      "alternatives": []
+    },
+    {
+      "id": 997,
+      "category": "movies",
+      "question": "Which 2009 comedy follows three friends searching Las Vegas for a missing groom?",
+      "answer": "The Hangover",
+      "alternatives": []
+    },
+    {
+      "id": 998,
+      "category": "movies",
+      "question": "Which British comedy troupe made Life of Brian and The Holy Grail?",
+      "answer": "Monty Python",
+      "alternatives": [
+        "Monty Python's Flying Circus",
+        "The Pythons"
+      ]
+    },
+    {
+      "id": 999,
+      "category": "movies",
+      "question": "Which 2004 Will Ferrell comedy follows 1970s San Diego newsreader Ron Burgundy?",
+      "answer": "Anchorman",
+      "alternatives": [
+        "Anchorman: The Legend of Ron Burgundy"
+      ]
+    },
+    {
+      "id": 1000,
+      "category": "movies",
+      "question": "Which 1980 spoof has Leslie Nielsen aboard a doomed passenger flight?",
+      "answer": "Airplane!",
+      "alternatives": [
+        "Aeroplane!",
+        "Flying High"
+      ]
+    },
+    {
+      "id": 1001,
+      "category": "movies",
+      "question": "Which Mike Myers spy spoof pits a swinging 60s agent against Dr. Evil?",
+      "answer": "Austin Powers",
+      "alternatives": [
+        "Austin Powers: International Man of Mystery"
+      ]
+    },
+    {
+      "id": 1002,
+      "category": "movies",
+      "question": "Which 1993 comedy traps Bill Murray's grumpy weatherman in a time loop?",
+      "answer": "Groundhog Day",
+      "alternatives": []
+    },
+    {
+      "id": 1003,
+      "category": "movies",
+      "question": "Which 2007 comedy has Seth Rogen as a slacker facing unexpected fatherhood?",
+      "answer": "Knocked Up",
+      "alternatives": []
+    },
+    {
+      "id": 1004,
+      "category": "movies",
+      "question": "Which 1988 comedy has a boy wish himself into an adult's body?",
+      "answer": "Big",
+      "alternatives": []
+    },
+    {
+      "id": 1005,
+      "category": "movies",
+      "question": "Which 2001 Ben Stiller comedy follows a dim-witted male model?",
+      "answer": "Zoolander",
+      "alternatives": []
+    },
+    {
+      "id": 1006,
+      "category": "movies",
+      "question": "Which 1994 prison drama follows Andy Dufresne and his friend Red?",
+      "answer": "The Shawshank Redemption",
+      "alternatives": [
+        "Shawshank"
+      ]
+    },
+    {
+      "id": 1007,
+      "category": "movies",
+      "question": "Which 1999 David Fincher film has Brad Pitt as the anarchic soap-maker Tyler Durden?",
+      "answer": "Fight Club",
+      "alternatives": []
+    },
+    {
+      "id": 1008,
+      "category": "movies",
+      "question": "Which 1993 black-and-white drama tells how a German industrialist saved over a thousand Jews?",
+      "answer": "Schindler's List",
+      "alternatives": []
+    },
+    {
+      "id": 1009,
+      "category": "movies",
+      "question": "Which 2008 film follows a Mumbai teenager's run on a TV quiz show?",
+      "answer": "Slumdog Millionaire",
+      "alternatives": [
+        "Slumdog"
+      ]
+    },
+    {
+      "id": 1010,
+      "category": "movies",
+      "question": "Which 1997 drama has Robin Williams as therapist to a maths-genius janitor?",
+      "answer": "Good Will Hunting",
+      "alternatives": []
+    },
+    {
+      "id": 1011,
+      "category": "movies",
+      "question": "Which 1990 Martin Scorsese gangster film follows mobster Henry Hill?",
+      "answer": "Goodfellas",
+      "alternatives": []
+    },
+    {
+      "id": 1012,
+      "category": "movies",
+      "question": "Which 2014 film has Miles Teller as a drummer pushed by a brutal teacher?",
+      "answer": "Whiplash",
+      "alternatives": []
+    },
+    {
+      "id": 1013,
+      "category": "movies",
+      "question": "Which 1975 drama pits patient McMurphy against Nurse Ratched?",
+      "answer": "One Flew Over the Cuckoo's Nest",
+      "alternatives": [
+        "Cuckoo's Nest"
+      ]
+    },
+    {
+      "id": 1014,
+      "category": "movies",
+      "question": "Which 2004 tearjerker tells the love story of Noah and Allie?",
+      "answer": "The Notebook",
+      "alternatives": []
+    },
+    {
+      "id": 1015,
+      "category": "movies",
+      "question": "Which 1988 drama has Tom Cruise road-tripping with Dustin Hoffman's savant brother?",
+      "answer": "Rain Man",
+      "alternatives": []
+    },
+    {
+      "id": 1016,
+      "category": "sport",
+      "question": "Which club went unbeaten through the 2003-04 season, earning the nickname The Invincibles?",
+      "answer": "Arsenal",
+      "alternatives": []
+    },
+    {
+      "id": 1017,
+      "category": "sport",
+      "question": "Which Norwegian striker scored a record 36 Premier League goals in 2022-23?",
+      "answer": "Erling Haaland",
+      "alternatives": [
+        "Haaland"
+      ]
+    },
+    {
+      "id": 1018,
+      "category": "sport",
+      "question": "Which club won the 2015-16 title after starting the season as 5000-1 outsiders?",
+      "answer": "Leicester City",
+      "alternatives": [
+        "Leicester"
+      ]
+    },
+    {
+      "id": 1019,
+      "category": "sport",
+      "question": "Who is the Premier League's all-time top scorer with 260 goals?",
+      "answer": "Alan Shearer",
+      "alternatives": [
+        "Shearer"
+      ]
+    },
+    {
+      "id": 1020,
+      "category": "sport",
+      "question": "Which Scottish manager won 13 Premier League titles at Old Trafford?",
+      "answer": "Alex Ferguson",
+      "alternatives": [
+        "Sir Alex Ferguson",
+        "Ferguson",
+        "Fergie",
+        "Sir Alex"
+      ]
+    },
+    {
+      "id": 1021,
+      "category": "sport",
+      "question": "Which Merseyside club left Goodison Park for a new stadium in 2025?",
+      "answer": "Everton",
+      "alternatives": []
+    },
+    {
+      "id": 1022,
+      "category": "sport",
+      "question": "Which forward is nicknamed the Egyptian King?",
+      "answer": "Mohamed Salah",
+      "alternatives": [
+        "Salah",
+        "Mo Salah"
+      ]
+    },
+    {
+      "id": 1023,
+      "category": "sport",
+      "question": "Which club, nicknamed the Hammers, moved into the former Olympic Stadium in 2016?",
+      "answer": "West Ham United",
+      "alternatives": [
+        "West Ham"
+      ]
+    },
+    {
+      "id": 1024,
+      "category": "sport",
+      "question": "Which club won the first Premier League title in 1992-93?",
+      "answer": "Manchester United",
+      "alternatives": [
+        "Man United",
+        "Man Utd",
+        "Manchester Utd",
+        "Man U"
+      ]
+    },
+    {
+      "id": 1025,
+      "category": "sport",
+      "question": "Which Spanish manager won four straight Premier League titles from 2021 to 2024?",
+      "answer": "Pep Guardiola",
+      "alternatives": [
+        "Guardiola",
+        "Pep"
+      ]
+    },
+    {
+      "id": 1026,
+      "category": "sport",
+      "question": "Which city hosted the 2012 Summer Olympics?",
+      "answer": "London",
+      "alternatives": []
+    },
+    {
+      "id": 1027,
+      "category": "sport",
+      "question": "Which swimmer won a record 23 Olympic gold medals?",
+      "answer": "Michael Phelps",
+      "alternatives": [
+        "Phelps"
+      ]
+    },
+    {
+      "id": 1028,
+      "category": "sport",
+      "question": "Which Jamaican sprinter won the 100m at three straight Olympics?",
+      "answer": "Usain Bolt",
+      "alternatives": [
+        "Bolt"
+      ]
+    },
+    {
+      "id": 1029,
+      "category": "sport",
+      "question": "Which city hosted the 2024 Summer Olympics?",
+      "answer": "Paris",
+      "alternatives": []
+    },
+    {
+      "id": 1030,
+      "category": "sport",
+      "question": "Which fashion capital co-hosted the 2026 Winter Olympics with Cortina d'Ampezzo?",
+      "answer": "Milan",
+      "alternatives": [
+        "Milano"
+      ]
+    },
+    {
+      "id": 1031,
+      "category": "sport",
+      "question": "Which Brazilian city hosted the 2016 Summer Olympics?",
+      "answer": "Rio de Janeiro",
+      "alternatives": [
+        "Rio"
+      ]
+    },
+    {
+      "id": 1032,
+      "category": "sport",
+      "question": "Which US city will host the 2028 Summer Olympics?",
+      "answer": "Los Angeles",
+      "alternatives": [
+        "LA",
+        "L.A."
+      ]
+    },
+    {
+      "id": 1033,
+      "category": "sport",
+      "question": "Which Romanian gymnast scored the first perfect 10 in Olympic history in 1976?",
+      "answer": "Nadia Comăneci",
+      "alternatives": [
+        "Nadia Comaneci",
+        "Comaneci"
+      ]
+    },
+    {
+      "id": 1034,
+      "category": "sport",
+      "question": "Which American won four gold medals at the 1936 Berlin Olympics?",
+      "answer": "Jesse Owens",
+      "alternatives": [
+        "Owens"
+      ]
+    },
+    {
+      "id": 1035,
+      "category": "sport",
+      "question": "Which winter sport sees players sweep the ice ahead of a sliding granite stone?",
+      "answer": "Curling",
+      "alternatives": []
+    },
+    {
+      "id": 1036,
+      "category": "sport",
+      "question": "Which country won the 2022 World Cup in Qatar?",
+      "answer": "Argentina",
+      "alternatives": []
+    },
+    {
+      "id": 1037,
+      "category": "sport",
+      "question": "Which country won the 2026 World Cup, its second title after 2010?",
+      "answer": "Spain",
+      "alternatives": []
+    },
+    {
+      "id": 1038,
+      "category": "sport",
+      "question": "Which country has won the most men's World Cups?",
+      "answer": "Brazil",
+      "alternatives": []
+    },
+    {
+      "id": 1039,
+      "category": "sport",
+      "question": "Which country's rugby union team is known as the All Blacks?",
+      "answer": "New Zealand",
+      "alternatives": [
+        "NZ"
+      ]
+    },
+    {
+      "id": 1040,
+      "category": "sport",
+      "question": "Which Indian batting great was the first to score 100 international centuries?",
+      "answer": "Sachin Tendulkar",
+      "alternatives": [
+        "Tendulkar"
+      ]
+    },
+    {
+      "id": 1041,
+      "category": "sport",
+      "question": "Which German driver won seven F1 world titles, five of them with Ferrari?",
+      "answer": "Michael Schumacher",
+      "alternatives": [
+        "Schumacher"
+      ]
+    },
+    {
+      "id": 1042,
+      "category": "sport",
+      "question": "Which country won the 2023 Rugby World Cup?",
+      "answer": "South Africa",
+      "alternatives": []
+    },
+    {
+      "id": 1043,
+      "category": "sport",
+      "question": "Which cycling race's leader wears the yellow jersey?",
+      "answer": "Tour de France",
+      "alternatives": []
+    },
+    {
+      "id": 1044,
+      "category": "sport",
+      "question": "Which Dutch driver won four straight F1 world titles from 2021 to 2024?",
+      "answer": "Max Verstappen",
+      "alternatives": [
+        "Verstappen"
+      ]
+    },
+    {
+      "id": 1045,
+      "category": "sport",
+      "question": "In which sport do England and Australia contest the Ashes?",
+      "answer": "Cricket",
+      "alternatives": []
+    },
+    {
+      "id": 1046,
+      "category": "sport",
+      "question": "Which NFL team is nicknamed America's Team?",
+      "answer": "Dallas Cowboys",
+      "alternatives": [
+        "Cowboys",
+        "Dallas"
+      ]
+    },
+    {
+      "id": 1047,
+      "category": "sport",
+      "question": "Which team won Super Bowl LX in February 2026?",
+      "answer": "Seattle Seahawks",
+      "alternatives": [
+        "Seahawks",
+        "Seattle"
+      ]
+    },
+    {
+      "id": 1048,
+      "category": "sport",
+      "question": "Which Major League Baseball championship is played every October?",
+      "answer": "World Series",
+      "alternatives": []
+    },
+    {
+      "id": 1049,
+      "category": "sport",
+      "question": "Which city's NFL team is the Steelers?",
+      "answer": "Pittsburgh",
+      "alternatives": []
+    },
+    {
+      "id": 1050,
+      "category": "sport",
+      "question": "Which sport's champions lift the Stanley Cup?",
+      "answer": "Ice hockey",
+      "alternatives": [
+        "Hockey"
+      ]
+    },
+    {
+      "id": 1051,
+      "category": "sport",
+      "question": "Which NFL team plays at Lambeau Field and is owned by its fans?",
+      "answer": "Green Bay Packers",
+      "alternatives": [
+        "Packers",
+        "Green Bay"
+      ]
+    },
+    {
+      "id": 1052,
+      "category": "sport",
+      "question": "What is a baseball hit that clears the outfield fence called?",
+      "answer": "Home run",
+      "alternatives": [
+        "Homer"
+      ]
+    },
+    {
+      "id": 1053,
+      "category": "sport",
+      "question": "Which NBA team plays its home games at Madison Square Garden?",
+      "answer": "New York Knicks",
+      "alternatives": [
+        "Knicks"
+      ]
+    },
+    {
+      "id": 1054,
+      "category": "sport",
+      "question": "Which sport do the Harlem Globetrotters play?",
+      "answer": "Basketball",
+      "alternatives": []
+    },
+    {
+      "id": 1055,
+      "category": "sport",
+      "question": "Which Chicago Cubs ballpark is famous for its ivy-covered outfield walls?",
+      "answer": "Wrigley Field",
+      "alternatives": [
+        "Wrigley"
+      ]
+    },
+    {
+      "id": 1056,
+      "category": "sport",
+      "question": "Which Scottish tennis star won Wimbledon in 2013 and 2016?",
+      "answer": "Andy Murray",
+      "alternatives": [
+        "Murray"
+      ]
+    },
+    {
+      "id": 1057,
+      "category": "sport",
+      "question": "Which British driver has won seven F1 world titles?",
+      "answer": "Lewis Hamilton",
+      "alternatives": [
+        "Hamilton"
+      ]
+    },
+    {
+      "id": 1058,
+      "category": "sport",
+      "question": "Which distance runner won the 5,000m and 10,000m double at both the 2012 and 2016 Olympics?",
+      "answer": "Mo Farah",
+      "alternatives": [
+        "Farah",
+        "Mohamed Farah"
+      ]
+    },
+    {
+      "id": 1059,
+      "category": "sport",
+      "question": "Which heptathlete won gold on Super Saturday at the 2012 Olympics?",
+      "answer": "Jessica Ennis-Hill",
+      "alternatives": [
+        "Jessica Ennis",
+        "Ennis-Hill",
+        "Ennis"
+      ]
+    },
+    {
+      "id": 1060,
+      "category": "sport",
+      "question": "Which rower won gold at every Olympics from 1984 to 2000?",
+      "answer": "Steve Redgrave",
+      "alternatives": [
+        "Sir Steve Redgrave",
+        "Redgrave"
+      ]
+    },
+    {
+      "id": 1061,
+      "category": "sport",
+      "question": "Which former Match of the Day presenter won the Golden Boot at the 1986 World Cup?",
+      "answer": "Gary Lineker",
+      "alternatives": [
+        "Lineker"
+      ]
+    },
+    {
+      "id": 1062,
+      "category": "sport",
+      "question": "Which darts legend, nicknamed The Power, won 16 world titles?",
+      "answer": "Phil Taylor",
+      "alternatives": [
+        "Taylor"
+      ]
+    },
+    {
+      "id": 1063,
+      "category": "sport",
+      "question": "Which boxer is nicknamed the Gypsy King?",
+      "answer": "Tyson Fury",
+      "alternatives": [
+        "Fury"
+      ]
+    },
+    {
+      "id": 1064,
+      "category": "sport",
+      "question": "Which snooker star is nicknamed The Rocket?",
+      "answer": "Ronnie O'Sullivan",
+      "alternatives": [
+        "O'Sullivan",
+        "Ronnie"
+      ]
+    },
+    {
+      "id": 1065,
+      "category": "sport",
+      "question": "Which England all-rounder was the hero of the 2019 World Cup final and the Headingley Ashes Test?",
+      "answer": "Ben Stokes",
+      "alternatives": [
+        "Stokes"
+      ]
+    },
+    {
+      "id": 1066,
+      "category": "sport",
+      "question": "Which Swiss player won a record eight Wimbledon men's singles titles?",
+      "answer": "Roger Federer",
+      "alternatives": [
+        "Federer"
+      ]
+    },
+    {
+      "id": 1067,
+      "category": "sport",
+      "question": "Which Spaniard, the King of Clay, won a record 14 titles at Roland Garros?",
+      "answer": "Rafael Nadal",
+      "alternatives": [
+        "Nadal",
+        "Rafa Nadal",
+        "Rafa"
+      ]
+    },
+    {
+      "id": 1068,
+      "category": "sport",
+      "question": "Which Serbian holds the record for the most men's Grand Slam singles titles?",
+      "answer": "Novak Djokovic",
+      "alternatives": [
+        "Djokovic"
+      ]
+    },
+    {
+      "id": 1069,
+      "category": "sport",
+      "question": "Which American won 23 Grand Slam singles titles, the women's Open Era record?",
+      "answer": "Serena Williams",
+      "alternatives": [
+        "Serena"
+      ]
+    },
+    {
+      "id": 1070,
+      "category": "sport",
+      "question": "What is a serve that the receiver fails to touch called?",
+      "answer": "Ace",
+      "alternatives": []
+    },
+    {
+      "id": 1071,
+      "category": "sport",
+      "question": "On which surface is Wimbledon played?",
+      "answer": "Grass",
+      "alternatives": []
+    },
+    {
+      "id": 1072,
+      "category": "sport",
+      "question": "Which Grand Slam tournament is held at Roland Garros?",
+      "answer": "French Open",
+      "alternatives": []
+    },
+    {
+      "id": 1073,
+      "category": "sport",
+      "question": "Which British teenager won the 2021 US Open as a qualifier?",
+      "answer": "Emma Raducanu",
+      "alternatives": [
+        "Raducanu"
+      ]
+    },
+    {
+      "id": 1074,
+      "category": "sport",
+      "question": "Which Italian won his first Wimbledon title in 2025?",
+      "answer": "Jannik Sinner",
+      "alternatives": [
+        "Sinner"
+      ]
+    },
+    {
+      "id": 1075,
+      "category": "sport",
+      "question": "Which young Spaniard won Wimbledon in 2023 and 2024?",
+      "answer": "Carlos Alcaraz",
+      "alternatives": [
+        "Alcaraz"
+      ]
+    },
+    {
+      "id": 1076,
+      "category": "sport",
+      "question": "Which golfer, nicknamed the Golden Bear, won a record 18 majors?",
+      "answer": "Jack Nicklaus",
+      "alternatives": [
+        "Nicklaus"
+      ]
+    },
+    {
+      "id": 1077,
+      "category": "sport",
+      "question": "What is a score of one under par on a hole called?",
+      "answer": "Birdie",
+      "alternatives": []
+    },
+    {
+      "id": 1078,
+      "category": "sport",
+      "question": "Which golf major's winner receives a green jacket?",
+      "answer": "The Masters",
+      "alternatives": []
+    },
+    {
+      "id": 1079,
+      "category": "sport",
+      "question": "Which Northern Irish golfer completed his career Grand Slam in 2025?",
+      "answer": "Rory McIlroy",
+      "alternatives": [
+        "McIlroy"
+      ]
+    },
+    {
+      "id": 1080,
+      "category": "sport",
+      "question": "What is the biennial team contest between Europe and the USA called?",
+      "answer": "Ryder Cup",
+      "alternatives": []
+    },
+    {
+      "id": 1081,
+      "category": "sport",
+      "question": "Which Scottish town is known as the Home of Golf?",
+      "answer": "St Andrews",
+      "alternatives": [
+        "Saint Andrews"
+      ]
+    },
+    {
+      "id": 1082,
+      "category": "sport",
+      "question": "What is Tiger Woods' real first name?",
+      "answer": "Eldrick",
+      "alternatives": []
+    },
+    {
+      "id": 1083,
+      "category": "sport",
+      "question": "What does a golfer shout to warn others of a wayward ball?",
+      "answer": "Fore",
+      "alternatives": []
+    },
+    {
+      "id": 1084,
+      "category": "sport",
+      "question": "What name is given to a score of one on a par three?",
+      "answer": "Hole in one",
+      "alternatives": [
+        "Ace",
+        "Hole-in-one"
+      ]
+    },
+    {
+      "id": 1085,
+      "category": "sport",
+      "question": "Which golf major, first played in 1860, is the oldest?",
+      "answer": "The Open",
+      "alternatives": [
+        "The Open Championship",
+        "British Open"
+      ]
+    },
+    {
+      "id": 1086,
+      "category": "sport",
+      "question": "Which club has won the European Cup a record number of times?",
+      "answer": "Real Madrid",
+      "alternatives": []
+    },
+    {
+      "id": 1087,
+      "category": "sport",
+      "question": "Which French club won the Champions League in both 2025 and 2026?",
+      "answer": "Paris Saint-Germain",
+      "alternatives": [
+        "PSG",
+        "Paris SG"
+      ]
+    },
+    {
+      "id": 1088,
+      "category": "sport",
+      "question": "Which city hosted the 2005 final, where a Merseyside club came back from 3-0 down at half-time?",
+      "answer": "Istanbul",
+      "alternatives": []
+    },
+    {
+      "id": 1089,
+      "category": "sport",
+      "question": "Which Portuguese forward is the Champions League's all-time top scorer?",
+      "answer": "Cristiano Ronaldo",
+      "alternatives": [
+        "Ronaldo",
+        "CR7"
+      ]
+    },
+    {
+      "id": 1090,
+      "category": "sport",
+      "question": "Which English club beat Tottenham in Madrid to win the 2019 final?",
+      "answer": "Liverpool",
+      "alternatives": []
+    },
+    {
+      "id": 1091,
+      "category": "sport",
+      "question": "Which Dutch club won the European Cup three years in a row from 1971 to 1973?",
+      "answer": "Ajax",
+      "alternatives": []
+    },
+    {
+      "id": 1092,
+      "category": "sport",
+      "question": "Which club won the 2012 final on penalties in Munich, with Didier Drogba scoring the winning kick?",
+      "answer": "Chelsea",
+      "alternatives": []
+    },
+    {
+      "id": 1093,
+      "category": "sport",
+      "question": "Which Welsh city hosted the 2017 Champions League final?",
+      "answer": "Cardiff",
+      "alternatives": []
+    },
+    {
+      "id": 1094,
+      "category": "sport",
+      "question": "Which Italian club, managed by Jose Mourinho, won the treble in 2010?",
+      "answer": "Inter Milan",
+      "alternatives": [
+        "Inter",
+        "Internazionale"
+      ]
+    },
+    {
+      "id": 1095,
+      "category": "sport",
+      "question": "Which Scottish club became the first British winner of the European Cup in 1967?",
+      "answer": "Celtic",
+      "alternatives": []
+    },
+    {
+      "id": 1096,
+      "category": "sport",
+      "question": "Which club won promotion via the 2025 Championship play-off final, returning to the top flight after eight years?",
+      "answer": "Sunderland",
+      "alternatives": []
+    },
+    {
+      "id": 1097,
+      "category": "sport",
+      "question": "At which stadium is the Championship play-off final played?",
+      "answer": "Wembley",
+      "alternatives": [
+        "Wembley Stadium"
+      ]
+    },
+    {
+      "id": 1098,
+      "category": "sport",
+      "question": "Which Welsh club, owned by Ryan Reynolds and Rob McElhenney, reached the Championship in 2025?",
+      "answer": "Wrexham",
+      "alternatives": []
+    },
+    {
+      "id": 1099,
+      "category": "sport",
+      "question": "Which Berkshire club set the Championship points record of 106 in 2005-06?",
+      "answer": "Reading",
+      "alternatives": []
+    },
+    {
+      "id": 1100,
+      "category": "sport",
+      "question": "Which Yorkshire club won the Championship with 100 points in 2024-25?",
+      "answer": "Leeds United",
+      "alternatives": [
+        "Leeds"
+      ]
+    },
+    {
+      "id": 1101,
+      "category": "sport",
+      "question": "Which club beat Middlesbrough in the 2026 Championship play-off final?",
+      "answer": "Hull City",
+      "alternatives": [
+        "Hull"
+      ]
+    },
+    {
+      "id": 1102,
+      "category": "sport",
+      "question": "What was the Championship called before its 2004 rebrand?",
+      "answer": "First Division",
+      "alternatives": [
+        "Division One",
+        "Football League First Division"
+      ]
+    },
+    {
+      "id": 1103,
+      "category": "sport",
+      "question": "Which Devon club parted company with manager Wayne Rooney on New Year's Eve 2024?",
+      "answer": "Plymouth Argyle",
+      "alternatives": [
+        "Plymouth"
+      ]
+    },
+    {
+      "id": 1104,
+      "category": "sport",
+      "question": "Which Frank Lampard-managed club won the 2025-26 Championship, returning to the top flight after 25 years?",
+      "answer": "Coventry City",
+      "alternatives": [
+        "Coventry"
+      ]
+    },
+    {
+      "id": 1105,
+      "category": "sport",
+      "question": "Which club, nicknamed the Owls, plays at Hillsborough?",
+      "answer": "Sheffield Wednesday",
+      "alternatives": [
+        "Wednesday",
+        "Sheff Wed"
+      ]
+    },
+    {
+      "id": 1106,
+      "category": "sport",
+      "question": "What is the top division of Spanish football called?",
+      "answer": "La Liga",
+      "alternatives": [
+        "LaLiga",
+        "Primera Division"
+      ]
+    },
+    {
+      "id": 1107,
+      "category": "sport",
+      "question": "Which club has won the most Bundesliga titles?",
+      "answer": "Bayern Munich",
+      "alternatives": [
+        "Bayern",
+        "FC Bayern"
+      ]
+    },
+    {
+      "id": 1108,
+      "category": "sport",
+      "question": "Which club, managed by Xabi Alonso, won the Bundesliga unbeaten in 2023-24?",
+      "answer": "Bayer Leverkusen",
+      "alternatives": [
+        "Leverkusen"
+      ]
+    },
+    {
+      "id": 1109,
+      "category": "sport",
+      "question": "What is the top division of Italian football called?",
+      "answer": "Serie A",
+      "alternatives": []
+    },
+    {
+      "id": 1110,
+      "category": "sport",
+      "question": "Which club plays at the Camp Nou?",
+      "answer": "Barcelona",
+      "alternatives": [
+        "Barca",
+        "FC Barcelona"
+      ]
+    },
+    {
+      "id": 1111,
+      "category": "sport",
+      "question": "Which Turin club is nicknamed the Old Lady?",
+      "answer": "Juventus",
+      "alternatives": [
+        "Juve"
+      ]
+    },
+    {
+      "id": 1112,
+      "category": "sport",
+      "question": "Which Neapolitan club won the Italian title in 2023, its first since the Maradona era?",
+      "answer": "Napoli",
+      "alternatives": [
+        "SSC Napoli"
+      ]
+    },
+    {
+      "id": 1113,
+      "category": "sport",
+      "question": "Which Polish striker broke Gerd Muller's Bundesliga record by scoring 41 goals in 2020-21?",
+      "answer": "Robert Lewandowski",
+      "alternatives": [
+        "Lewandowski"
+      ]
+    },
+    {
+      "id": 1114,
+      "category": "sport",
+      "question": "Which club's Yellow Wall is German football's most famous stand?",
+      "answer": "Borussia Dortmund",
+      "alternatives": [
+        "Dortmund",
+        "BVB"
+      ]
+    },
+    {
+      "id": 1115,
+      "category": "sport",
+      "question": "Which Spanish club did Diego Simeone lead to league titles in 2014 and 2021?",
+      "answer": "Atletico Madrid",
+      "alternatives": [
+        "Atletico",
+        "Atleti"
+      ]
+    },
+    {
+      "id": 1116,
+      "category": "sport",
+      "question": "Which Chicago Bulls legend, nicknamed His Airness, won six NBA titles?",
+      "answer": "Michael Jordan",
+      "alternatives": [
+        "Jordan",
+        "MJ"
+      ]
+    },
+    {
+      "id": 1117,
+      "category": "sport",
+      "question": "Which boxer, born Cassius Clay, called himself The Greatest?",
+      "answer": "Muhammad Ali",
+      "alternatives": [
+        "Ali"
+      ]
+    },
+    {
+      "id": 1118,
+      "category": "sport",
+      "question": "Which quarterback won a record seven Super Bowls?",
+      "answer": "Tom Brady",
+      "alternatives": [
+        "Brady"
+      ]
+    },
+    {
+      "id": 1119,
+      "category": "sport",
+      "question": "Which gymnast won four golds at the 2016 Olympics and has several moves named after her?",
+      "answer": "Simone Biles",
+      "alternatives": [
+        "Biles"
+      ]
+    },
+    {
+      "id": 1120,
+      "category": "sport",
+      "question": "Which Lakers star became the NBA's all-time leading scorer in 2023?",
+      "answer": "LeBron James",
+      "alternatives": [
+        "LeBron"
+      ]
+    },
+    {
+      "id": 1121,
+      "category": "sport",
+      "question": "Which Kansas City Chiefs quarterback won three Super Bowls between 2020 and 2024?",
+      "answer": "Patrick Mahomes",
+      "alternatives": [
+        "Mahomes"
+      ]
+    },
+    {
+      "id": 1122,
+      "category": "sport",
+      "question": "Which New York Yankees slugger was nicknamed the Sultan of Swat?",
+      "answer": "Babe Ruth",
+      "alternatives": [
+        "Ruth"
+      ]
+    },
+    {
+      "id": 1123,
+      "category": "sport",
+      "question": "Which American won nine Olympic golds in sprinting and long jump from 1984 to 1996?",
+      "answer": "Carl Lewis",
+      "alternatives": [
+        "Lewis"
+      ]
+    },
+    {
+      "id": 1124,
+      "category": "sport",
+      "question": "Which purple-haired footballer helped the USA win the 2015 and 2019 Women's World Cups?",
+      "answer": "Megan Rapinoe",
+      "alternatives": [
+        "Rapinoe"
+      ]
+    },
+    {
+      "id": 1125,
+      "category": "sport",
+      "question": "Which Golden State Warriors guard holds the NBA record for career three-pointers?",
+      "answer": "Stephen Curry",
+      "alternatives": [
+        "Curry",
+        "Steph Curry"
+      ]
+    },
+    {
+      "id": 1126,
+      "category": "sport",
+      "question": "Which South Korean T1 star, real name Lee Sang-hyeok, is esports' most famous player?",
+      "answer": "Faker",
+      "alternatives": []
+    },
+    {
+      "id": 1127,
+      "category": "sport",
+      "question": "Which battle royale game's 2019 World Cup was won by 16-year-old Bugha?",
+      "answer": "Fortnite",
+      "alternatives": [
+        "Fortnight"
+      ]
+    },
+    {
+      "id": 1128,
+      "category": "sport",
+      "question": "Which Valve tactical shooter holds esports championships known as Majors?",
+      "answer": "Counter-Strike",
+      "alternatives": [
+        "CS2",
+        "CS:GO",
+        "Counter-Strike 2",
+        "CS"
+      ]
+    },
+    {
+      "id": 1129,
+      "category": "sport",
+      "question": "Which Valve game's world championship is called The International?",
+      "answer": "Dota 2",
+      "alternatives": [
+        "Dota"
+      ]
+    },
+    {
+      "id": 1130,
+      "category": "sport",
+      "question": "Which Amazon-owned live-streaming platform is home to many esports broadcasts?",
+      "answer": "Twitch",
+      "alternatives": []
+    },
+    {
+      "id": 1131,
+      "category": "sport",
+      "question": "Which Riot Games shooter, launched in 2020, features agents such as Jett and Sage?",
+      "answer": "Valorant",
+      "alternatives": []
+    },
+    {
+      "id": 1132,
+      "category": "sport",
+      "question": "Which Psyonix game is essentially football played with jet-boosted cars?",
+      "answer": "Rocket League",
+      "alternatives": []
+    },
+    {
+      "id": 1133,
+      "category": "sport",
+      "question": "Which Nintendo fighting series has a 2001 entry, Melee, that is still played competitively?",
+      "answer": "Super Smash Bros.",
+      "alternatives": [
+        "Smash Bros",
+        "Smash"
+      ]
+    },
+    {
+      "id": 1134,
+      "category": "sport",
+      "question": "Which EA Sports football series was renamed EA Sports FC in 2023?",
+      "answer": "FIFA",
+      "alternatives": []
+    },
+    {
+      "id": 1135,
+      "category": "sport",
+      "question": "Which Riot Games title's world championship is known as Worlds?",
+      "answer": "League of Legends",
+      "alternatives": [
+        "LoL"
+      ]
+    },
+    {
+      "id": 1136,
+      "category": "movies",
+      "question": "Which Swedish director made The Seventh Seal, in which a knight plays chess with Death?",
+      "answer": "Ingmar Bergman",
+      "alternatives": [
+        "Bergman"
+      ]
+    },
+    {
+      "id": 1137,
+      "category": "movies",
+      "question": "In Citizen Kane, what word is revealed to be painted on a childhood sled?",
+      "answer": "Rosebud",
+      "alternatives": []
+    },
+    {
+      "id": 1138,
+      "category": "movies",
+      "question": "Which 1927 Al Jolson film is considered the first feature-length talkie?",
+      "answer": "The Jazz Singer",
+      "alternatives": []
+    },
+    {
+      "id": 1139,
+      "category": "movies",
+      "question": "Which Japanese director made Seven Samurai and Rashomon?",
+      "answer": "Akira Kurosawa",
+      "alternatives": [
+        "Kurosawa"
+      ]
+    },
+    {
+      "id": 1140,
+      "category": "movies",
+      "question": "Which 1958 film stars James Stewart as a retired detective with a crippling fear of heights?",
+      "answer": "Vertigo",
+      "alternatives": []
+    },
+    {
+      "id": 1141,
+      "category": "movies",
+      "question": "Which 1920 German Expressionist film features a sleepwalker named Cesare?",
+      "answer": "The Cabinet of Dr. Caligari",
+      "alternatives": [
+        "Cabinet of Dr Caligari",
+        "Caligari"
+      ]
+    },
+    {
+      "id": 1142,
+      "category": "movies",
+      "question": "Which Italian director made La Dolce Vita and 8½?",
+      "answer": "Federico Fellini",
+      "alternatives": [
+        "Fellini"
+      ]
+    },
+    {
+      "id": 1143,
+      "category": "movies",
+      "question": "What is the name of the ship's computer in 2001: A Space Odyssey?",
+      "answer": "HAL 9000",
+      "alternatives": [
+        "HAL"
+      ]
+    },
+    {
+      "id": 1144,
+      "category": "movies",
+      "question": "Which actor played the unhinged cabbie Travis Bickle in Taxi Driver?",
+      "answer": "Robert De Niro",
+      "alternatives": [
+        "De Niro"
+      ]
+    },
+    {
+      "id": 1145,
+      "category": "movies",
+      "question": "Which French New Wave director made The 400 Blows?",
+      "answer": "François Truffaut",
+      "alternatives": [
+        "Francois Truffaut",
+        "Truffaut"
+      ]
+    },
+    {
+      "id": 1146,
+      "category": "literature",
+      "question": "Which Russian author wrote War and Peace and Anna Karenina?",
+      "answer": "Leo Tolstoy",
+      "alternatives": [
+        "Tolstoy"
+      ]
+    },
+    {
+      "id": 1147,
+      "category": "literature",
+      "question": "What is the name of Captain Ahab's whaling ship in Moby-Dick?",
+      "answer": "The Pequod",
+      "alternatives": [
+        "Pequod"
+      ]
+    },
+    {
+      "id": 1148,
+      "category": "literature",
+      "question": "Which Irish author wrote Ulysses, set over a single day in Dublin?",
+      "answer": "James Joyce",
+      "alternatives": [
+        "Joyce"
+      ]
+    },
+    {
+      "id": 1149,
+      "category": "literature",
+      "question": "In Nineteen Eighty-Four, which superstate does Winston Smith live in?",
+      "answer": "Oceania",
+      "alternatives": []
+    },
+    {
+      "id": 1150,
+      "category": "literature",
+      "question": "Which poet wrote The Waste Land?",
+      "answer": "T. S. Eliot",
+      "alternatives": [
+        "TS Eliot",
+        "Eliot"
+      ]
+    },
+    {
+      "id": 1151,
+      "category": "literature",
+      "question": "Which Brontë sister wrote The Tenant of Wildfell Hall?",
+      "answer": "Anne Brontë",
+      "alternatives": [
+        "Anne Bronte",
+        "Anne"
+      ]
+    },
+    {
+      "id": 1152,
+      "category": "literature",
+      "question": "In Dante's Inferno, which Roman poet guides Dante through Hell?",
+      "answer": "Virgil",
+      "alternatives": [
+        "Vergil"
+      ]
+    },
+    {
+      "id": 1153,
+      "category": "literature",
+      "question": "Which Gabriel García Márquez novel follows the Buendía family in the town of Macondo?",
+      "answer": "One Hundred Years of Solitude",
+      "alternatives": [
+        "100 Years of Solitude"
+      ]
+    },
+    {
+      "id": 1154,
+      "category": "literature",
+      "question": "In Mary Shelley's 1818 novel, what is the first name of the scientist who builds the creature?",
+      "answer": "Victor",
+      "alternatives": []
+    },
+    {
+      "id": 1155,
+      "category": "literature",
+      "question": "Which Jane Austen novel reunites Captain Wentworth with the woman who once rejected his proposal?",
+      "answer": "Persuasion",
+      "alternatives": []
+    },
+    {
+      "id": 1156,
+      "category": "history",
+      "question": "Which 1648 peace settlement ended the Thirty Years' War?",
+      "answer": "Peace of Westphalia",
+      "alternatives": [
+        "Treaty of Westphalia",
+        "Westphalia"
+      ]
+    },
+    {
+      "id": 1157,
+      "category": "history",
+      "question": "Which Byzantine emperor commissioned the Hagia Sophia in the 6th century?",
+      "answer": "Justinian",
+      "alternatives": [
+        "Justinian the Great"
+      ]
+    },
+    {
+      "id": 1158,
+      "category": "history",
+      "question": "Which queen of the Iceni led a revolt against Roman Britain around AD 60?",
+      "answer": "Boudica",
+      "alternatives": [
+        "Boudicca",
+        "Boadicea"
+      ]
+    },
+    {
+      "id": 1159,
+      "category": "history",
+      "question": "At which 1415 battle did Henry V's longbowmen defeat a much larger French army?",
+      "answer": "Agincourt",
+      "alternatives": [
+        "Battle of Agincourt"
+      ]
+    },
+    {
+      "id": 1160,
+      "category": "history",
+      "question": "Which 1494 treaty divided newly discovered lands between two Iberian kingdoms?",
+      "answer": "Treaty of Tordesillas",
+      "alternatives": [
+        "Tordesillas"
+      ]
+    },
+    {
+      "id": 1161,
+      "category": "history",
+      "question": "What was Genghis Khan's birth name?",
+      "answer": "Temüjin",
+      "alternatives": [
+        "Temujin"
+      ]
+    },
+    {
+      "id": 1162,
+      "category": "history",
+      "question": "Which female pharaoh of the 18th dynasty ruled as king and was often depicted with a false beard?",
+      "answer": "Hatshepsut",
+      "alternatives": []
+    },
+    {
+      "id": 1163,
+      "category": "history",
+      "question": "Which Russian royal dynasty was executed at Yekaterinburg in 1918?",
+      "answer": "Romanov",
+      "alternatives": [
+        "Romanovs",
+        "The Romanovs"
+      ]
+    },
+    {
+      "id": 1164,
+      "category": "history",
+      "question": "Which Carthaginian general crossed the Alps with war elephants in 218 BC?",
+      "answer": "Hannibal",
+      "alternatives": [
+        "Hannibal Barca"
+      ]
+    },
+    {
+      "id": 1165,
+      "category": "history",
+      "question": "Which Frankish king was crowned Emperor of the Romans on Christmas Day in 800?",
+      "answer": "Charlemagne",
+      "alternatives": [
+        "Charles the Great"
+      ]
+    },
+    {
+      "id": 1166,
+      "category": "art",
+      "question": "Which Dutch painter created Girl with a Pearl Earring?",
+      "answer": "Johannes Vermeer",
+      "alternatives": [
+        "Vermeer",
+        "Jan Vermeer"
+      ]
+    },
+    {
+      "id": 1167,
+      "category": "art",
+      "question": "Which Renaissance artist painted The Birth of Venus?",
+      "answer": "Sandro Botticelli",
+      "alternatives": [
+        "Botticelli"
+      ]
+    },
+    {
+      "id": 1168,
+      "category": "art",
+      "question": "Which Norwegian artist painted The Scream?",
+      "answer": "Edvard Munch",
+      "alternatives": [
+        "Munch"
+      ]
+    },
+    {
+      "id": 1169,
+      "category": "art",
+      "question": "Which Madrid museum houses Velázquez's Las Meninas?",
+      "answer": "The Prado",
+      "alternatives": [
+        "Prado",
+        "Museo del Prado",
+        "Prado Museum"
+      ]
+    },
+    {
+      "id": 1170,
+      "category": "art",
+      "question": "Which art movement did Pablo Picasso and Georges Braque pioneer?",
+      "answer": "Cubism",
+      "alternatives": []
+    },
+    {
+      "id": 1171,
+      "category": "art",
+      "question": "Which painter of The Fighting Temeraire appears on the Bank of England £20 note?",
+      "answer": "J. M. W. Turner",
+      "alternatives": [
+        "JMW Turner",
+        "Turner",
+        "William Turner"
+      ]
+    },
+    {
+      "id": 1172,
+      "category": "art",
+      "question": "Which Mexican artist, famous for her self-portraits, was married to Diego Rivera?",
+      "answer": "Frida Kahlo",
+      "alternatives": [
+        "Kahlo",
+        "Frida"
+      ]
+    },
+    {
+      "id": 1173,
+      "category": "art",
+      "question": "Which Austrian painter covered The Kiss in gold leaf?",
+      "answer": "Gustav Klimt",
+      "alternatives": [
+        "Klimt"
+      ]
+    },
+    {
+      "id": 1174,
+      "category": "art",
+      "question": "Which Netherlandish painter created The Garden of Earthly Delights?",
+      "answer": "Hieronymus Bosch",
+      "alternatives": [
+        "Bosch"
+      ]
+    },
+    {
+      "id": 1175,
+      "category": "art",
+      "question": "Which artist preserved a tiger shark in formaldehyde for his 1991 work The Physical Impossibility of Death in the Mind of Someone Living?",
+      "answer": "Damien Hirst",
+      "alternatives": [
+        "Hirst"
+      ]
+    },
+    {
+      "id": 1176,
+      "category": "geography",
+      "question": "What is the longest river in Europe?",
+      "answer": "Volga",
+      "alternatives": [
+        "River Volga",
+        "Volga River"
+      ]
+    },
+    {
+      "id": 1177,
+      "category": "geography",
+      "question": "What is the largest lake in Africa by area?",
+      "answer": "Lake Victoria",
+      "alternatives": [
+        "Victoria"
+      ]
+    },
+    {
+      "id": 1178,
+      "category": "geography",
+      "question": "Which country has more natural lakes than any other?",
+      "answer": "Canada",
+      "alternatives": []
+    },
+    {
+      "id": 1179,
+      "category": "geography",
+      "question": "What is the deepest known point in Earth's oceans, found in the Mariana Trench?",
+      "answer": "Challenger Deep",
+      "alternatives": []
+    },
+    {
+      "id": 1180,
+      "category": "geography",
+      "question": "Which southern African kingdom is completely enclosed by a single neighbouring country?",
+      "answer": "Lesotho",
+      "alternatives": []
+    },
+    {
+      "id": 1181,
+      "category": "geography",
+      "question": "What is the driest non-polar desert in the world?",
+      "answer": "Atacama",
+      "alternatives": [
+        "Atacama Desert"
+      ]
+    },
+    {
+      "id": 1182,
+      "category": "geography",
+      "question": "Counting its overseas territories, which country spans the most time zones?",
+      "answer": "France",
+      "alternatives": []
+    },
+    {
+      "id": 1183,
+      "category": "geography",
+      "question": "Which mountain range is conventionally treated as the boundary between Europe and Asia?",
+      "answer": "Ural Mountains",
+      "alternatives": [
+        "Urals",
+        "Ural"
+      ]
+    },
+    {
+      "id": 1184,
+      "category": "geography",
+      "question": "Which river flows through more countries than any other?",
+      "answer": "Danube",
+      "alternatives": [
+        "River Danube",
+        "Danube River"
+      ]
+    },
+    {
+      "id": 1185,
+      "category": "geography",
+      "question": "Which sea in the North Atlantic is the only one with no land coastline?",
+      "answer": "Sargasso Sea",
+      "alternatives": [
+        "Sargasso"
+      ]
     }
   ]
 }
