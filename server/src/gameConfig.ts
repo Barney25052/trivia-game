@@ -337,15 +337,25 @@ export const BANK_EDIT = {
     maxAlternatives: 10
 } as const;
 
+/** Open-answer leniency (ticket 047, tightened by ticket 161). Answers are
+ * compared word by word; numbers (digits, number words, Roman numerals)
+ * always need the exact value. */
 export const ANSWER_CHECK = {
-    /** Trim + collapse runs of internal whitespace before comparing. */
-    normaliseWhitespace: true,
     /** Lowercase both answers before comparing. */
     caseInsensitive: true,
-    /** A single edit (substitution/insertion/deletion/transposition) always passes. */
-    allowSingleEdit: true,
-    /** Beyond a single edit, accept answers within this edit-distance ratio of the longer answer. */
-    editDistanceRatio: 0.3
+    /** Words shorter than this (after collapsing doubled letters) must be typed exactly: "Cat" is not "Bat". */
+    minTypoWordLength: 4,
+    /** Edits each longer word can absorb, per letter of the shorter of the two words (rounded down, at least 1). */
+    typoEditsPerLetter: 0.25,
+    /** Compare words with doubled letters collapsed, so "Scarlet Johanson" is "Scarlett Johansson". */
+    ignoreDoubledLetters: true,
+    /** Read Roman numerals as numbers: "Frozen II" is "Frozen 2", "Louis XV" is not "Louis XIV". */
+    romanNumerals: true,
+    /** Most words regrouped at once when the spacing differs ("Kermitthefrog", "ACDC"). Bounds the checker's work. */
+    maxRegroupWords: 6,
+    /** A typed answer longer than this is wrong without being checked (accepted answers are capped at
+     * `BANK_EDIT.maxAnswerLength`), so an oversized message can't make the checker slow. */
+    maxTypedLength: 200
 } as const;
 
 export const CHASER_QUIP = {
