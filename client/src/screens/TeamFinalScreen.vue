@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import CharacterFace from "../components/CharacterFace.vue";
+import { MAX_TYPED_ANSWER_LENGTH } from "../answerLimits.ts";
 
 const props = defineProps({
     teamScore: { type: Number, default: 0 },
@@ -240,6 +241,7 @@ watch(isBuzzWinner, (winner) => {
                   v-model="answerInput"
                   class="field"
                   placeholder="Type your answer"
+                  :maxlength="MAX_TYPED_ANSWER_LENGTH"
                   ref="inputBox"
                   @keyup.enter="submit"
               />

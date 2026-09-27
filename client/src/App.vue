@@ -5,6 +5,7 @@ import { GamePhase } from "./TriviaTypes.ts";
 import { preloadFonts, preloadImages } from "./assetPreload.js";
 import { CHASER_ABILITY_COPY, SHARED_CHASER_ABILITY_COPY } from "./chaserAbilities.ts";
 import { CHASER_NAMES } from "./chaserPortraits.ts";
+import { SERVER_URL } from "./serverUrl.ts";
 import HomeScreen from "./screens/HomeScreen.vue"
 import AddQuestionScreen from "./screens/AddQuestionScreen.vue";
 import LobbyScreen from "./screens/LobbyScreen.vue";
@@ -20,8 +21,6 @@ import TeamFinalIntroScreen from "./screens/TeamFinalIntroScreen.vue";
 import TeamFinalScreen from "./screens/TeamFinalScreen.vue";
 import ChaserFinalScreen from "./screens/ChaserFinalScreen.vue";
 import ResultsScreen from "./screens/ResultsScreen.vue";
-
-const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? "ws://localhost:2567";
 
 preloadImages();
 preloadFonts();
@@ -346,6 +345,7 @@ function describeJoinError(error) {
   const message = String(error?.message ?? "");
   if (/not found/i.test(message)) return "No room with that code. Check it and try again.";
   if (/locked/i.test(message)) return "That room is full.";
+  if (/already started/i.test(message)) return "That game has already started.";
   if (/capacity/i.test(message)) return "The server is busy right now. Try again in a minute.";
   if (/playerName/i.test(message)) return "Names need to be 1 to 24 characters.";
   return "Couldn't reach the game server. Check your connection and try again.";

@@ -165,8 +165,13 @@ describe("POST /api/questions CORS origin (production gate, ticket 131)", () => 
   beforeEach(() => {
     savedEnv = {
       NODE_ENV: process.env.NODE_ENV,
-      CLIENT_ORIGIN: process.env.CLIENT_ORIGIN
+      CLIENT_ORIGIN: process.env.CLIENT_ORIGIN,
+      MONITOR_USER: process.env.MONITOR_USER,
+      MONITOR_PASS: process.env.MONITOR_PASS
     };
+    // Production also needs the admin login to post (ticket 163).
+    process.env.MONITOR_USER = "admin";
+    process.env.MONITOR_PASS = "s3cret";
   });
 
   afterEach(() => {
@@ -183,6 +188,8 @@ describe("POST /api/questions CORS origin (production gate, ticket 131)", () => 
   // A deliberately-invalid body (400) is enough here — allowCrossOrigin sets
   // the header before the route handler runs, so it's present regardless of
   // the eventual status code, and this avoids mutating the question bank.
+  const adminHeaders = { authorization: `Basic ${Buffer.from("admin:s3cret").toString("base64")}` };
+
   it("dev (NODE_ENV unset): Access-Control-Allow-Origin is '*'", async () => {
     delete process.env.NODE_ENV;
     await assert.rejects(server.http.post("/api/questions", { body: {} }), (err: any) => {
@@ -195,7 +202,7 @@ describe("POST /api/questions CORS origin (production gate, ticket 131)", () => 
   it("production with CLIENT_ORIGIN set: header is locked to that origin, not '*'", async () => {
     process.env.NODE_ENV = "production";
     process.env.CLIENT_ORIGIN = "https://trivia.example.com";
-    await assert.rejects(server.http.post("/api/questions", { body: {} }), (err: any) => {
+    await assert.rejects(server.http.post("/api/questions", { body: {}, headers: adminHeaders }), (err: any) => {
       assert.strictEqual(err.statusCode, 400);
       assert.strictEqual(err.headers["access-control-allow-origin"], "https://trivia.example.com");
       return true;
@@ -205,11 +212,98 @@ describe("POST /api/questions CORS origin (production gate, ticket 131)", () => 
   it("production without CLIENT_ORIGIN configured: header is omitted entirely", async () => {
     process.env.NODE_ENV = "production";
     delete process.env.CLIENT_ORIGIN;
-    await assert.rejects(server.http.post("/api/questions", { body: {} }), (err: any) => {
+    await assert.rejects(server.http.post("/api/questions", { body: {}, headers: adminHeaders }), (err: any) => {
       assert.strictEqual(err.statusCode, 400);
       assert.strictEqual(err.headers["access-control-allow-origin"], undefined);
       return true;
     });
+  });
+});
+
+describe("POST /api/questions admin login (production gate, ticket 163)", () => {
+  let server: ColyseusTestServer<typeof appConfig>;
+  let savedEnv: Record<string, string | undefined>;
+
+  before(async () => {
+    server = await getTestServer();
+  });
+
+  beforeEach(() => {
+    savedEnv = {
+      NODE_ENV: process.env.NODE_ENV,
+      MONITOR_USER: process.env.MONITOR_USER,
+      MONITOR_PASS: process.env.MONITOR_PASS
+    };
+  });
+
+  afterEach(() => {
+    for (const key of Object.keys(savedEnv)) {
+      const value = savedEnv[key];
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  });
+
+  // Every request carries an invalid body: a 400 proves the request got past
+  // the login to validation, without ever writing to the question bank.
+  const basic = (credentials: string) => ({ authorization: `Basic ${Buffer.from(credentials).toString("base64")}` });
+
+  it("dev (NODE_ENV unset): no login needed, the body is validated", async () => {
+    delete process.env.NODE_ENV;
+    await assert.rejects(server.http.post("/api/questions", { body: {} }), (err: any) => {
+      assert.strictEqual(err.statusCode, 400);
+      return true;
+    });
+  });
+
+  it("production without MONITOR_USER/MONITOR_PASS configured: fails closed with 503", async () => {
+    process.env.NODE_ENV = "production";
+    delete process.env.MONITOR_USER;
+    delete process.env.MONITOR_PASS;
+    await assert.rejects(server.http.post("/api/questions", { body: {} }), (err: any) => {
+      assert.strictEqual(err.statusCode, 503);
+      return true;
+    });
+  });
+
+  it("production without an Authorization header: 401 with a login challenge", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.MONITOR_USER = "admin";
+    process.env.MONITOR_PASS = "s3cret";
+    await assert.rejects(server.http.post("/api/questions", { body: {} }), (err: any) => {
+      assert.strictEqual(err.statusCode, 401);
+      assert.strictEqual(err.headers["www-authenticate"], 'Basic realm="Trivia Admin"');
+      return true;
+    });
+  });
+
+  it("production with wrong credentials: 401", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.MONITOR_USER = "admin";
+    process.env.MONITOR_PASS = "s3cret";
+    await assert.rejects(
+      server.http.post("/api/questions", { body: {}, headers: basic("admin:wrong") }),
+      (err: any) => {
+        assert.strictEqual(err.statusCode, 401);
+        return true;
+      }
+    );
+  });
+
+  it("production with the admin login: reaches validation", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.MONITOR_USER = "admin";
+    process.env.MONITOR_PASS = "s3cret";
+    await assert.rejects(
+      server.http.post("/api/questions", { body: {}, headers: basic("admin:s3cret") }),
+      (err: any) => {
+        assert.strictEqual(err.statusCode, 400);
+        return true;
+      }
+    );
   });
 });
 
@@ -315,7 +409,7 @@ describe("OPTIONS /api/questions preflight CORS origin (ticket 151, bug-018)", (
   // Scope check: /monitor's own OPTIONS/CORS handling must stay exactly the
   // pre-existing Colyseus-core default (reflects Origin unconditionally) —
   // this ticket only scopes the fix to /api/questions. /monitor's real
-  // (non-OPTIONS) requests remain gated by requireMonitorAuth regardless.
+  // (non-OPTIONS) requests remain gated by requireAdminAuth regardless.
   it("does not change OPTIONS /monitor's own (Colyseus-default) CORS behavior", async () => {
     process.env.NODE_ENV = "production";
     process.env.CLIENT_ORIGIN = "https://trivia.example.com";

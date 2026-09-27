@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import CharacterFace from "../components/CharacterFace.vue";
+import { MAX_TYPED_ANSWER_LENGTH } from "../answerLimits.ts";
 
 const props = defineProps({
     getReadyCooldownMs: { type: Number, default: 0 },
@@ -378,6 +379,7 @@ onUnmounted(() => {
                         class="field"
                         :class="{ 'field-wrong': revealedCorrectAnswer }"
                         placeholder="Type your answer"
+                        :maxlength="MAX_TYPED_ANSWER_LENGTH"
                         :disabled="inputDisabled"
                         @keyup.enter="submit"
                         ref="inputBox"

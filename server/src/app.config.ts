@@ -32,13 +32,13 @@ const server = defineServer({
         // MONITOR_USER/MONITOR_PASS and CLIENT_ORIGIN. Warn once at boot
         // rather than staying silent — the fail-closed behavior below means
         // a missing var doesn't break anything, but it does mean nobody can
-        // reach /monitor, or that /api/questions rejects every browser
-        // request, until it's set.
+        // reach /monitor or add questions, or that /api/questions rejects
+        // every cross-origin browser request, until it's set.
         if (process.env.NODE_ENV === "production") {
             if (!process.env.MONITOR_USER || !process.env.MONITOR_PASS) {
                 console.warn(
                     "[app.config] MONITOR_USER/MONITOR_PASS are not both set — " +
-                    "/monitor will deny every request (503) until both are configured."
+                    "/monitor and adding questions will deny every request (503) until both are configured."
                 );
             }
             if (!process.env.CLIENT_ORIGIN) {
@@ -50,34 +50,37 @@ const server = defineServer({
         }
 
         /**
-         * Use @colyseus/monitor
-         * Protected by hand-rolled HTTP Basic Auth in production (ticket
-         * 131), gated on NODE_ENV so local dev stays exactly as it was —
-         * no prompt. Credentials come from MONITOR_USER/MONITOR_PASS; if
-         * either is unset in production this fails closed (503) instead of
-         * leaving the panel open. The check reads process.env per request
-         * (not once at setup) so it always reflects the current env.
+         * The admin login: hand-rolled HTTP Basic Auth in production, for
+         * @colyseus/monitor (ticket 131) and for adding questions (ticket
+         * 163, so strangers can't write to a public server's bank). Gated
+         * on NODE_ENV so local dev stays exactly as it was — no prompt.
+         * Credentials come from MONITOR_USER/MONITOR_PASS; if either is
+         * unset in production this fails closed (503) instead of leaving
+         * the route open. The check reads process.env per request (not
+         * once at setup) so it always reflects the current env. One realm
+         * for both, so a browser that has logged in to one reuses the
+         * login for the other.
          * Read more: https://docs.colyseus.io/tools/monitoring/#restrict-access-to-the-panel-using-a-password
          */
-        const requireMonitorAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+        const requireAdminAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
             if (process.env.NODE_ENV !== "production") {
                 next();
                 return;
             }
-            const monitorUser = process.env.MONITOR_USER;
-            const monitorPass = process.env.MONITOR_PASS;
-            if (!monitorUser || !monitorPass) {
-                res.status(503).send("Monitor is not configured");
+            const adminUser = process.env.MONITOR_USER;
+            const adminPass = process.env.MONITOR_PASS;
+            if (!adminUser || !adminPass) {
+                res.status(503).send("The admin login is not configured");
                 return;
             }
-            if (checkBasicAuth(req.headers.authorization, monitorUser, monitorPass)) {
+            if (checkBasicAuth(req.headers.authorization, adminUser, adminPass)) {
                 next();
                 return;
             }
-            res.setHeader("WWW-Authenticate", 'Basic realm="Trivia Monitor"');
+            res.setHeader("WWW-Authenticate", 'Basic realm="Trivia Admin"');
             res.status(401).send("Authentication required");
         };
-        app.use("/monitor", requireMonitorAuth, monitor());
+        app.use("/monitor", requireAdminAuth, monitor());
 
         /**
          * Use @colyseus/playground
@@ -88,9 +91,10 @@ const server = defineServer({
         }
 
         // Add-question endpoint (ticket 091): the web path into the open-ended
-        // bank. Dev-friendly CORS — the Vite client (:5173) posts cross-origin to
-        // :2567; production is same-origin once the client is served from here,
-        // but locked to CLIENT_ORIGIN (ticket 131) rather than "*" in case it's
+        // bank, behind the admin login in production (ticket 163). Dev-friendly
+        // CORS — the Vite client (:5173) posts cross-origin to :2567;
+        // production is same-origin once the client is served from here, but
+        // locked to CLIENT_ORIGIN (ticket 131) rather than "*" in case it's
         // ever hit cross-origin, e.g. from a staging client.
         const allowCrossOrigin = (_req: express.Request, res: express.Response, next: express.NextFunction) => {
             const origin = resolveAllowedOrigin(process.env.NODE_ENV, process.env.CLIENT_ORIGIN);
@@ -113,7 +117,7 @@ const server = defineServer({
         app.options("/api/questions", allowCrossOrigin, (_req, res) => {
             res.sendStatus(204);
         });
-        app.post("/api/questions", allowCrossOrigin, express.json({ limit: "50kb" }), (req, res) => {
+        app.post("/api/questions", allowCrossOrigin, requireAdminAuth, express.json({ limit: "50kb" }), (req, res) => {
             const result = validateNewQuestion(req.body);
             if (result.ok === false) {
                 res.status(400).json({ error: result.error });

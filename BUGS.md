@@ -170,7 +170,7 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - What you saw: `onJoin` only validates the player name; it never checks `currentPhase`, and the room is never locked when the game starts. Anyone with the 4-letter code can join mid-game: they get a random character and are pushed onto `contestantsOrder`, so they're treated as a contestant who never had a Cash Builder, and they land on whatever phase screen is live with no role.
 - Expected: once the game leaves the Lobby, new joins are refused (e.g. `this.lock()` on game start, or a phase check in `onJoin` that throws), and the client shows a clear "That game has already started." message (`describeJoinError` in `App.vue` would need a matching case).
 - Repro steps: 1. Host creates a room and starts a game with 2+ players. 2. From another browser, join with the same room code during the Cash Builder. 3. The join succeeds and the new seat is appended to the running order.
-- Status: open
+- Status: triaged — ticket 164
 
 ## `bug-024` — Answer checker accepts wrong numbers and near-identical team names
 - Found: 2026-09-27 · question-bank authoring session (not a ticket) · `server/src/questions/answerChecker.ts` (`matchesSingle`), `server/src/gameConfig.ts` (`ANSWER_CHECK`)
@@ -181,7 +181,7 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 
 ## `bug-025` — Typed answers are relayed to the whole room with no length cap
 - Found: 2026-09-27 · ticket 161 (reading the answer handlers while bounding the new checker's work; outside that ticket's checker scope) · `server/src/rooms/handlers/messageHandlers.ts` (`submitFinalAnswer`, `submitFinalChaserAnswer`, `submitFinalStealAnswer`, `submitAnswer` for the Cash Builder), client answer inputs
-- What you saw: the four typed-answer handlers only check `typeof message.answer === "string"`, then broadcast `message.answer.trim()` to every client (`finalAnswer`, `finalStealAnswer`, `cashBuilderAnswer`). Nothing caps its length, and the client answer inputs have no `maxlength`, so one player can make the server relay arbitrarily long text to the whole room (bounded only by the rate limiter and the transport's payload limit). AGENTS.md's Security section requires inbound strings to be capped. (Ticket 161 already makes `checkAnswer` reject anything over `ANSWER_CHECK.maxTypedLength` without checking it, so the checker itself is safe.)
-- Expected: over-long or empty answers are rejected server-side and logged like any other malformed payload, and the answer inputs carry a matching `maxlength` so a normal player never hits the cap.
-- Repro steps: in the Cash Builder, send `room.send("submitAnswer", { questionId, answer: "x".repeat(100000) })` from a client console; every other client receives the 100,000-character `cashBuilderAnswer` broadcast.
-- Status: open
+- What you saw: the four typed-answer handlers only check `typeof message.answer === "string"`, then broadcast `message.answer.trim()` to every client (`finalAnswer`, `finalStealAnswer`, `cashBuilderAnswer`). Nothing caps its length, and the client answer inputs have no `maxlength`, so one player can make the server relay a wall of text into everyone's answer bubble and the server log, bounded only by the rate limiter and the WebSocket transport's 4 KB message cap (`@colyseus/ws-transport`'s default `maxPayload`), i.e. roughly 4,000 characters per answer. AGENTS.md's Security section requires inbound strings to be capped. (Ticket 161 already makes `checkAnswer` reject anything over `ANSWER_CHECK.maxTypedLength` without checking it, so the checker itself is safe.)
+- Expected: over-long answers are rejected server-side and logged like any other malformed payload, and the answer inputs carry a matching `maxlength` so a normal player never hits the cap.
+- Repro steps: in the Cash Builder, send `room.send("submitAnswer", { questionId, answer: "x".repeat(4000) })` from a client console; every other client receives the 4,000-character `cashBuilderAnswer` broadcast.
+- Status: triaged — ticket 165

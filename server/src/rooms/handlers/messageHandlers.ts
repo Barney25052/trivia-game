@@ -4,7 +4,28 @@ import { applyChaserAbilityEffect, canUseAbility } from "./chaserAbilities.js";
 import { checkAnswer } from "../../questions/answerChecker.js";
 import { pickOfferQuip } from "../../offerQuips.js";
 import { isValidCharacter } from "../../character.js";
-import { CASH_BUILDER, CHASER_ABILITIES, CHASER_CHARACTERS, CHASER_QUIP, OFFER, REACTION } from "../../gameConfig.js";
+import { ANSWER_CHECK, CASH_BUILDER, CHASER_ABILITIES, CHASER_CHARACTERS, CHASER_QUIP, OFFER, REACTION } from "../../gameConfig.js";
+
+/**
+ * A typed-answer payload the server will take: a numeric question id and
+ * a string answer no longer than `ANSWER_CHECK.maxTypedLength` (ticket 165,
+ * bug-025) — every typed answer is relayed to the whole room. Logs and
+ * rejects anything else, without echoing an over-long answer into the log.
+ */
+function isTypedAnswerPayload(client: any, message: any, handler: string): boolean {
+    if (typeof message?.answer === "string" && message.answer.length > ANSWER_CHECK.maxTypedLength) {
+        console.log(
+            client.sessionId,
+            `Ignoring ${handler}: the answer is ${message.answer.length} characters (max ${ANSWER_CHECK.maxTypedLength})`
+        );
+        return false;
+    }
+    if (typeof message?.answer !== "string" || typeof message?.questionId !== "number") {
+        console.log(client.sessionId, `Ignoring malformed ${handler} payload:`, message);
+        return false;
+    }
+    return true;
+}
 
 export function startGame(client: any, message: any, room: any) {
     if (!room.isHost(client)) {
@@ -378,8 +399,7 @@ export function submitFinalAnswer(client: any, message: any, room: any) {
         console.log(client.sessionId, "Can not submit a final answer — the Chaser does not answer for the team!");
         return;
     }
-    if (typeof message?.answer !== "string" || typeof message?.questionId !== "number") {
-        console.log(client.sessionId, "Ignoring malformed submitFinalAnswer payload:", message);
+    if (!isTypedAnswerPayload(client, message, "submitFinalAnswer")) {
         return;
     }
     const currentQuestion = room.finalRoundQuestions.getCurrentQuestion("team");
@@ -444,8 +464,7 @@ export function submitFinalChaserAnswer(client: any, message: any, room: any) {
         console.log(client.sessionId, "Can not submit a chaser final answer — only the Chaser can!");
         return;
     }
-    if (typeof message?.answer !== "string" || typeof message?.questionId !== "number") {
-        console.log(client.sessionId, "Ignoring malformed submitFinalChaserAnswer payload:", message);
+    if (!isTypedAnswerPayload(client, message, "submitFinalChaserAnswer")) {
         return;
     }
     const currentQuestion = room.finalRoundQuestions.getCurrentQuestion("chaser");
@@ -536,8 +555,7 @@ export function submitFinalStealAnswer(client: any, message: any, room: any) {
         console.log(client.sessionId, "No steal window is open (already resolved or expired)");
         return;
     }
-    if (typeof message?.answer !== "string" || typeof message?.questionId !== "number") {
-        console.log(client.sessionId, "Ignoring malformed submitFinalStealAnswer payload:", message);
+    if (!isTypedAnswerPayload(client, message, "submitFinalStealAnswer")) {
         return;
     }
     const currentQuestion = room.finalRoundQuestions.getCurrentQuestion("chaser");
@@ -676,8 +694,7 @@ export function submitAnswer(client: any, message: any, room: any) {
         console.log(client.sessionId, "Can not submit an answer — not the active contestant!");
         return;
     }
-    if (typeof message?.answer !== "string" || typeof message?.questionId !== "number") {
-        console.log(client.sessionId, "Ignoring malformed submitAnswer payload:", message);
+    if (!isTypedAnswerPayload(client, message, "submitAnswer")) {
         return;
     }
     const currentQuestion = room.questionManager.getCurrentQuestion(seatId);

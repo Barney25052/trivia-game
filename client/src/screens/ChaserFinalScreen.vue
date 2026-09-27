@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import ChaserPanel from "../components/ChaserPanel.vue";
 import CharacterFace from "../components/CharacterFace.vue";
 import { CHASER_NAMES } from "../chaserPortraits.ts";
+import { MAX_TYPED_ANSWER_LENGTH } from "../answerLimits.ts";
 
 const props = defineProps({
     teamScore: { type: Number, default: 0 },
@@ -566,6 +567,7 @@ const chaserFinalStageClass = computed(() => (stealActive.value ? "chaserFinalSt
                   v-model="stealAnswerInput"
                   class="field"
                   placeholder="Type your answer"
+                  :maxlength="MAX_TYPED_ANSWER_LENGTH"
                   :disabled="stealLocked"
                   ref="stealInputBox"
                   @keyup.enter="submitSteal"
@@ -591,6 +593,7 @@ const chaserFinalStageClass = computed(() => (stealActive.value ? "chaserFinalSt
                   v-model="chaserAnswerInput"
                   class="field"
                   placeholder="Type your answer"
+                  :maxlength="MAX_TYPED_ANSWER_LENGTH"
                   ref="chaserInputBox"
                   @keyup.enter="submitChaserAnswer"
               />

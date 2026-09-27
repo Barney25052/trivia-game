@@ -4,7 +4,7 @@ import appConfig from "../src/app.config.js";
 import { GameState } from "../src/rooms/schema/GameState.js";
 import { GamePhase } from "../src/TriviaTypes.js";
 import { loadBank, BankQuestion } from "../src/questions/bank.js";
-import { CASH_BUILDER, REACTION } from "../src/gameConfig.js";
+import { ANSWER_CHECK, CASH_BUILDER, REACTION } from "../src/gameConfig.js";
 import { cleanup, getTestServer } from "./testServer.js";
 import { seatIdOf } from "./seatIdHelper.js";
 
@@ -317,6 +317,26 @@ describe("cashBuilderFlow (integration)", () => {
 
         assert.strictEqual(room.state.players.get(activeSeatId).cashBuilderMoney, 0);
         assert.strictEqual(room.state.players.get(activeSeatId).cashBuilderCorrectAnswers, 0);
+    });
+
+    it("submitAnswer with an over-long answer is rejected and never relayed, and the contestant can still answer (ticket 165)", async () => {
+        const { room, activeClient, benchClient, activeSeatId } = await openCashBuilder(colyseus);
+
+        const q1 = await activeClient.waitForMessage("question");
+        const canonical1 = bank.find((q) => q.id === q1.questionId)!;
+        const relayed: any[] = [];
+        benchClient.onMessage("cashBuilderAnswer", (message: any) => relayed.push(message));
+
+        const overLong = `${canonical1.answer} ${"x".repeat(ANSWER_CHECK.maxTypedLength)}`;
+        activeClient.send("submitAnswer", { answer: overLong, questionId: q1.questionId });
+        await sleep(50);
+        assert.strictEqual(relayed.length, 0, "an over-long answer is not relayed to the room");
+        assert.strictEqual(room.state.players.get(activeSeatId).cashBuilderMoney, 0);
+
+        activeClient.send("submitAnswer", { answer: canonical1.answer, questionId: q1.questionId });
+        await sleep(50);
+        assert.strictEqual(relayed.length, 1, "the same question can still be answered");
+        assert.strictEqual(room.state.players.get(activeSeatId).cashBuilderMoney, CASH_BUILDER.rewardPerCorrect);
     });
 
     it("broadcasts a reaction cue to every client on a correct answer (smile), visible to the bench spectator too (ticket 103)", async () => {

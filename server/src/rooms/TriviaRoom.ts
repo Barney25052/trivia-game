@@ -784,6 +784,13 @@ export class TriviaRoom extends Room {
   };
 
   onJoin (client: Client, options: any) {
+    // Ticket 164 (bug-023): seats, roles and the running order are settled
+    // when the game starts, so a late joiner has nowhere to go. Not
+    // `this.lock()`: a locked room reaches the client as "full".
+    if (this.state.currentPhase !== GamePhase.Lobby) {
+      console.log(`Rejected join: room ${this.roomId} has already started (${this.state.currentPhase})`);
+      throw new Error("That game has already started");
+    }
     const name = typeof options?.playerName === "string" ? options.playerName.trim() : "";
     if (name.length === 0 || name.length > PLAYER_NAME.maxLength) {
       console.log(

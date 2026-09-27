@@ -1,14 +1,8 @@
 <script setup>
 import { ref } from "vue";
+import { API_BASE } from "../serverUrl.ts";
 
 const emit = defineEmits(["back"]);
-
-// No Colyseus room is involved on this screen (ticket 092), so it derives its
-// own http base instead of taking SERVER_URL as a prop — same derivation as
-// App.vue:20, just widened to also cover the wss:// case correctly (a plain
-// /^ws/ replace would turn "wss://" into "httpss://").
-const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? "ws://localhost:2567";
-const API_BASE = SERVER_URL.replace(/^wss:\/\//, "https://").replace(/^ws:\/\//, "http://");
 
 // Mirrors server/src/gameConfig.ts BANK_EDIT — duplicated client-side the same
 // way OfferScreen mirrors OFFER (no shared module between the two npm
@@ -55,6 +49,16 @@ async function submit() {
                 alternatives
             })
         });
+        // A live server keeps the bank behind the admin login (ticket 163).
+        // The browser asks for it on the 401; these answer a cancelled login.
+        if (response.status === 401) {
+            errorMessage.value = "Adding questions needs the admin login.";
+            return;
+        }
+        if (response.status === 503) {
+            errorMessage.value = "Adding questions isn't set up on this server.";
+            return;
+        }
         const body = await response.json();
         if (!response.ok) {
             errorMessage.value = body.error ?? "Failed to add the question.";

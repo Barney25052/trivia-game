@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "start", "--prefix", "server"],
       "port": 2567
+    },
+    {
+      "name": "server-prod",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--import=data:text/javascript,process.env.NODE_ENV='production';process.env.PORT='8080';", "server/build/index.js"],
+      "port": 8080
     }
   ]
 }
