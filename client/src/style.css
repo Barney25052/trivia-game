@@ -1048,16 +1048,6 @@ h1, h2, h3, h4 {
   filter: grayscale(100%) brightness(0%);
 }
 
-.p5-card-silhouette {
-  width: 110px;
-  height: 156px;
-}
-
-/* Scoped to the card so they beat .chaser-silhouette's default tint: the
-   cover is the same pure black as the art silhouettes beside it. */
-.p5-card .p5-card-silhouette-base { color: var(--chaser-red-glow); }
-.p5-card .p5-card-silhouette-cover { color: rgb(var(--color-black-rgb)); }
-
 .p5-card-name {
   margin: 4px 0 2px;
   font-size: 24px;
@@ -3403,8 +3393,8 @@ h1, h2, h3, h4 {
    size bump, no growth mechanic. */
 .board-portrait-wrap.chaser-wrap { width: 180px; height: 180px; }
 
-/* ChaserSilhouette.vue — the mystery bust shown when there's no portrait
-   art (no pick yet, or art still pending). Tinted with `color`. */
+/* ChaserSilhouette.vue — the mystery bust shown when there's no character
+   to show yet. Tinted with `color`. */
 .chaser-silhouette {
   display: block;
   fill: currentColor;

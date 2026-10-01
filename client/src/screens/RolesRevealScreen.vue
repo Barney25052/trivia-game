@@ -20,9 +20,6 @@ const allReady = computed(
     () => props.players.length > 0 && props.players.every((p) => p.revealReady === true)
 );
 
-// A character with no finished art (chaserPortrait returns null — Maggie,
-// today) renders the ChaserSilhouette bust in place of an image, using the
-// same base/cover layering so her card's hover reveal behaves the same.
 const ROSTER = [ChaserCharacter.Bezos, ChaserCharacter.BigStan, ChaserCharacter.Nami, ChaserCharacter.Maggie];
 const availableCharacters = computed(() =>
     ROSTER.map((id) => ({ id, name: CHASER_NAMES[id], img: chaserPortrait(id), ...CHASER_ABILITY_COPY[id] }))
@@ -71,17 +68,14 @@ function handleCharacterSelect(characterId) {
                             <span class="p5-card-content">
                                 <span class="p5-card-portrait-wrap">
                                     <span class="p5-card-portrait-base">
-                                        <img v-if="character.img" class="p5-card-portrait" :src="character.img" alt="">
-                                        <ChaserSilhouette v-else class="p5-card-silhouette p5-card-silhouette-base" />
+                                        <img class="p5-card-portrait" :src="character.img" alt="">
                                     </span>
                                     <span class="p5-card-portrait-cover">
                                         <img
-                                            v-if="character.img"
                                             class="p5-card-portrait p5-card-portrait-silhouette"
                                             :src="character.img"
                                             alt=""
                                         >
-                                        <ChaserSilhouette v-else class="p5-card-silhouette p5-card-silhouette-cover" />
                                     </span>
                                 </span>
                                 <h2 class="p5-card-name">{{ character.name }}</h2>

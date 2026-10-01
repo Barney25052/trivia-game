@@ -247,6 +247,9 @@ A 4th Chaser character (Maggie) joins Bezos/Big Stan/Nami; every Chaser gets 2 s
 | 165 | Cap typed answers before they're relayed to the room (`bug-025`) | done********************************************************************************************** |
 | 166 | Deploy runbook, PM2 production env, READMEs and dependency advisories | done*********************************************************************************************** |
 
+### Art drop-ins
+| 167 | Maggie's portrait art | done************************************************************************************************ |
+
 ### Follow-up findings (ticket 137, final v1 acceptance review, 2026-09-15)
 | 154 | Remove dead CSS accumulated across the visual redesign arc (5 orphaned rule blocks) | done******************************************************* |
 | 155 | Investigate — Cash Builder answer input may not submit on Enter | done********************************************************** |
@@ -462,6 +465,8 @@ Scoped to the Chase→Team-Final boundary specifically, as instructed — did no
 \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 165: `bug-025`. The four typed-answer handlers share one `isTypedAnswerPayload` guard that also rejects answers over `ANSWER_CHECK.maxTypedLength` (200) without echoing them into the log; nothing resolves, so the player can answer again. The four answer boxes get a matching `maxlength` (`client/src/answerLimits.ts`). Blank answers unchanged (a blank Cash Builder submit is a pass). New `cashBuilderFlow` test.
 
 \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 166: a real root `README.md` (local setup, checks, deploy runbook with first-deploy-only seeding, `server/.env.production`, PM2, one instance, TLS proxy with a Caddy example, admin routes); the template `server/README.md` and `client/README.md` removed; `ecosystem.config.cjs` sets `NODE_ENV=production` and `cwd` (a plain `pm2 start` used to run dev mode: playground exposed, no admin login, client not served); `engines.node` corrected to `>= 22.0.0`; `qs` moved to 6.16.0 via an in-range `express` update, fixing a reachable moderate DoS advisory (the 8 remaining advisories are all under the unused `@colyseus/auth`, whose only fix is a downgrade); a `server-prod` launch config; AGENTS.md and GOAL.md brought up to date (TLS/wss item done as documented).
+
+\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 167: the user drew Maggie's portrait and asked for it in the game. `chaserPortraits.ts` no longer holds her art back (`PORTRAIT_ART_PENDING` removed), so every Chaser portrait slot shows it; the roster cards' silhouette fallback and its `.p5-card-silhouette*` CSS, now unreachable, are removed, while `ChaserSilhouette` stays as the mystery bust before a character is revealed. `HUMAN_TASKS.md` row marked done. Seen on the production build in a two-player game: roster card (silhouette, then the portrait on hover), the Chaser's lock-in frame, the Offer screen and the chase board; the character reveal screen shares the lookup but wasn't observed. Client build green; server untouched.
 
 Status values: `backlog`, `in-progress`, `done`.
 

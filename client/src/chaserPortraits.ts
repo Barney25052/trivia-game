@@ -17,18 +17,9 @@ const CHASER_PORTRAITS: Record<string, string> = {
     [ChaserCharacter.Maggie]: maggieIcon
 };
 
-// maggie-icon.png is still the flat-colour placeholder square (its
-// HUMAN_TASKS.md row is `todo`), which reads as a broken image rather than a
-// character. Until the real art replaces that file, anyone listed here
-// renders the shared ChaserSilhouette bust instead — remove Maggie from this
-// set once her art lands (the import above is already wired).
-const PORTRAIT_ART_PENDING = new Set<string>([ChaserCharacter.Maggie]);
-
-/** The Chaser's portrait, or null when there's nothing real to show (no
- * character picked yet, or art still pending) — callers render
- * ChaserSilhouette.vue in that case. */
+/** The Chaser's portrait, or null when there's no character to show yet —
+ * callers render ChaserSilhouette.vue in that case. */
 export function chaserPortrait(characterId: string): string | null {
-    if (PORTRAIT_ART_PENDING.has(characterId)) return null;
     return CHASER_PORTRAITS[characterId] ?? null;
 }
 
