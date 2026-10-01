@@ -1,0 +1,28 @@
+# Render Blueprint (ticket 169): one free web service that builds the client,
+# builds the server, seeds the question bank, then runs the single Node
+# process that serves everything. Create it from the Render dashboard with
+# New > Blueprint and pick this repository. See README.md > Deploying.
+services:
+  - type: web
+    name: big-baws-trivia
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    # `--include=dev` because the builds need typescript, vite, vue-tsc and
+    # tsx even when NODE_ENV is production. The seed runs here, not at start:
+    # the free plan's disk is reset on every restart, and only what the build
+    # produced comes back.
+    buildCommand: >-
+      cd client && npm ci --include=dev && npm run build &&
+      cd ../server && npm ci --include=dev && npm run build &&
+      npx tsx scripts/seedQuestionsDb.ts
+    startCommand: cd server && node build/index.js
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Pinned to the version the project is developed and tested on.
+      - key: NODE_VERSION
+        value: 24.19.0

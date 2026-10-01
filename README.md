@@ -43,6 +43,18 @@ All three must pass for every change (see [AGENTS.md](AGENTS.md)).
 
 In production one Node process serves everything: the built client, the game server and the admin routes.
 
+### Render (free, what the live game uses)
+
+[`render.yaml`](render.yaml) describes the whole deploy. In the Render dashboard choose **New > Blueprint**, pick this repository and apply. Render builds the client and server, seeds the question bank and starts the server on a free `onrender.com` address with HTTPS. Every push to `main` redeploys.
+
+On the free plan the server sleeps after 15 minutes with no traffic and takes about a minute to wake, and its disk is reset each time. That is fine here: the question bank is rebuilt from `questions.json` by the build. To add questions, edit `questions.json` and push to `main`.
+
+To use `/monitor`, add `MONITOR_USER` and `MONITOR_PASS` under the service's **Environment** tab.
+
+### Your own server
+
+The same steps by hand, for a machine you manage:
+
 1. **Build**, client first (the server serves `client/dist`):
 
    ```bash

@@ -174,6 +174,7 @@ These are the Chase/CashBuilder/palette items the user asked to pull forward fro
 - [x] Cap concurrent rooms server-wide (132) — per-room `maxClients` and per-connection rate limiting already exist; this is the last of the three AGENTS.md "abuse caps". A PM2 config issue that could silently multiply this cap on a multi-core host was found in review — tracked separately (152)
 - [x] TLS/wss behind a reverse proxy — documented in `README.md` → Deploying (any TLS proxy that passes WebSockets through, e.g. Caddy). The client connects back to the host that served it and switches to `wss://` behind `https://` on its own (ticket 162); setting up the proxy itself happens on the host.
 - [x] Pre-upload readiness pass (2026-09-27, tickets 162–166): the client finds a deployed server (162), adding questions needs the admin login in production (163), no joining a game in progress (164, `bug-023`), typed answers capped before they are relayed (165, `bug-025`), and a deploy runbook, PM2 production env and patched `qs` advisory (166).
+- [x] Hosting chosen: Render's free web service, set up from a root `render.yaml` Blueprint that deploys `main` (169).
 - [x] Remove the web "Add questions" form and its endpoint before hosting (168) — the bank is only ever built from `questions.json`, so a deploy reseeds it every time.
 
 ### Stretch goals
