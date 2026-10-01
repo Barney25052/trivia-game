@@ -22,9 +22,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // From both the source tree (server/src/questions/) and the build output
 // (server/build/questions/) this resolves to server/data/questions.db.
-// Exported so the seed script (server/scripts/seedQuestionsDb.ts) and the
-// add-question endpoint (app.config.ts, via bankAdmin.ts) share the exact
-// same file loadBank() reads, in both run modes.
+// Exported so the seed script (server/scripts/seedQuestionsDb.ts) writes the
+// exact same file loadBank() reads, in both run modes.
 export const DB_PATH = resolve(__dirname, "../../data/questions.db");
 
 const SCHEMA_SQL = `
@@ -41,9 +40,9 @@ let db: Database.Database | undefined;
 /**
  * Opens a connection to a question-bank SQLite file (or `:memory:`) and
  * makes sure the `questions` table exists. Used for the default runtime
- * connection (via getBankDb), the seed script, and per-test isolated DBs —
- * unlike getBankDb() this never checks whether the file pre-exists, so it's
- * also how the seed script/tests create a brand new DB from scratch.
+ * connection (via getBankDb) and the seed script — unlike getBankDb() this
+ * never checks whether the file pre-exists, so it's also how the seed
+ * script creates a brand new DB from scratch.
  */
 export function openBankDb(path: string): Database.Database {
     const instance = new Database(path);
@@ -69,15 +68,6 @@ export function getBankDb(): Database.Database {
         db = openBankDb(DB_PATH);
     }
     return db;
-}
-
-/**
- * Test-only hook: points loadBank()/appendQuestion() at a different
- * connection (e.g. a fresh `:memory:` DB from openBankDb) instead of the
- * default file at DB_PATH. Pass undefined to reset back to the default.
- */
-export function setBankDb(instance: Database.Database | undefined): void {
-    db = instance;
 }
 
 export function loadBank(): BankQuestion[] {

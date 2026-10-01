@@ -7,6 +7,3 @@ export const SERVER_URL: string = import.meta.env.VITE_SERVER_URL
     ?? (import.meta.env.PROD
         ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}`
         : "ws://localhost:2567");
-
-/** The same server over HTTP(S), for plain requests: ws → http, wss → https. */
-export const API_BASE = SERVER_URL.replace(/^ws/, "http");

@@ -11,7 +11,7 @@ const props = defineProps({
   // left, the connection dropped).
   notice: { type: String, default: "" }
 });
-const emit = defineEmits(["join", "create", "add-questions"]);
+const emit = defineEmits(["join", "create"]);
 
 // Mirrors server/src/gameConfig.ts PLAYER_NAME.maxLength — the server
 // rejects the join outright past this, so stop typing at the limit instead.
@@ -86,10 +86,6 @@ function handleCreate() {
   saveName(playerName.value.trim());
   emit("join", { playerName: playerName.value, roomCode: "" });
 }
-
-function handleAddQuestions() {
-  emit("add-questions");
-}
 </script>
 
 <template>
@@ -124,9 +120,8 @@ function handleAddQuestions() {
           </button>
         </div>
         <!-- Always rendered (empty when there's nothing to say) so a message
-             appearing never pushes the link below it down. -->
+             appearing never shifts the layout. -->
         <p class="homeMessage" :class="{ 'homeMessage-error': error }" role="status">{{ error || notice }}</p>
-        <button @click="handleAddQuestions" class="addQuestionsLink">Add questions</button>
       </div>
   </div>
 </template>

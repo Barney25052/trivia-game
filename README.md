@@ -50,24 +50,23 @@ In production one Node process serves everything: the built client, the game ser
    cd ../server && npm ci && npm run build
    ```
 
-2. **Seed the question bank** on the first deploy only:
+2. **Seed the question bank** on every deploy:
 
    ```bash
    cd server && npx tsx scripts/seedQuestionsDb.ts
    ```
 
-   Don't re-run it on a live server unless you mean to: it replaces the whole bank, so any questions added through the web form since are lost.
+   The database is built from `server/data/questions.json` and nothing writes to it while the game runs, so reseeding is always safe. To add questions, edit `questions.json` and deploy again.
 
-3. **Configure** `server/.env.production` (gitignored; loaded automatically when `NODE_ENV=production`):
+3. **Configure** `server/.env.production` (gitignored; loaded automatically when `NODE_ENV=production`), or set the same variables in the host's environment settings. All of them are optional:
 
    ```bash
-   MONITOR_USER=choose-a-username   # the admin login, for /monitor and for adding questions
+   MONITOR_USER=choose-a-username   # the admin login, for /monitor
    MONITOR_PASS=choose-a-long-password
-   PORT=2567                        # optional, 2567 by default
-   CLIENT_ORIGIN=https://trivia.example.com   # optional, only for a client hosted on another origin
+   PORT=2567                        # 2567 by default; most hosts set this themselves
    ```
 
-   Without `MONITOR_USER`/`MONITOR_PASS`, `/monitor` and adding questions stay shut (503). The server warns about this at startup.
+   Without `MONITOR_USER`/`MONITOR_PASS`, `/monitor` stays shut (503) and the server says so at startup. The game itself is unaffected.
 
 4. **Start** with PM2 from `server/`:
 
@@ -89,10 +88,7 @@ In production one Node process serves everything: the built client, the game ser
 
 ### Admin
 
-- `/monitor`: the Colyseus room monitor.
-- **Add questions** on the home screen: writes new typed-answer questions into the live bank.
-
-Both ask for the admin login in production. In development neither needs one.
+- `/monitor`: the Colyseus room monitor. It asks for the admin login in production; in development it needs none.
 
 ## Project docs
 

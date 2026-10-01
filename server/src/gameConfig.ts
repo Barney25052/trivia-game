@@ -327,16 +327,6 @@ export const PLAYER_NAME = {
     maxLength: 24
 } as const;
 
-/** Caps for the add-question endpoint (ticket 091) — the web path into the
- * open-ended bank. No `category`: it is legacy/unused per GOAL.md and must
- * never appear on an added question. */
-export const BANK_EDIT = {
-    maxQuestionLength: 300,
-    maxAnswerLength: 100,
-    maxAlternativeLength: 100,
-    maxAlternatives: 10
-} as const;
-
 /** Open-answer leniency (ticket 047, tightened by ticket 161). Answers are
  * compared word by word; numbers (digits, number words, Roman numerals)
  * always need the exact value. */
@@ -353,8 +343,8 @@ export const ANSWER_CHECK = {
     romanNumerals: true,
     /** Most words regrouped at once when the spacing differs ("Kermitthefrog", "ACDC"). Bounds the checker's work. */
     maxRegroupWords: 6,
-    /** A typed answer longer than this is wrong without being checked (accepted answers are capped at
-     * `BANK_EDIT.maxAnswerLength`), so an oversized message can't make the checker slow. */
+    /** A typed answer longer than this is wrong without being checked, so an oversized message can't
+     * make the checker slow. */
     maxTypedLength: 200
 } as const;
 

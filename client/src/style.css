@@ -164,8 +164,7 @@ a:focus-visible {
   to   { opacity: 1; }
 }
 
-input,
-textarea {
+input {
   box-sizing: border-box;
   margin: 0;
   font: inherit;
@@ -351,7 +350,6 @@ h1, h2, h3, h4 {
 }
 
 /* Small uppercase pixel label above a value or a row of controls. */
-.field-label,
 .lobbyCharacterLabel {
   width: 100%;
   margin: 14px 0 6px;
@@ -3099,101 +3097,6 @@ h1, h2, h3, h4 {
 .resultsMenuButton {
   min-width: 200px;
   margin-top: 16px;
-}
-
-/* ============================================================
-   Home extras — the "Add questions" entry point and AddQuestionScreen.vue.
-   ============================================================ */
-
-/* A quiet secondary control under the Join/Create pair. */
-.addQuestionsLink {
-  display: block;
-  width: fit-content;
-  margin: 10px auto 0;
-  padding: 8px 16px;
-  border: 2px solid rgba(var(--color-white-rgb), 0.4);
-  border-radius: 8px;
-  color: var(--text-soft);
-  font-weight: 700;
-  font-size: 14px;
-  transition: transform 0.12s ease, color 0.12s ease, border-color 0.12s ease;
-}
-
-.addQuestionsLink:hover {
-  color: var(--color-white);
-  border-color: var(--color-white);
-  transform: translateY(-1px);
-}
-
-.addQuestionTitle {
-  margin: 6vh 0 0;
-}
-
-.addQuestionPanel {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 520px;
-  margin-top: 10px;
-}
-
-.addQuestionPanel .field-label {
-  text-align: left;
-}
-
-.addQuestionPanel .field {
-  width: 100%;
-}
-
-.addQuestionTextarea {
-  min-height: 84px;
-  resize: vertical;
-}
-
-/* Always rendered so an error appearing doesn't push the buttons down. */
-.addQuestionError {
-  min-height: 20px;
-  margin: 10px 0 4px;
-  color: var(--chaser-red-bright);
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.addQuestionSuccess {
-  margin: 4px 0 14px;
-  color: #86e57c;
-  font-weight: 700;
-  font-size: 20px;
-  text-align: center;
-}
-
-/* What was just saved, read back on a recessed card. */
-.addQuestionEcho {
-  margin: 0 0 18px;
-  padding: 14px 18px;
-  border-radius: 12px;
-  background: var(--btn-ink);
-  text-align: left;
-}
-
-.addQuestionEchoPrompt {
-  margin: 4px 0 8px;
-  color: var(--color-white);
-  font-weight: 600;
-  font-size: 18px;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-
-.addQuestionEchoAnswer {
-  margin: 0;
-  color: var(--text-soft);
-  font-size: 15px;
-  overflow-wrap: anywhere;
-}
-
-.addQuestionEchoAnswer strong {
-  color: var(--color-gold);
 }
 
 /* ============================================================

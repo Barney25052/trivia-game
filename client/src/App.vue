@@ -7,7 +7,6 @@ import { CHASER_ABILITY_COPY, SHARED_CHASER_ABILITY_COPY } from "./chaserAbiliti
 import { CHASER_NAMES } from "./chaserPortraits.ts";
 import { SERVER_URL } from "./serverUrl.ts";
 import HomeScreen from "./screens/HomeScreen.vue"
-import AddQuestionScreen from "./screens/AddQuestionScreen.vue";
 import LobbyScreen from "./screens/LobbyScreen.vue";
 import ChaserSelectionScreen from "./screens/ChaserSelectionScreen.vue";
 import ChaserWheelScreen from "./screens/ChaserWheelScreen.vue";
@@ -26,9 +25,6 @@ preloadImages();
 preloadFonts();
 
 const room = ref(null);
-// Local-only screen (ticket 092): no Colyseus room involved, so it's routed
-// the same way as "home" — a flag the currentScreen computed checks below.
-const addQuestionMode = ref(false);
 // Home-screen feedback: a join/create in flight, why the last one failed,
 // and why the player was sent back home if it wasn't their own choice.
 const joining = ref(false);
@@ -188,7 +184,7 @@ let chaseRevealHoldTimeout = null;
 let pendingQuestion = null;
 
 const currentScreen = computed(() => {
-  if (!room.value) return addQuestionMode.value ? "addQuestion" : "home";
+  if (!room.value) return "home";
   switch (currentPhase.value) {
     case GamePhase.Lobby: return "lobby";
     case GamePhase.ChaserSelection: return "chaserSelection";
@@ -328,14 +324,6 @@ function showAbilityCue(ability) {
 
 async function handleJoin({ playerName, roomCode }) {
   await joinLobby(playerName, roomCode);
-}
-
-function showAddQuestion() {
-  addQuestionMode.value = true;
-}
-
-function hideAddQuestion() {
-  addQuestionMode.value = false;
 }
 
 // Turns a matchmaking failure into something a player can act on. The
@@ -861,9 +849,7 @@ onUnmounted(() => {
       :notice="homeNotice"
       @join="handleJoin"
       @create="handleJoin"
-      @add-questions="showAddQuestion"
     />
-    <AddQuestionScreen v-if="currentScreen=='addQuestion'" @back="hideAddQuestion"/>
     <LobbyScreen
       v-if="currentScreen=='lobby'"
       @start="startGame"
