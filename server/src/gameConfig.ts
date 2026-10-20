@@ -276,7 +276,23 @@ export const ROOM_SETTINGS = {
      * — an abuse guard against unbounded `client.create("trivia", ...)`
      * calls, not a capacity/performance ceiling. Tune based on real traffic
      * once deployed. */
-    maxConcurrentRooms: 50
+    maxConcurrentRooms: 50,
+    /** Close code sent to everyone when the host leaves and the room ends
+     * (ticket 171). Inside the WebSocket private-use range (RFC 6455:
+     * 4000-4999) but clear of the codes Colyseus uses itself (4000-4003,
+     * 4010) — the old 4001 is Colyseus's SERVER_SHUTDOWN, so a server
+     * restart used to read as "the host left". */
+    hostLeftCloseCode: 4100
+} as const;
+
+/** How long a dropped player's seat is held for them to reconnect (ticket
+ * 171). The lobby waits longer: nothing is waiting on anyone there, and the
+ * classic drop is a phone switching apps to share the room code. Once the
+ * game has started, the round waits on the dropped player, so the hold is
+ * short; after it, the usual leave handling (forfeit and cleanup) runs. */
+export const RECONNECTION = {
+    lobbyGraceSeconds: 120,
+    gameGraceSeconds: 30
 } as const;
 
 export const FINAL_ROUND = {

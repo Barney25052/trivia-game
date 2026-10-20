@@ -513,7 +513,7 @@ describe("leaveFlow (integration)", () => {
         assert.strictEqual(room.state.players.get(aliceSeat), undefined);
     });
 
-    it("a host-Chaser leaving still disconnects the room (close 6767), unchanged from before ticket 075", async () => {
+    it("a host-Chaser leaving still disconnects the room, unchanged from before ticket 075", async () => {
         const room = await colyseus.createRoom<GameState>("trivia", {
             cashBuilderDurationMs: 10000,
             chaserSelectionDurationMs: 10000,

@@ -223,6 +223,33 @@ describe("cashBuilderFlow (integration)", () => {
         );
     });
 
+    it("everyone watching gets the reveal: cashBuilderAnswer carries correct and the real answer, right or wrong (ticket 173)", async () => {
+        const { activeClient, benchClient, activeSeatId } = await openCashBuilder(colyseus, {
+            cashBuilderDurationMs: 8000
+        });
+
+        const q1 = await activeClient.waitForMessage("question");
+        const canonical1 = bank.find((q) => q.id === q1.questionId)!;
+        const watched1 = benchClient.waitForMessage("cashBuilderAnswer");
+        const q2Promise = activeClient.waitForMessage("question");
+        activeClient.send("submitAnswer", { answer: canonical1.answer, questionId: q1.questionId });
+        assert.deepStrictEqual(await watched1, {
+            questionId: q1.questionId,
+            seatId: activeSeatId,
+            answer: canonical1.answer,
+            correct: true,
+            correctAnswer: canonical1.answer
+        });
+
+        const q2 = await q2Promise;
+        const canonical2 = bank.find((q) => q.id === q2.questionId)!;
+        const watched2 = benchClient.waitForMessage("cashBuilderAnswer");
+        activeClient.send("submitAnswer", { answer: "definitely wrong", questionId: q2.questionId });
+        const wrong = await watched2;
+        assert.strictEqual(wrong.correct, false);
+        assert.strictEqual(wrong.correctAnswer, canonical2.answer, "a miss shows the watchers the real answer");
+    });
+
     it("a wrong answer holds the correct-answer reveal for wrongAnswerRevealMs before the next question is delivered", async () => {
         const { activeClient } = await openCashBuilder(colyseus, {
             cashBuilderDurationMs: 8000,

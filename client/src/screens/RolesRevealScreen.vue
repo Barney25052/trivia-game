@@ -7,8 +7,11 @@ import CharacterFace from "../components/CharacterFace.vue";
 import ChaserSilhouette from "../components/ChaserSilhouette.vue";
 
 const selectedCharacterId = ref(null);
+// Ticket 170: the Chaser's own choice to play with no powers, sent with
+// their character pick and fixed from then on.
+const hardModeChoice = ref(false);
 
-const props = defineProps(["players", "mySeatId"]);
+const props = defineProps(["players", "mySeatId", "hardMode"]);
 const emit = defineEmits(["ready"]);
 
 const chaser = computed(() => props.players.find((p) => p.role === PlayerRole.Chaser));
@@ -36,14 +39,15 @@ const myPickPortrait = computed(() =>
     isMeChaser.value && selectedCharacterId.value !== null ? chaserPortrait(selectedCharacterId.value) : null
 );
 const chaserStatus = computed(() => {
-    if (isMeChaser.value && selectedCharacterName.value) return `You're chasing as ${selectedCharacterName.value}`;
-    return chaser.value?.revealReady ? "Ready to chase" : "Choosing a character…";
+    const noPowers = props.hardMode ? ", no powers" : "";
+    if (isMeChaser.value && selectedCharacterName.value) return `You're chasing as ${selectedCharacterName.value}${noPowers}`;
+    return chaser.value?.revealReady ? `Ready to chase${noPowers}` : "Choosing a character…";
 });
 
 function handleCharacterSelect(characterId) {
     if (selectedCharacterId.value !== null) return;
     selectedCharacterId.value = characterId;
-    emit('ready', { characterId });
+    emit('ready', { characterId, hardMode: hardModeChoice.value });
 }
 </script>
 
@@ -53,6 +57,24 @@ function handleCharacterSelect(characterId) {
             <div v-if="chaser?.seatId === mySeatId && !myRevealReady" class="p5-stage">
                 <div class="p5-title-block">
                     <h1 class="p5-title">Choose your Chaser</h1>
+                </div>
+                <div class="segmented p5-hard-mode" role="group" aria-label="Chaser powers">
+                    <button
+                        type="button"
+                        class="segmented-option"
+                        :class="{ selected: !hardModeChoice }"
+                        :aria-pressed="!hardModeChoice"
+                        :disabled="selectedCharacterId !== null"
+                        @click="hardModeChoice = false"
+                    >With powers</button>
+                    <button
+                        type="button"
+                        class="segmented-option"
+                        :class="{ selected: hardModeChoice }"
+                        :aria-pressed="hardModeChoice"
+                        :disabled="selectedCharacterId !== null"
+                        @click="hardModeChoice = true"
+                    >Hard mode: no powers</button>
                 </div>
                 <div class="p5-roster-row">
                     <div v-for="character in availableCharacters" :key="character.id" class="p5-card-tilt">
@@ -79,7 +101,10 @@ function handleCharacterSelect(characterId) {
                                     </span>
                                 </span>
                                 <h2 class="p5-card-name">{{ character.name }}</h2>
-                                <span class="p5-card-abilities">
+                                <span v-if="hardModeChoice" class="p5-card-abilities">
+                                    <span class="p5-ability-chip p5-ability-chip-none">No powers</span>
+                                </span>
+                                <span v-else class="p5-card-abilities">
                                     <span
                                         v-for="ability in character.passive"
                                         :key="ability.id"

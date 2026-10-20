@@ -1,6 +1,6 @@
 import { ChaserCharacter, GamePhase, PlayerRole } from "../../TriviaTypes.js";
 import { allPlayersReady, allPlayersVoted, tallyChaserVotes } from "./chaserSelection.js";
-import { applyChaserAbilityEffect, canUseAbility } from "./chaserAbilities.js";
+import { applyChaserAbilityEffect, canUseAbility, poweredChaserCharacter } from "./chaserAbilities.js";
 import { checkAnswer } from "../../questions/answerChecker.js";
 import { pickOfferQuip } from "../../offerQuips.js";
 import { isValidCharacter } from "../../character.js";
@@ -34,6 +34,13 @@ export function startGame(client: any, message: any, room: any) {
     }
     if (room.state.currentPhase !== GamePhase.Lobby) {
         console.log(client.sessionId, "Can not start the game outside Lobby!");
+        return;
+    }
+    // Ticket 171: a dropped seat is held for its player to reconnect — don't
+    // deal them a role they may never come back to play.
+    const reconnecting = [...room.state.players.values()].find((player: any) => !player.connected);
+    if (reconnecting) {
+        console.log(client.sessionId, `Can not start the game — waiting for ${reconnecting.seatId} to reconnect`);
         return;
     }
     console.log(client.sessionId, "Starting game!");
@@ -111,9 +118,20 @@ export function revealReady(client: any, message: any, room: any) {
             console.log(seatId, "Invalid chaser character ID:", characterId);
             return;
         }
+        // Hard mode (ticket 170) is the Chaser's own call, made once with
+        // their character pick and never changeable after lock-in.
+        const hardMode = message?.hardMode;
+        if (hardMode !== undefined && typeof hardMode !== "boolean") {
+            console.log(seatId, "Ignoring malformed hardMode:", hardMode);
+            return;
+        }
         player.revealReady = true;
         player.chaserCharacterId = characterId;
-        console.log(`${seatId} confirmed ready with character ${characterId} for the roles reveal`);
+        room.state.hardMode = hardMode === true;
+        console.log(
+            `${seatId} confirmed ready with character ${characterId}` +
+            `${room.state.hardMode ? " in hard mode (no powers)" : ""} for the roles reveal`
+        );
     } else {
         player.revealReady = true;
         console.log(`${seatId} confirmed ready for the cash builder`);
@@ -353,17 +371,16 @@ export function buzzIn(client: any, message: any, room: any) {
         console.log(client.sessionId, "Someone already buzzed in for this question");
         return;
     }
-    const chaser = room.state.players.get(room.state.chaserSeatId);
     if (
-        chaser?.chaserCharacterId === ChaserCharacter.Maggie &&
+        poweredChaserCharacter(room) === ChaserCharacter.Maggie &&
         seatId === room.state.lastTeamFinalCorrectSeatId
     ) {
         // Silence (ticket 144): whoever scored the last correct answer can't
         // buzz in again on the next one — unless they're the only eligible
         // buzzer still connected, in which case letting them through beats
-        // soft-locking the round. "Eligible" mirrors sendFinalQuestion's team
-        // side: any currently-connected non-Chaser client, not contestantsOrder,
-        // so eliminated players who rejoined for the final still count.
+        // soft-locking the round. "Eligible" means any currently-connected
+        // non-Chaser client, not contestantsOrder, so eliminated players who
+        // rejoined for the final still count.
         const eligibleBuzzerSeatIds = new Set<string>();
         for (const otherClient of room.clients) {
             const otherSeatId = room.seatIdForClient(otherClient);
@@ -503,8 +520,7 @@ export function submitFinalChaserAnswer(client: any, message: any, room: any) {
         // every correct answer,
         // only while the clock is actually counting down — a paused clock
         // (e.g. resolving a steal) has nothing live to extend here.
-        const chaser = room.state.players.get(room.state.chaserSeatId);
-        if (chaser?.chaserCharacterId === ChaserCharacter.BigStan && room.chaserFinalClockRunning) {
+        if (poweredChaserCharacter(room) === ChaserCharacter.BigStan && room.chaserFinalClockRunning) {
             room.extendChaserFinalClock(CHASER_ABILITIES.timeBonusMs);
         }
 
@@ -586,8 +602,7 @@ export function submitFinalStealAnswer(client: any, message: any, room: any) {
     let pushbackBlocked = false;
     if (isCorrect) {
         if (room.state.chaserScore > 0) {
-            const chaser = room.state.players.get(room.state.chaserSeatId);
-            if (chaser?.chaserCharacterId === ChaserCharacter.Bezos && room.state.pushbackImmunityUsesRemaining > 0) {
+            if (poweredChaserCharacter(room) === ChaserCharacter.Bezos && room.state.pushbackImmunityUsesRemaining > 0) {
                 // Bezos's Pushback Immunity (ticket 142, passive/auto-consumed,
                 // 3 uses/game): the steal still resolves as correct for the
                 // team (right-answer confirmation + success reaction below),
@@ -720,11 +735,15 @@ export function submitAnswer(client: any, message: any, room: any) {
     // right or wrong the instant it lands, so broadcasting the guessed text
     // itself (regardless of correctness) withholds nothing a spectator
     // couldn't already piece together, and lets the answer bubble pop on
-    // every client, not just the submitter's own (ticket 128).
+    // every client, not just the submitter's own (ticket 128). The question
+    // is finished once answered, so the real answer rides along as the reveal
+    // for everyone watching (ticket 173) — the next question is a fresh one.
     room.broadcast("cashBuilderAnswer", {
         questionId: currentQuestion.id,
         seatId,
-        answer: message.answer.trim()
+        answer: message.answer.trim(),
+        correct: isCorrect,
+        correctAnswer: currentQuestion.answer
     });
 
     client.send("answerResult", {

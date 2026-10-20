@@ -185,3 +185,10 @@ Bugs an agent finds **while working a ticket** that are outside that ticket's sc
 - Expected: over-long answers are rejected server-side and logged like any other malformed payload, and the answer inputs carry a matching `maxlength` so a normal player never hits the cap.
 - Repro steps: in the Cash Builder, send `room.send("submitAnswer", { questionId, answer: "x".repeat(4000) })` from a client console; every other client receives the 4,000-character `cashBuilderAnswer` broadcast.
 - Status: triaged — ticket 165
+
+## `bug-026` — A team that was all caught wins a 0–0 final by running out the Chaser's clock
+- Found: 2026-10-20 · ticket 171 (playing a 1v1 to the end while reproducing the reported kick) · `server/src/rooms/handlers/messageHandlers.ts` (`submitFinalChaserAnswer`), `server/src/gameFlow.ts` (`finalChaserTimeout`)
+- What you saw: in a 1v1 where the only contestant was caught, the Team Final started at 0 and the team scored nothing. The Chaser then missed every question until their clock ran out, and the results screen said "The team wins!" with TEAM 0 / CHASER 0. The Chaser only "reaches" the target when a correct answer lands (`chaserScore >= teamScore` is checked there), so a 0 target is never reached without one, and `finalChaserTimeout` always gives the team the win.
+- Expected: decide the rule for a 0 target. GOAL.md says that with nobody back the Chaser is "X ahead where X=0 until the team catches up", which reads as the Chaser already being level, so a 0–0 final should probably go to the Chaser (or end the moment the Chaser Final starts at 0–0).
+- Repro steps: 1. Two-player game. 2. Let the contestant get caught. 3. Score nothing in the Team Final. 4. As the Chaser, answer every final question wrong until the clock runs out. 5. Results: "The team wins!", 0–0.
+- Status: open

@@ -499,6 +499,26 @@ h1, h2, h3, h4 {
   font-weight: 500;
 }
 
+/* A seat held for a player who dropped (ticket 171): dimmed, with a
+   "Reconnecting" chip over the bottom of their circle. */
+.lobbySeat.isAway .lobbySeatCircle {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+.lobbySeat.isAway .lobbySeatName {
+  color: var(--text-muted);
+}
+
+.chip.lobbySeatAwayChip {
+  position: absolute;
+  top: 62px;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  font-size: 11px;
+}
+
 .lobbyCharacterPicker {
   display: flex;
   flex-direction: column;
@@ -809,6 +829,25 @@ h1, h2, h3, h4 {
   margin: 0 auto;
 }
 
+/* "Reconnecting…" while the connection is down and the SDK is getting the
+   player back into their seat (ticket 171): a .chip pinned to the top of
+   every screen. Scoped to .chip, which is declared later in this file. */
+.chip.reconnectBanner {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  z-index: 50;
+  margin: 0;
+  padding: 8px 18px;
+  transform: translateX(-50%);
+  border-color: var(--color-gold);
+  font-size: 16px;
+}
+
+.chip.reconnectBanner .oq-dots i {
+  background: var(--color-white);
+}
+
 /* ============================================================
    Roles reveal — RolesRevealScreen.vue. The top half is the Chaser's side
    (flat --ink-chase): the roster picker for the Chaser themself, a mystery
@@ -928,6 +967,14 @@ h1, h2, h3, h4 {
   font-size: 36px;
   text-align: center;
   text-shadow: 3px 3px 0 var(--btn-ink);
+}
+
+/* The Chaser's own hard-mode switch (ticket 170), a .segmented under the
+   title. */
+.segmented.p5-hard-mode {
+  width: 420px;
+  max-width: 100%;
+  margin: 4px 0 6px;
 }
 
 .p5-roster-row {
@@ -1082,6 +1129,13 @@ h1, h2, h3, h4 {
 .p5-ability-chip-active {
   border-color: var(--color-gold);
   color: var(--color-gold);
+}
+
+/* Hard mode (ticket 170): one chip in place of the card's abilities. */
+.p5-ability-chip-none {
+  border-color: var(--chaser-red-glow);
+  color: var(--chaser-red-bright);
+  cursor: default;
 }
 
 .p5-confirm-banner {
@@ -2077,6 +2131,19 @@ h1, h2, h3, h4 {
 
 .ccrScreen.name .ccrName {
   animation: reveal-text-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Hard mode (ticket 170), under the desk, popping in with the name. */
+.chip.ccrHardMode {
+  position: relative;
+  z-index: 2;
+  margin: 18px 0 0;
+  font-size: 16px;
+  opacity: 0;
+}
+
+.ccrScreen.name .ccrHardMode {
+  animation: reveal-text-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forwards;
 }
 
 @keyframes chaser-character-grow {
@@ -3736,7 +3803,8 @@ h1, h2, h3, h4 {
   .chaser-bubble-pop-enter-active,
   .ability-cue-pop-enter-active,
   .ccrScreen.grow .ccrPortraitWrap,
-  .ccrScreen.name .ccrName {
+  .ccrScreen.name .ccrName,
+  .ccrScreen.name .ccrHardMode {
     animation: none !important;
   }
   .ccrPortrait,
@@ -3751,7 +3819,8 @@ h1, h2, h3, h4 {
      state instead: the Chaser stands full size from the start, and the name
      simply appears on the desk at its beat. */
   .ccrPortraitWrap { transform: none; }
-  .ccrScreen.name .ccrName { opacity: 1; transform: none; }
+  .ccrScreen.name .ccrName,
+  .ccrScreen.name .ccrHardMode { opacity: 1; transform: none; }
   .app > *,
   .lobbySeatCircle.poked .head, .lobbySeatCircle.poked .eyes {
     animation: none !important;

@@ -6,6 +6,7 @@ import { ChaserCharacter, GamePhase } from "../src/TriviaTypes.js";
 import { BankQuestion } from "../src/questions/bank.js";
 import { cleanup, getTestServer } from "./testServer.js";
 import { seatIdOf } from "./seatIdHelper.js";
+import { waitForFinalQuestion } from "./finalQuestionHelper.js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -74,6 +75,7 @@ async function driveToChaseEscape(
     chaserSeatId: string;
     teamFinalQuestion: Promise<any>;
     chaserFinalQuestion: Promise<any>;
+    chaserSeesTeamQuestion: Promise<any>;
 }> {
     const alice = await colyseus.connectTo(room, { playerName: "Alice" });
     const bob = await colyseus.connectTo(room, { playerName: "Bob" });
@@ -100,8 +102,9 @@ async function driveToChaseEscape(
 
     // Registered now (before the chase even starts) so neither can race a
     // finalQuestion the server already sent before the test started listening.
-    const teamFinalQuestion = contestantClient.waitForMessage("finalQuestion");
-    const chaserFinalQuestion = chaserClient.waitForMessage("finalQuestion");
+    const teamFinalQuestion = waitForFinalQuestion(contestantClient, "team", null);
+    const chaserFinalQuestion = waitForFinalQuestion(chaserClient, "chaser", null);
+    const chaserSeesTeamQuestion = waitForFinalQuestion(chaserClient, "team", null);
 
     chaserClient.send("setChaserLowOffer", { amount: 0 });
     await sleep(30);
@@ -133,7 +136,15 @@ async function driveToChaseEscape(
     }
 
     await waitForPhase(room, GamePhase.TeamFinal);
-    return { contestantClient, chaserClient, contestantSeatId, chaserSeatId, teamFinalQuestion, chaserFinalQuestion };
+    return {
+        contestantClient,
+        chaserClient,
+        contestantSeatId,
+        chaserSeatId,
+        teamFinalQuestion,
+        chaserFinalQuestion,
+        chaserSeesTeamQuestion
+    };
 }
 
 describe("final round question delivery (ticket 077)", () => {
@@ -144,7 +155,7 @@ describe("final round question delivery (ticket 077)", () => {
         await cleanup();
     });
 
-    it("startFinalTeam sends finalQuestion(team) only to the non-chaser side; the Chaser gets nothing", async () => {
+    it("startFinalTeam sends finalQuestion(team) to the whole room, the Chaser included (ticket 172) — same prompt, never an answer", async () => {
         const room = await colyseus.createRoom<GameState>("trivia", {
             cashBuilderDurationMs: 80,
             chaserSelectionDurationMs: 80,
@@ -159,17 +170,16 @@ describe("final round question delivery (ticket 077)", () => {
         room.mcQuestionSource = stubChaseSource();
         room.questionBank = bankFixture(20);
 
-        const { chaserFinalQuestion, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
+        const { chaserSeesTeamQuestion, teamFinalQuestion } = await driveToChaseEscape(colyseus, room);
 
-        const NOTHING = Symbol("chaser got nothing");
-        const chaserOutcome = Promise.race([chaserFinalQuestion, sleep(200).then(() => NOTHING)]);
         const teamMessage = await teamFinalQuestion;
-        const chaserResult = await chaserOutcome;
+        const chaserMessage = await chaserSeesTeamQuestion;
 
         assert.strictEqual(teamMessage.side, "team");
         assert.ok(typeof teamMessage.questionId === "number");
         assert.ok(typeof teamMessage.prompt === "string" && teamMessage.prompt.length > 0);
-        assert.strictEqual(chaserResult, NOTHING, "the Chaser must not receive the team's finalQuestion");
+        assert.deepStrictEqual(chaserMessage, teamMessage, "the Chaser watches the same team question");
+        assert.ok(!("answer" in chaserMessage), "the team's question never carries its answer");
     });
 
     it("startFinalChaser sends finalQuestion(chaser) to the whole room (ticket 117 Watching state) — same prompt, never an answer", async () => {
@@ -192,7 +202,7 @@ describe("final round question delivery (ticket 077)", () => {
 
         // The team now sees the Chaser's prompt too (ticket 117) — listen
         // before the phase even flips so a fast server can't win the race.
-        const teamSeesChaserQuestion = contestantClient.waitForMessage("finalQuestion");
+        const teamSeesChaserQuestion = waitForFinalQuestion(contestantClient, "chaser", null);
 
         await waitForPhase(room, GamePhase.ChaserFinal);
         const chaserMessage = await chaserFinalQuestion;

@@ -13,8 +13,12 @@ const emit = defineEmits(["start", "setChaserMode", "setCharacter"]);
 const MIN_PLAYERS = 2;
 const hostName = computed(() => props.players.find((p) => p.isHost)?.name ?? "");
 const lobbyTitle = computed(() => (hostName.value ? `${hostName.value}'s Lobby` : "Lobby"));
-const canStart = computed(() => props.players.length >= MIN_PLAYERS);
+// Ticket 171: a dropped player's seat is held while they reconnect, and the
+// server won't start the game until they're back.
+const reconnectingName = computed(() => props.players.find((p) => p.connected === false)?.name ?? "");
+const canStart = computed(() => props.players.length >= MIN_PLAYERS && !reconnectingName.value);
 const startHint = computed(() => {
+    if (reconnectingName.value) return `Waiting for ${reconnectingName.value} to reconnect`;
     if (!props.isHost) return `Waiting for ${hostName.value || "the host"} to start`;
     return canStart.value ? "Press play when everyone's in" : `Need ${MIN_PLAYERS} players to start`;
 });
@@ -272,7 +276,7 @@ async function copyRoomCode() {
             v-for="(seatPlayer, i) in seats"
             :key="i"
             class="lobbySeat"
-            :class="{ isEmpty: !seatPlayer }"
+            :class="{ isEmpty: !seatPlayer, isAway: seatPlayer?.connected === false }"
             :style="seatPositions[i]"
           >
             <svg v-if="seatPlayer?.isHost" viewBox="0 0 100 60" class="lobbyCrown" aria-hidden="true">
@@ -288,6 +292,7 @@ async function copyRoomCode() {
               <CharacterFace v-if="assetsReady" :character="seatPlayer.character" reaction="neutral" />
             </div>
             <div v-else class="lobbyEmptyCircle"></div>
+            <span v-if="seatPlayer?.connected === false" class="chip lobbySeatAwayChip">Reconnecting</span>
             <div class="lobbySeatName">{{ seatPlayer ? seatPlayer.name : "Open seat" }}</div>
           </div>
         </div>

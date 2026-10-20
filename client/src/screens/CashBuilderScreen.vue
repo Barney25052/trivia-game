@@ -19,10 +19,10 @@ const props = defineProps({
     cashBuilderCorrectAnswers: { type: Number, default: 0 },
     answerResult: { type: Object, default: null },
     // Broadcast the instant any client submits a Cash Builder answer (ticket
-    // 128) — {questionId, seatId, answer}, reaches every client including
-    // spectators, not just the active contestant's own. See
-    // server/src/shared/MessageTypes.ts's CashBuilderAnswerPayload comment
-    // for why this one is safe to broadcast regardless of correctness.
+    // 128) — {questionId, seatId, answer, correct, correctAnswer}, reaches
+    // every client including spectators, not just the active contestant's
+    // own. See server/src/shared/MessageTypes.ts's CashBuilderAnswerPayload
+    // comment for why this one is safe to broadcast.
     cashBuilderAnswer: { type: Object, default: null },
     // Per-seat face reaction store (ticket 103): seatId -> expression, see
     // App.vue's reactionsBySeat.
@@ -60,6 +60,9 @@ watch(() => props.cashBuilderAnswer, (message) => {
     bubbleKey.value += 1;
     if (bubbleTimeout) clearTimeout(bubbleTimeout);
     bubbleTimeout = setTimeout(clearBubble, ANSWER_BUBBLE_HOLD_MS);
+    // Ticket 173: everyone watching gets the same reveal on the question
+    // card; the player's own comes from their answerResult instead.
+    if (!props.isActiveContestant) showReveal(message.correct, message.correctAnswer, false);
 });
 
 const answerInput = ref("");
@@ -124,7 +127,7 @@ const inputDisabled = computed(() =>
 const questionBoxAccent = computed(() => {
     if (revealedCorrectAnswer.value) return "accent-red";
     if (correctAnswerText.value) return "accent-green";
-    return "accent-blue";
+    return props.isActiveContestant ? "accent-blue" : "";
 });
 
 function prefersReducedMotion() {
@@ -281,22 +284,30 @@ watch(() => props.cashBuilderMoney, (current, previous) => {
     }
 });
 
-watch(() => props.answerResult, (result) => {
-    if (!result) return;
+// The question card's reveal: "Correct!" for a beat, or "Wrong! The answer
+// was …" until the next question arrives. The full-viewport flash is the
+// player's own (withFlash); watchers only get the card (ticket 173), the
+// same split as the Team Final's.
+function showReveal(correct, correctAnswer, withFlash) {
     if (screenFlashTimeout) clearTimeout(screenFlashTimeout);
-    if (result.correct) {
+    if (correct) {
         revealedCorrectAnswer.value = "";
-        correctAnswerText.value = result.correctAnswer;
-        screenFlash.value = "cashBuilder-flash-correct";
+        correctAnswerText.value = correctAnswer;
+        screenFlash.value = withFlash ? "cashBuilder-flash-correct" : "";
         screenFlashTimeout = setTimeout(() => {
             screenFlash.value = "";
             correctAnswerText.value = "";
         }, 700);
     } else {
         correctAnswerText.value = "";
-        revealedCorrectAnswer.value = result.correctAnswer;
-        screenFlash.value = "cashBuilder-flash-wrong";
+        revealedCorrectAnswer.value = correctAnswer;
+        screenFlash.value = withFlash ? "cashBuilder-flash-wrong" : "";
     }
+}
+
+watch(() => props.answerResult, (result) => {
+    if (!result) return;
+    showReveal(result.correct, result.correctAnswer, true);
 });
 
 onMounted(() => {
@@ -358,7 +369,10 @@ onUnmounted(() => {
                 <div class="plaque-wipe"></div>
             </div>
 
-            <div v-if="isActiveContestant" class="open-question-box" :class="questionBoxAccent">
+            <!-- One card for the player and everyone watching (ticket 173):
+                 only the player gets the input row and the blue "your turn"
+                 accent. -->
+            <div class="open-question-box" :class="questionBoxAccent">
                 <template v-if="revealedCorrectAnswer">
                     <span class="wrong-label">Wrong!</span>
                     <p class="wrong-answer">The answer was <strong>{{ revealedCorrectAnswer }}</strong></p>
@@ -368,12 +382,12 @@ onUnmounted(() => {
                     <p class="steal-success-text"><strong>{{ correctAnswerText }}</strong></p>
                 </template>
                 <template v-else-if="currentQuestion">
-                    <span class="oq-eyebrow">Question</span>
+                    <span class="oq-eyebrow">{{ isActiveContestant ? "Question" : `${activeContestantName || "A contestant"} is answering` }}</span>
                     <p class="oq-prompt">{{ currentQuestion.prompt }}</p>
                 </template>
                 <p v-else class="oq-thinking">The first question is on its way…</p>
 
-                <div class="oq-row cashBuilderAnswerRow">
+                <div v-if="isActiveContestant" class="oq-row cashBuilderAnswerRow">
                     <input
                         v-model="answerInput"
                         class="field"
@@ -387,12 +401,6 @@ onUnmounted(() => {
                     />
                     <button class="btn btn-primary" :disabled="inputDisabled" @click="submit">Submit</button>
                 </div>
-            </div>
-
-            <div v-else class="open-question-box">
-                <span class="oq-eyebrow">Watching</span>
-                <p class="oq-prompt">{{ activeContestantName || "A contestant" }} is building their pot.</p>
-                <p class="oq-thinking">Answering<span class="oq-dots"><i></i><i></i><i></i></span></p>
             </div>
 
             <div class="cashBuilderStatusSlot">

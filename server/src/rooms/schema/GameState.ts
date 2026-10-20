@@ -20,6 +20,10 @@ export class GamePlayer extends Schema {
      * results screen shows it — cashBuilderMoney is only what they built. */
     @type("number") bankedAmount: number = 0;
     @type("boolean") isHost: boolean = false;
+    /** False while this seat's connection has dropped and the room is holding
+     * it for them to reconnect (ticket 171) — the lobby dims the seat and the
+     * host can't start until they're back. */
+    @type("boolean") connected: boolean = true;
     @type("string") chaserVote: string = "";
     @type("boolean") revealReady: boolean = false;
     @type("string") seatState: string = "waiting";
@@ -77,6 +81,12 @@ export class GameState extends Schema {
      * clearChaseAnswerTimer so it never survives past the question it was
      * armed for. */
     @type("boolean") doubleTimeArmed: boolean = false;
+    /** Hard mode (ticket 170): the Chaser chose to play with no powers at all,
+     * active or passive. Set once, when the Chaser locks in their character
+     * during the Roles Reveal, and never changed after — see
+     * `poweredChaserCharacter` in handlers/chaserAbilities.ts. Public, like
+     * the counters above. */
+    @type("boolean") hardMode: boolean = false;
     /** Maggie's Silence passive (ticket 144): the seatId that scored the most
      * recent team-final correct answer — that seat can't buzz in again on the
      * very next question while Maggie is the Chaser (enforced in buzzIn).

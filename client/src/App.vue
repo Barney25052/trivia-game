@@ -30,10 +30,20 @@ const room = ref(null);
 const joining = ref(false);
 const joinError = ref("");
 const homeNotice = ref("");
-// TriviaRoom.onLeave's disconnect(4001) when the host leaves; 4000 is the
-// SDK's own consented close (the player left on purpose).
-const HOST_LEFT_CLOSE_CODE = 4001;
+// Mirrors server/src/gameConfig.ts ROOM_SETTINGS.hostLeftCloseCode: the
+// close code everyone gets when the host leaves (ticket 171). 4000 is the
+// SDK's own consented close (the player left on purpose), and 4001 is
+// Colyseus's own SERVER_SHUTDOWN (a restart or redeploy).
+const HOST_LEFT_CLOSE_CODE = 4100;
 const CONSENTED_CLOSE_CODE = 4000;
+const SERVER_SHUTDOWN_CLOSE_CODE = 4001;
+// Ticket 171: the connection dropped and the SDK is trying to get back into
+// the same seat, which the server holds for 2 minutes in the lobby and 30
+// seconds once the game has started (RECONNECTION in gameConfig.ts). The
+// SDK's own default (15 tries, backing off to 5s apart) gives up after
+// about a minute; 30 tries keep it going for the whole lobby window.
+const reconnecting = ref(false);
+const RECONNECT_MAX_RETRIES = 30;
 const playersMap = ref(null);
 const players = ref([]);
 const currentPhase = ref(null);
@@ -99,6 +109,9 @@ const doubleTimeUsedThisTableRound = ref(false);
 const reRackUsedThisTableRound = ref(false);
 const jumbleUsedThisTableRound = ref(false);
 const doubleTimeArmed = ref(false);
+// Ticket 170: the Chaser chose to play with no powers. Rides in
+// abilityCounters too, so ChaserPanel hides its tray and passives.
+const hardMode = ref(false);
 const abilityCounters = computed(() => ({
   fiftyFiftyUsesRemaining: fiftyFiftyUsesRemaining.value,
   skipUsesRemaining: skipUsesRemaining.value,
@@ -106,7 +119,8 @@ const abilityCounters = computed(() => ({
   doubleTimeUsedThisTableRound: doubleTimeUsedThisTableRound.value,
   reRackUsedThisTableRound: reRackUsedThisTableRound.value,
   jumbleUsedThisTableRound: jumbleUsedThisTableRound.value,
-  doubleTimeArmed: doubleTimeArmed.value
+  doubleTimeArmed: doubleTimeArmed.value,
+  hardMode: hardMode.value
 }));
 // Public "the Chaser just used X" cue (ticket 140's chaserAbilityUsed
 // broadcast) — a short-lived toast rendered by ChaserPanel.vue, deliberately
@@ -354,11 +368,26 @@ async function joinLobby(playerName, roomCode) {
       room.value = await client.joinById(roomCode, {playerName : playerName});
     }
 
+    room.value.reconnection.maxRetries = RECONNECT_MAX_RETRIES;
+
+    room.value.onDrop(() => {
+      reconnecting.value = true;
+    });
+
+    room.value.onReconnect(() => {
+      reconnecting.value = false;
+    });
+
     room.value.onLeave((code) => {
       if (code === HOST_LEFT_CLOSE_CODE) {
         homeNotice.value = "The host left, so the game ended.";
+      } else if (code === SERVER_SHUTDOWN_CLOSE_CODE) {
+        homeNotice.value = "The game server restarted, so the game ended.";
       } else if (code !== CONSENTED_CLOSE_CODE) {
-        homeNotice.value = "Lost connection to the game.";
+        // Reconnecting first means the seat ran out before we got back.
+        homeNotice.value = reconnecting.value
+            ? "You were away too long, so you lost your seat."
+            : "Lost connection to the game.";
       }
       handleLeave();
     })
@@ -408,6 +437,7 @@ async function joinLobby(playerName, roomCode) {
       reRackUsedThisTableRound.value = newState.reRackUsedThisTableRound;
       jumbleUsedThisTableRound.value = newState.jumbleUsedThisTableRound;
       doubleTimeArmed.value = newState.doubleTimeArmed;
+      hardMode.value = newState.hardMode;
     });
 
     room.value.onMessage("seatId", (message) => {
@@ -565,9 +595,9 @@ async function joinLobby(playerName, roomCode) {
       getReadyCooldownMs.value = message.cooldownMs;
     });
 
-    // Each client only ever receives finalQuestion for its own side (see
-    // sendFinalQuestion server-side) — a fresh team question also means the
-    // previous buzz is over.
+    // Both sides' questions reach everyone, so each side can watch the
+    // other's round (tickets 117, 172) — a fresh team question also means
+    // the previous buzz is over.
     room.value.onMessage("finalQuestion", (message) => {
       if (message.side === "team") {
         finalTeamQuestion.value = message;
@@ -722,6 +752,7 @@ function sendChaseAnswer({ answerIndex, questionId }) {
 function handleLeave() {
   room.value?.leave()
   room.value  = null
+  reconnecting.value = false;
   if (chaseResultHoldTimeout) {
     clearTimeout(chaseResultHoldTimeout);
     chaseResultHoldTimeout = null;
@@ -742,9 +773,9 @@ function handleLeave() {
   reactionsBySeat.value = {};
 }
 
-function revealReady({ characterId } = {}) {
+function revealReady({ characterId, hardMode } = {}) {
   try {
-    room.value?.send("revealReady", { characterId });
+    room.value?.send("revealReady", { characterId, hardMode });
 
   } catch (e) {
     console.error("Failed to send reveal ready:", e);
@@ -842,6 +873,9 @@ onUnmounted(() => {
 
 <template>
   <div class="app">
+    <p v-if="reconnecting" class="chip reconnectBanner" role="status">
+      Reconnecting<span class="oq-dots"><i></i><i></i><i></i></span>
+    </p>
     <HomeScreen
       v-if="currentScreen=='home'"
       :joining="joining"
@@ -878,6 +912,7 @@ onUnmounted(() => {
       v-if="currentScreen=='rolesReveal'"
       :players="players"
       :mySeatId="mySeatId"
+      :hardMode="hardMode"
       @ready="revealReady"
     />
     <ContestantLineupScreen
@@ -905,6 +940,7 @@ onUnmounted(() => {
       v-if="currentScreen=='chaserCharacterReveal'"
       :chaserCharacterId="revealChaserCharacterId"
       :chaserCharacterName="revealChaserCharacterName"
+      :hardMode="hardMode"
     />
     <OfferScreen
       v-if="currentScreen=='offer'"

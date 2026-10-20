@@ -22,6 +22,18 @@ const ABILITY_OWNER: Record<string, string> = {
  * (ticket 139), so they are deliberately absent from `ABILITY_OWNER`. */
 const MANUAL_ABILITY_IDS = Object.keys(ABILITY_OWNER);
 
+/** The Chaser's character id for every passive check (No Middle, Pushback
+ * Immunity, Time Bonus, Short Fuse, Silence), or "" in hard mode (ticket 170)
+ * — so a hard-mode Chaser matches no character's passive. The one place the
+ * passives ask "whose powers are live?"; display code still reads the real
+ * `chaserCharacterId`. */
+export function poweredChaserCharacter(room: any): string {
+    if (room.state.hardMode) {
+        return "";
+    }
+    return room.state.players.get(room.state.chaserSeatId)?.chaserCharacterId ?? "";
+}
+
 /** Shared timing gate for `fiftyFifty`/`reRack`/`jumble`: mid-Chase, a
  * question is live, and nobody has answered it yet — redrawing or altering a
  * question after either side has committed would be exploitable/confusing. */
@@ -36,13 +48,17 @@ function chaseTimingGate(room: any): AbilityCheckResult {
 }
 
 /** Pure-ish validation (reads room state, never mutates it) for the generic
- * `useChaserAbility` message: sender must be the Chaser, the ability must be
+ * `useChaserAbility` message: sender must be the Chaser, not in hard mode
+ * (ticket 170), the ability must be
  * one of the five manually-activated ones, owned by the Chaser's chosen
  * character (or shared), still have charges/be unused this table round, and
  * pass its own phase/timing gate. */
 export function canUseAbility(room: any, seatId: string, abilityId: string): AbilityCheckResult {
     if (seatId !== room.state.chaserSeatId) {
         return { ok: false, reason: "Only the Chaser can activate an ability" };
+    }
+    if (room.state.hardMode) {
+        return { ok: false, reason: "Hard mode: the Chaser plays with no powers" };
     }
     if (!MANUAL_ABILITY_IDS.includes(abilityId)) {
         return { ok: false, reason: `Not a manually-activated ability: ${abilityId}` };

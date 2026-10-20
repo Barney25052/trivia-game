@@ -7,6 +7,7 @@ import { BOARD, CHASER_ABILITIES, CHASE_QUESTION, FINAL_ROUND } from "../src/gam
 import { BankQuestion } from "../src/questions/bank.js";
 import { cleanup, getTestServer } from "./testServer.js";
 import { seatIdOf } from "./seatIdHelper.js";
+import { waitForFinalQuestion } from "./finalQuestionHelper.js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -241,7 +242,7 @@ async function reachChaserFinal(
             stealResolveHoldMs: opts?.stealResolveHoldMs ?? 80
         });
 
-    const chaserFinalQuestion = chaserClient.waitForMessage("finalQuestion");
+    const chaserFinalQuestion = waitForFinalQuestion(chaserClient, "chaser", null);
 
     let question = firstQuestion;
     for (let round = 0; round < 4 && room.state.currentPhase === GamePhase.Chase; round += 1) {

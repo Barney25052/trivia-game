@@ -2,6 +2,7 @@ import { FlowEffect } from "../../gameFlow.js";
 import { ChaserCharacter, PlayerRole } from "../../TriviaTypes.js";
 import { pickOfferQuip } from "../../offerQuips.js";
 import * as chaserSelection from "./chaserSelection.js";
+import { poweredChaserCharacter } from "./chaserAbilities.js";
 import {
   CHASER_ABILITIES,
   CHASER_CHARACTERS,
@@ -145,7 +146,8 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           // itself is untouched — it still exists and still bounds low/high
           // exactly as before (ticket 051) — only offerChoice's "middle" pick
           // is rejected for it, enforced server-side in messageHandlers.ts.
-          const middleVoided = chaserCharId === ChaserCharacter.Bezos;
+          // Hard mode (ticket 170) switches the passive off.
+          const middleVoided = poweredChaserCharacter(room) === ChaserCharacter.Bezos;
           // A $0 middle has no legal low offer (ticket 058) — skip the low-offer
           // step by pre-filling it with $0 instead of waiting on the Chaser.
           // This pre-fill is unrelated to No Middle and behaves identically
@@ -275,9 +277,9 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
           // room.stealWindowMs exactly as onCreate already set it (the
           // clamped room option, or FINAL_ROUND.stealWindowMs by default) —
           // this never resets it back to the config default, so short test
-          // overrides for non-Nami chasers keep working unchanged.
-          const chaser = room.state.players.get(room.state.chaserSeatId);
-          if (chaser?.chaserCharacterId === ChaserCharacter.Nami) {
+          // overrides for non-Nami chasers keep working unchanged. Hard mode
+          // (ticket 170) switches the passive off.
+          if (poweredChaserCharacter(room) === ChaserCharacter.Nami) {
             room.stealWindowMs = CHASER_ABILITIES.shortFuseStealWindowMs;
           }
           console.log(`Final round: chaser goes (${room.chaserFinalDurationMs}ms)`);
@@ -289,6 +291,9 @@ export function applyEffects(effects: FlowEffect[], room: any, context: any): vo
 
         case "endGame": {
           console.log(`Game over — ${effect.winner} wins!`);
+          // Kept so a player who reconnects after the end still gets the
+          // result (ticket 171's resendLiveContext).
+          room.gameWinner = effect.winner;
           room.broadcast("endGame", { winner: effect.winner });
           break;
         }

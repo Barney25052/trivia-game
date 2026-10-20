@@ -16,10 +16,12 @@ export interface EndGamePayload {
     winner: "chaser" | "team";
 }
 
-/** Final-round open-ended question delivery (ticket 077). Sent per-client to
- * only the side it belongs to — never broadcast, since the Chaser must never
- * see a team prompt or vice versa. `questionId` is null when that side's
- * question bank is exhausted mid-round (the round's timer still ends it). */
+/** Final-round open-ended question delivery (ticket 077). Both sides go to
+ * the whole room so each side can watch the other's round (tickets 117 and
+ * 172): the two streams never share a question, so watching tells nobody
+ * anything about their own. Never carries an answer. `questionId` is null
+ * when that side's question bank is exhausted mid-round (the round's timer
+ * still ends it). */
 export interface FinalQuestionPayload {
     side: "team" | "chaser";
     questionId: number | null;
@@ -67,12 +69,15 @@ export interface FinalStealAnswerPayload {
  * unlike the Chase/steal answer channels this is broadcast regardless of
  * correctness: the existing public `reaction` cue already tells the room
  * whether a guess was right or wrong the instant it lands, so withholding
- * the guessed text itself would not have protected anything. Never carries
- * the correct answer directly — just what was typed. */
+ * the guessed text itself would not have protected anything. Carries the
+ * correct answer as the reveal for everyone watching (ticket 173): the
+ * question is finished once answered and the next one is a fresh question. */
 export interface CashBuilderAnswerPayload {
     questionId: number;
     seatId: string;
     answer: string;
+    correct: boolean;
+    correctAnswer: string;
 }
 
 /** Broadcast to the whole room the moment a steal attempt resolves, correct or

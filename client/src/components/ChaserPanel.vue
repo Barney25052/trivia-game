@@ -54,7 +54,8 @@ const props = defineProps({
     // public info, not secret (see GameState.ts's own comment on these
     // fields). Keys: fiftyFiftyUsesRemaining, skipUsesRemaining,
     // pushbackImmunityUsesRemaining, doubleTimeUsedThisTableRound,
-    // reRackUsedThisTableRound, jumbleUsedThisTableRound, doubleTimeArmed.
+    // reRackUsedThisTableRound, jumbleUsedThisTableRound, doubleTimeArmed,
+    // and hardMode (ticket 170: no powers at all, so nothing to show).
     abilityCounters: { type: Object, default: () => ({}) },
     // Best-effort client mirror of canUseAbility's timing gate — true when
     // there's a live question nobody has committed an answer to yet (mid-
@@ -108,9 +109,12 @@ const ABILITY_TABLE_ROUND_FLAG = {
 
 const characterAbilities = computed(() => CHASER_ABILITY_COPY[props.characterId] ?? null);
 
-const visiblePassives = computed(() => characterAbilities.value?.passive ?? []);
+const visiblePassives = computed(() =>
+    props.abilityCounters.hardMode ? [] : characterAbilities.value?.passive ?? []
+);
 
 const visibleActiveAbilities = computed(() => {
+    if (props.abilityCounters.hardMode) return [];
     const allowedIds = PHASE_ACTIVE_ABILITY_IDS[props.phase] ?? [];
     if (allowedIds.length === 0) return [];
     const all = [...SHARED_CHASER_ABILITY_COPY, ...(characterAbilities.value?.active ?? [])];

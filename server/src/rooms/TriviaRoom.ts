@@ -30,6 +30,7 @@ import {
   PLAYER_NAME,
   RATE_LIMIT,
   REACTION,
+  RECONNECTION,
   REVEAL_READY,
   ROOM_SETTINGS,
   TEAM_FINAL_INTRO,
@@ -54,6 +55,7 @@ import {
 } from "./handlers/messageHandlers.js";
 import { applyEffects } from "./handlers/effects.js";
 import { clampRoomOptions } from "./handlers/clampOptions.js";
+import { finalQuestionPayload, resendLiveContext } from "./handlers/reconnect.js";
 
 const OFFER_TIERS: OfferTier[] = ["low", "middle", "high"];
 
@@ -130,6 +132,16 @@ export class TriviaRoom extends Room {
   rateLimitMaxMessages: number = RATE_LIMIT.maxMessages;
   rateLimitWindowMs: number = RATE_LIMIT.windowMs;
   chaseAnswerWindowMs: number = CHASE_QUESTION.answerWindowMs;
+  /** How long a dropped seat is held for its player (ticket 171) — not a
+   * room option, but plain fields so tests can shorten them. */
+  lobbyReconnectGraceSeconds: number = RECONNECTION.lobbyGraceSeconds;
+  gameReconnectGraceSeconds: number = RECONNECTION.gameGraceSeconds;
+  /** The game's result once it ends, for a player who reconnects after the
+   * `endGame` broadcast went out (ticket 171). */
+  gameWinner: "chaser" | "team" | null = null;
+  /** True once the host has left and the room is closing on everyone: the
+   * other players' connections close too, and there's no seat to hold. */
+  private closingForHostLeave = false;
 
   /** Per-question buzz lock for the team final (ticket 078): the seatId that
    * won the right to answer the current team question, cleared once the
@@ -328,30 +340,15 @@ export class TriviaRoom extends Room {
     this.broadcast("reaction", { seatId, expression });
   }
 
-  /** Delivers a final-round question. The team side stays one-sided (ticket
-   * 077): the Chaser must never get an advance look at the team's prompt. The
-   * Chaser side is a whole-room send (ticket 117's "Watching" state) — only
-   * the Chaser's typed guess has to stay hidden (AGENTS.md "never broadcast
-   * before reveal" covers answers/correctness, not the prompt itself), so the
-   * team can now watch the same question the Chaser is working on instead of
-   * staring at a blank state. `question` is null when that side's bank is
-   * exhausted. */
+  /** Delivers a final-round question to the whole room, whichever side it
+   * belongs to, so each side can watch the other's round: the team watches
+   * the Chaser's (ticket 117) and the Chaser watches the team's (ticket 172).
+   * AGENTS.md "never broadcast before reveal" covers answers, not prompts,
+   * and the two streams never share a question (ticket 077's one used-ID
+   * set), so watching the team's questions tells the Chaser nothing about
+   * their own. `question` is null when that side's bank is exhausted. */
   private sendFinalQuestion(side: "team" | "chaser", question: BankQuestion | null) {
-    const payload = {
-      side,
-      questionId: question?.id ?? null,
-      prompt: question?.question ?? null,
-    };
-    for (const client of this.clients) {
-      const seatId = this.seatIdForClient(client);
-      if (!seatId) {
-        continue;
-      }
-      const isChaser = seatId === this.state.chaserSeatId;
-      if (side === "chaser" || !isChaser) {
-        client.send("finalQuestion", payload);
-      }
-    }
+    this.broadcast("finalQuestion", finalQuestionPayload(side, question));
   }
 
   private clearChaseAnswerTimer() {
@@ -814,6 +811,44 @@ export class TriviaRoom extends Room {
     console.log(`Client joined room ${this.roomId} as seat ${seatId}`);
   }
 
+  /** The connection dropped without the player choosing to leave (ticket
+   * 171): a phone switching apps, a network blip, a proxy restart. Hold the
+   * seat so they can come back to it, instead of removing it (and, for the
+   * host, closing the room on everyone). If they don't make it back in time,
+   * Colyseus calls `onLeave` and the usual forfeit and cleanup run. A
+   * consented leave (the Leave button, or a reload — ticket 153) skips this
+   * and goes straight to `onLeave`. */
+  onDrop (client: Client, code: CloseCode) {
+    if (this.closingForHostLeave) {
+      return;
+    }
+    const seatId = this.seatIdForClient(client);
+    const player = seatId ? this.state.players.get(seatId) : undefined;
+    if (!player) {
+      return;
+    }
+    const graceSeconds = this.state.currentPhase === GamePhase.Lobby
+      ? this.lobbyReconnectGraceSeconds
+      : this.gameReconnectGraceSeconds;
+    player.connected = false;
+    console.log(`Seat ${seatId} dropped (code ${code}) — holding it ${graceSeconds}s for a reconnect`);
+    // A client that never finished joining, or a room already disposing,
+    // gets an already-rejected promise back: Colyseus then calls onLeave
+    // itself, so the rejection only needs catching here.
+    this.allowReconnection(client, graceSeconds).catch(() => {});
+  }
+
+  onReconnect (client: Client) {
+    const seatId = this.seatIdForClient(client);
+    const player = seatId ? this.state.players.get(seatId) : undefined;
+    if (!player) {
+      return;
+    }
+    player.connected = true;
+    console.log(`Seat ${seatId} reconnected to room ${this.roomId}`);
+    resendLiveContext(this, client);
+  }
+
   private allPlayersReady(): boolean {
     const players = [...this.state.players.values()];
     return players.length > 0 && players.every((player) => player.revealReady);
@@ -825,10 +860,12 @@ export class TriviaRoom extends Room {
     const player = seatId ? this.state.players.get(seatId) : undefined;
     if (player?.isHost) {
       console.log("Host left the room — disconnecting", this.roomId);
-      // 4001 is inside the WebSocket spec's private-use close-code range
-      // (RFC 6455: 4000-4999) — the old 6767 exceeded it and made `ws`
-      // throw on every real host disconnect (bug-014, ticket 104).
-      this.disconnect(4001);
+      // Inside the WebSocket spec's private-use close-code range (RFC 6455:
+      // 4000-4999) — the old 6767 exceeded it and made `ws` throw on every
+      // real host disconnect (bug-014, ticket 104) — and clear of 4001,
+      // Colyseus's own SERVER_SHUTDOWN (ticket 171).
+      this.closingForHostLeave = true;
+      this.disconnect(ROOM_SETTINGS.hostLeftCloseCode);
       return;
     }
 

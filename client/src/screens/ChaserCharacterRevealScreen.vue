@@ -9,7 +9,9 @@ const SPOTLIGHT_MS = 700;
 
 const props = defineProps({
     chaserCharacterId: { type: String, default: "" },
-    chaserCharacterName: { type: String, default: "" }
+    chaserCharacterName: { type: String, default: "" },
+    // Ticket 170: the Chaser plays this game with no powers.
+    hardMode: { type: Boolean, default: false }
 });
 
 const portrait = computed(() => chaserPortrait(props.chaserCharacterId));
@@ -45,5 +47,6 @@ onBeforeUnmount(clearStageTimeouts);
         <div class="ccrDesk">
             <h1 class="ccrName">{{ chaserCharacterName }}</h1>
         </div>
+        <p v-if="hardMode" class="chip chip-red ccrHardMode">Hard mode: no powers</p>
     </div>
 </template>
